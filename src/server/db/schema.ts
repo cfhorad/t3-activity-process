@@ -2,13 +2,22 @@ import { relations } from "drizzle-orm";
 import {
 	boolean,
 	index,
-	pgTable,
+	integer,
+	jsonb,
 	pgTableCreator,
 	text,
 	timestamp,
 } from "drizzle-orm/pg-core";
 
 export const createTable = pgTableCreator((name) => `pg-drizzle_${name}`);
+
+export const googleSheetData = createTable("google_sheet_data", {
+	id: integer().primaryKey().generatedByDefaultAsIdentity(),
+	data: jsonb("data").notNull(),
+	syncedAt: timestamp("synced_at", { withTimezone: true })
+		.$defaultFn(() => new Date())
+		.notNull(),
+});
 
 export const posts = createTable(
 	"post",
@@ -26,12 +35,12 @@ export const posts = createTable(
 		updatedAt: d.timestamp({ withTimezone: true }).$onUpdate(() => new Date()),
 	}),
 	(t) => [
-		index("created_by_idx").on(t.createdById),
-		index("name_idx").on(t.name),
+		index("post_created_by_idx").on(t.createdById),
+		index("post_name_idx").on(t.name),
 	],
 );
 
-export const user = pgTable("user", {
+export const user = createTable("user", {
 	id: text("id").primaryKey(),
 	name: text("name").notNull(),
 	email: text("email").notNull().unique(),
@@ -47,7 +56,7 @@ export const user = pgTable("user", {
 		.notNull(),
 });
 
-export const session = pgTable("session", {
+export const session = createTable("session", {
 	id: text("id").primaryKey(),
 	expiresAt: timestamp("expires_at").notNull(),
 	token: text("token").notNull().unique(),
@@ -60,7 +69,7 @@ export const session = pgTable("session", {
 		.references(() => user.id, { onDelete: "cascade" }),
 });
 
-export const account = pgTable("account", {
+export const account = createTable("account", {
 	id: text("id").primaryKey(),
 	accountId: text("account_id").notNull(),
 	providerId: text("provider_id").notNull(),
@@ -78,7 +87,7 @@ export const account = pgTable("account", {
 	updatedAt: timestamp("updated_at").notNull(),
 });
 
-export const verification = pgTable("verification", {
+export const verification = createTable("verification", {
 	id: text("id").primaryKey(),
 	identifier: text("identifier").notNull(),
 	value: text("value").notNull(),

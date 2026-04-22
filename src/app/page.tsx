@@ -34,13 +34,11 @@ export default async function Home() {
 						</Link>
 						<Link
 							className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 hover:bg-white/20"
-							href="https://create.t3.gg/en/introduction"
-							target="_blank"
+							href="/process"
 						>
-							<h3 className="font-bold text-2xl">Documentation →</h3>
+							<h3 className="font-bold text-2xl">Process Data →</h3>
 							<div className="text-lg">
-								Learn more about Create T3 App, the libraries it uses, and how
-								to deploy it.
+								Sync and view data from Google Sheets in your local database.
 							</div>
 						</Link>
 					</div>
