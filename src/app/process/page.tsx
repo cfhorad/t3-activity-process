@@ -19,14 +19,21 @@ export default function ProcessPage() {
 	const [search, setSearch] = useState("");
 	const [debouncedSearch, setDebouncedSearch] = useState("");
 	const [filterColumn, setFilterColumn] = useState<string>("all");
+	const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
 	const { data: syncedData, isLoading: isQueryLoading } =
 		api.googleSheet.getAll.useQuery({
 			search: debouncedSearch,
 			filterColumn: filterColumn,
+			exactValue: selectedCategory === "all" ? undefined : selectedCategory,
 		});
 
 	const { data: availableColumns } = api.googleSheet.getColumns.useQuery();
+
+	const { data: categories } = api.googleSheet.getUniqueValues.useQuery(
+		{ columnName: filterColumn },
+		{ enabled: filterColumn !== "all" },
+	);
 
 	const syncMutation = api.googleSheet.sync.useMutation({
 		onSuccess: (data) => {
@@ -35,6 +42,7 @@ export default function ProcessPage() {
 			console.log(`Synced ${data.count} rows`);
 		},
 	});
+
 
 	// Handle search debounce
 	useEffect(() => {
@@ -86,9 +94,9 @@ export default function ProcessPage() {
 				</Button>
 			</div>
 
-			<div className="flex flex-col gap-4 md:flex-row md:items-center">
+			<div className="flex flex-wrap items-center gap-4">
 				<Input
-					className="w-full sm:max-w-[44%]"
+					className="w-full sm:max-w-[300px]"
 					onChange={(e) => setSearch(e.target.value)}
 					placeholder={
 						filterColumn === "all"
@@ -100,7 +108,10 @@ export default function ProcessPage() {
 				/>
 				<Select
 					className="w-full sm:max-w-[200px]"
-					onChange={(key) => setFilterColumn(String(key))}
+					onChange={(key) => {
+						setFilterColumn(String(key));
+						setSelectedCategory("all");
+					}}
 					placeholder="Filter by column"
 					value={filterColumn}
 					variant="primary"
@@ -125,6 +136,36 @@ export default function ProcessPage() {
 						</ListBox>
 					</Select.Popover>
 				</Select>
+
+				{filterColumn !== "all" && categories && categories.length > 0 && (
+					<Select
+						className="w-full sm:max-w-[200px]"
+						onChange={(key) => setSelectedCategory(String(key))}
+						placeholder="Select category"
+						value={selectedCategory}
+						variant="primary"
+					>
+						<Label>Category</Label>
+						<Select.Trigger>
+							<Select.Value />
+							<Select.Indicator />
+						</Select.Trigger>
+						<Select.Popover>
+							<ListBox>
+								<ListBox.Item id="all" textValue="All Categories">
+									All Categories
+									<ListBox.ItemIndicator />
+								</ListBox.Item>
+								{categories.map((cat: string) => (
+									<ListBox.Item id={cat} key={cat} textValue={cat}>
+										{cat}
+										<ListBox.ItemIndicator />
+									</ListBox.Item>
+								))}
+							</ListBox>
+						</Select.Popover>
+					</Select>
+				)}
 			</div>
 
 
