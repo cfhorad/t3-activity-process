@@ -4,17 +4,20 @@ import { Chip, Label, ListBox, Select } from "@heroui/react";
 import { api } from "~/trpc/react";
 
 interface FilterSelectProps {
+	activityId: string;
 	columnName: string;
 	selectedKeys: string[];
 	onSelectionChange: (keys: string[]) => void;
 }
 
 export function FilterSelect({
+	activityId,
 	columnName,
 	selectedKeys,
 	onSelectionChange,
 }: FilterSelectProps) {
 	const { data: values } = api.googleSheet.getUniqueValues.useQuery({
+		activityId,
 		columnName,
 	});
 

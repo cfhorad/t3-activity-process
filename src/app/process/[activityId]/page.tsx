@@ -2,13 +2,20 @@
 
 import { Button, Card, SearchField, Spinner } from "@heroui/react";
 import { Search } from "lucide-react";
-import { FilterSelect } from "./_components/FilterSelect";
-import { ProcessCard } from "./_components/ProcessCard";
-import { ProcessHeader } from "./_components/ProcessHeader";
-import { SkeletonGrid } from "./_components/SkeletonGrid";
-import { useProcessData } from "./_hooks/useProcessData";
+import { useParams } from "next/navigation";
+import { api } from "~/trpc/react";
+import { ActivityHeader } from "../../_components/ActivityHeader";
+import { FilterSelect } from "../_components/FilterSelect";
+import { ProcessCard } from "../_components/ProcessCard";
+import { SkeletonGrid } from "../_components/SkeletonGrid";
+import { useProcessData } from "../_hooks/useProcessData";
 
 export default function ProcessPage() {
+	const params = useParams();
+	const activityId = params.activityId as string;
+
+	const { data: activity } = api.activity.get.useQuery({ id: activityId });
+
 	const {
 		search,
 		setSearch,
@@ -19,11 +26,16 @@ export default function ProcessPage() {
 		syncMutation,
 		handleSync,
 		filterableColumns,
-	} = useProcessData();
+	} = useProcessData(activityId);
 
 	return (
 		<main className="container mx-auto flex flex-col gap-6 p-4 md:p-8">
-			<ProcessHeader isSyncing={syncMutation.isPending} onSync={handleSync} />
+			<ActivityHeader
+				isSyncing={syncMutation.isPending}
+				modeLabel="Process"
+				onSync={handleSync}
+				title={activity?.name ?? "Processing"}
+			/>
 
 			<div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
 				<SearchField
@@ -44,6 +56,7 @@ export default function ProcessPage() {
 				<div className="flex flex-col flex-wrap gap-4 sm:flex-row">
 					{filterableColumns.map((col) => (
 						<FilterSelect
+							activityId={activityId}
 							columnName={col.columnName}
 							key={col.columnName}
 							onSelectionChange={(values) =>

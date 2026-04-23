@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { api } from "~/trpc/react";
 
-export function useProcessData() {
+export function useProcessData(activityId: string) {
 	const utils = api.useUtils();
 	const [search, setSearch] = useState("");
 	const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -12,17 +12,24 @@ export function useProcessData() {
 	>({});
 
 	const { data: syncedData, isLoading: isQueryLoading } =
-		api.googleSheet.getAll.useQuery({
-			search: debouncedSearch,
-			filters: selectedFilters,
-		});
+		api.googleSheet.getAll.useQuery(
+			{
+				activityId,
+				search: debouncedSearch,
+				filters: selectedFilters,
+			},
+			{ enabled: !!activityId },
+		);
 
-	const { data: config } = api.googleSheet.getColumns.useQuery();
+	const { data: config } = api.googleSheet.getColumns.useQuery(
+		{ activityId },
+		{ enabled: !!activityId },
+	);
 
 	const syncMutation = api.googleSheet.sync.useMutation({
 		onSuccess: (data) => {
-			void utils.googleSheet.getAll.invalidate();
-			void utils.googleSheet.getColumns.invalidate();
+			void utils.googleSheet.getAll.invalidate({ activityId });
+			void utils.googleSheet.getColumns.invalidate({ activityId });
 			console.log(`Synced ${data.rowCount} rows and ${data.colCount} columns`);
 		},
 	});
@@ -36,7 +43,7 @@ export function useProcessData() {
 	}, [search]);
 
 	const handleSync = () => {
-		syncMutation.mutate();
+		syncMutation.mutate({ activityId });
 	};
 
 	const filterableColumns = config?.filter((c) => c.isFilterable) ?? [];

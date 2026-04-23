@@ -7,7 +7,7 @@ import { DetailsModal } from "./DetailsModal";
 
 interface ProcessCardProps {
 	row: {
-		id: number;
+		id: string;
 		data: unknown;
 	};
 }

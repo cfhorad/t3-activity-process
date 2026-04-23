@@ -7,41 +7,52 @@ import {
 	pgTableCreator,
 	text,
 	timestamp,
+	uuid,
 } from "drizzle-orm/pg-core";
 
 export const createTable = pgTableCreator((name) => `pg-drizzle_${name}`);
 
 export const googleSheetData = createTable("google_sheet_data", {
-	id: integer().primaryKey().generatedByDefaultAsIdentity(),
+	id: uuid("id").defaultRandom().primaryKey(),
+	activityId: uuid("activity_id").references(() => activities.id, {
+		onDelete: "cascade",
+	}),
 	data: jsonb("data").notNull(),
+	styles: jsonb("styles"),
+	rowOrder: integer("row_order").default(0).notNull(),
 });
 
 export const googleSheetConfig = createTable("google_sheet_config", {
 	id: integer().primaryKey().generatedByDefaultAsIdentity(),
+	activityId: uuid("activity_id").references(() => activities.id, {
+		onDelete: "cascade",
+	}),
 	columnName: text("column_name").notNull(),
 	isFilterable: boolean("is_filterable").default(false).notNull(),
 	displayOrder: integer("display_order").notNull(),
 });
 
-export const posts = createTable(
-	"post",
-	(d) => ({
-		id: d.integer().primaryKey().generatedByDefaultAsIdentity(),
-		name: d.varchar({ length: 256 }),
-		createdById: d
-			.varchar({ length: 255 })
+export const activities = createTable(
+	"activity",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		name: text("name").notNull(),
+		date: text("date").notNull(),
+		memo: text("memo"),
+		googleSheetId: text("google_sheet_id"),
+		googleSheetName: text("google_sheet_name"),
+		handlingMode: text("handling_mode").default("simple display").notNull(),
+		createdById: text("created_by_id")
 			.notNull()
 			.references(() => user.id),
-		createdAt: d
-			.timestamp({ withTimezone: true })
+		createdAt: timestamp("created_at", { withTimezone: true })
 			.$defaultFn(() => new Date())
 			.notNull(),
-		updatedAt: d.timestamp({ withTimezone: true }).$onUpdate(() => new Date()),
-	}),
-	(t) => [
-		index("post_created_by_idx").on(t.createdById),
-		index("post_name_idx").on(t.name),
-	],
+		updatedAt: timestamp("updated_at", { withTimezone: true }).$onUpdate(
+			() => new Date(),
+		),
+	},
+	(t) => [index("activity_created_by_idx").on(t.createdById)],
 );
 
 export const user = createTable("user", {
