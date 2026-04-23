@@ -46,7 +46,9 @@ export default function ProcessPage() {
 						<FilterSelect
 							columnName={col.columnName}
 							key={col.columnName}
-							onSelectionChange={(values) => updateFilter(col.columnName, values)}
+							onSelectionChange={(values) =>
+								updateFilter(col.columnName, values)
+							}
 							selectedKeys={selectedFilters[col.columnName] ?? []}
 						/>
 					))}
