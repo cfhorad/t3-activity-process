@@ -1,7 +1,8 @@
 "use client";
 
 import { Button, Card, Chip, Modal } from "@heroui/react";
-import { Clock, Info, Layers, Users } from "lucide-react";
+import { Bell, Clock, Info, Layers, Users } from "lucide-react";
+import { calculateDuration, formatTimeDisplay } from "~/lib/time";
 import { DetailsModal } from "./DetailsModal";
 
 interface ProcessCardProps {
@@ -16,6 +17,7 @@ export function ProcessCard({ row }: ProcessCardProps) {
 	const data = (row.data as Record<string, string>) ?? {};
 	const title = data.主題 ?? "Untitled";
 	const footerField = "負責人";
+	const duration = calculateDuration(data.StartAt, data.EndAt);
 
 	return (
 		<Card
@@ -33,23 +35,47 @@ export function ProcessCard({ row }: ProcessCardProps) {
 							{/* <span className="font-medium text-[10px] text-muted-foreground uppercase">
 								Time
 							</span> */}
-							<span className="font-semibold text-foreground">
-								{data.StartAt ?? "-"} — {data.EndAt ?? "-"}
-							</span>
+							<div className="flex flex-col gap-1">
+								<span className="font-semibold text-foreground">
+									{formatTimeDisplay(data.StartAt)} —{" "}
+									{formatTimeDisplay(data.EndAt)}
+								</span>
+							</div>
 						</div>
 					</div>
-					<div className="flex items-center gap-2">
-						<Layers className="size-4 text-primary" />
-						<div className="flex flex-col">
-							{/* <span className="font-medium text-[10px] text-muted-foreground uppercase">
-								Group
-							</span> */}
-							<div className="mt-0.5 flex flex-wrap gap-1">
-								{(data.組別 ?? "-").split(/[,\n\r]+/).map((g) => (
-									<Chip color="accent" key={g.trim()} size="sm" variant="soft">
-										{g.trim()}
-									</Chip>
-								))}
+					<div className="flex flex-wrap items-center gap-x-6 gap-y-2.5">
+						<div className="flex items-center gap-2">
+							<Bell className="size-4 text-primary" />
+							<div className="flex flex-col">
+								<div className="flex flex-col gap-1">
+									{duration && (
+										<Chip
+											className="h-auto px-0 font-semibold text-foreground"
+											color="success"
+											size="sm"
+											variant="soft"
+										>
+											{duration}
+										</Chip>
+									)}
+								</div>
+							</div>
+						</div>
+						<div className="flex items-center gap-2">
+							<Layers className="size-4 text-primary" />
+							<div className="flex flex-col">
+								<div className="flex flex-wrap gap-1">
+									{(data.組別 ?? "-").split(/[,\n\r]+/).map((g) => (
+										<Chip
+											color="accent"
+											key={g.trim()}
+											size="sm"
+											variant="soft"
+										>
+											{g.trim()}
+										</Chip>
+									))}
+								</div>
 							</div>
 						</div>
 					</div>
@@ -73,7 +99,7 @@ export function ProcessCard({ row }: ProcessCardProps) {
 				<Modal>
 					<Button className="font-semibold" size="sm" variant="tertiary">
 						<Info className="size-3.5" />
-						Details
+						詳細資訊
 					</Button>
 					<DetailsModal data={data} title={title} />
 				</Modal>
