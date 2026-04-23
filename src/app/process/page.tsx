@@ -76,7 +76,7 @@ export default function ProcessPage() {
 				<div>
 					<h1 className="font-bold text-3xl tracking-tight">Data Processing</h1>
 					<p className="text-muted-foreground">
-						Manage and synchronize data from Google Sheets ("test" sheet).
+						Manage and synchronize data from Google Sheets.
 					</p>
 				</div>
 				<Button

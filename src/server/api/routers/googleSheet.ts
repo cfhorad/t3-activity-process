@@ -17,10 +17,10 @@ export const googleSheetRouter = createTRPCRouter({
 
 			const doc = new GoogleSpreadsheet(env.GOOGLE_SHEET_ID, jwt);
 			await doc.loadInfo();
-			const sheet = doc.sheetsByTitle.test;
+			const sheet = doc.sheetsByTitle[env.GOOGLE_SHEET_PROCESS_NAME];
 			if (!sheet) {
 				throw new Error(
-					'Sheet named "test" not found in the Google Spreadsheet.',
+					`Sheet named "${env.GOOGLE_SHEET_PROCESS_NAME}" not found in the Google Spreadsheet.`,
 				);
 			}
 			const rows = await sheet.getRows();
