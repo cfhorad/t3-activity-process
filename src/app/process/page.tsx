@@ -3,8 +3,8 @@ import {
 	Breadcrumbs,
 	Button,
 	Card,
+	Chip,
 	Input,
-	// type Key,
 	Label,
 	ListBox,
 	Select,
@@ -217,7 +217,23 @@ function FilterSelect({
 		>
 			<Label>{columnName}</Label>
 			<Select.Trigger>
-				<Select.Value />
+				<Select.Value>
+					{({ isPlaceholder, state }) => {
+						if (isPlaceholder || state.selectedItems.length === 0) {
+							return `Filter by ${columnName}`;
+						}
+
+						return (
+							<div className="flex flex-wrap gap-1">
+								{state.selectedItems.map((item) => (
+									<Chip key={item.key} size="sm" variant="soft">
+										{item.textValue}
+									</Chip>
+								))}
+							</div>
+						);
+					}}
+				</Select.Value>
 				<Select.Indicator />
 			</Select.Trigger>
 			<Select.Popover>

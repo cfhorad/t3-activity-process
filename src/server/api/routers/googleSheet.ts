@@ -121,39 +121,44 @@ export const googleSheetRouter = createTRPCRouter({
 				.default({}),
 		)
 		.query(async ({ ctx, input }) => {
-			const conditions: SQL[] = [];
+			const filterConditions: SQL[] = [];
 
 			// Handle multi-select filters
 			if (input.filters) {
 				for (const [col, values] of Object.entries(input.filters)) {
 					if (values.length > 0) {
-						const filterConditions = values.map((val) => {
-							return sql`regexp_split_to_array(${googleSheetData.data}->>${col}, '[\\s,\\n\\r]+') && ARRAY[${val}]::text[]`;
+						const colFilterConditions = values.map((val) => {
+							// Split by comma or line break only, not whitespace
+							return sql`regexp_split_to_array(${googleSheetData.data}->>${col}, '[,\n\r]+') && ARRAY[${val}]::text[]`;
 						});
-						const filterCondition = or(...filterConditions);
-						if (filterCondition) {
-							conditions.push(filterCondition);
+						const colFilterCondition = or(...colFilterConditions);
+						if (colFilterCondition) {
+							filterConditions.push(colFilterCondition);
 						}
 					}
 				}
 			}
 
-			// Handle global search
-			if (input.search) {
-				conditions.push(
-					sql`${googleSheetData.data}::text ILIKE ${`%${input.search}%`}`,
-				);
-			}
+			// Base filter logic: (All Filters Match) OR isAlwaysShow
+			const filterPart = filterConditions.length > 0 
+				? or(and(...filterConditions), eq(googleSheetData.isAlwaysShow, true))
+				: null;
 
-			const result =
-				conditions.length > 0
-					? await ctx.db
-							.select()
-							.from(googleSheetData)
-							.where(
-								or(and(...conditions), eq(googleSheetData.isAlwaysShow, true)),
-							)
-					: await ctx.db.select().from(googleSheetData);
+			// Handle global search independently
+			const searchCondition = input.search
+				? sql`${googleSheetData.data}::text ILIKE ${`%${input.search}%`}`
+				: null;
+
+			// Combine search and filters
+			const finalCondition = and(
+				searchCondition ?? undefined,
+				filterPart ?? undefined
+			);
+
+			const result = await ctx.db
+				.select()
+				.from(googleSheetData)
+				.where(finalCondition);
 
 			return result;
 		}),
@@ -179,7 +184,7 @@ export const googleSheetRouter = createTRPCRouter({
 			const uniqueValues = new Set<string>();
 			for (const row of result) {
 				if (row.value) {
-					// Split by comma or line break
+					// Split by comma or line break only
 					const parts = row.value.split(/[,\n\r]+/).map((p) => p.trim());
 					for (const p of parts) {
 						if (p && p.toLowerCase() !== "all") {
