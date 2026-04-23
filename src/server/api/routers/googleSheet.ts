@@ -36,14 +36,16 @@ export const googleSheetRouter = createTRPCRouter({
 			// Now allRows[0] is index 3 in the sheet (the first actual data row).
 			// We still need the control rows at index 0 and 1.
 			// We can use loadCells for those.
-			await sheet.loadCells('A1:Z2');
-			
+			await sheet.loadCells("A1:Z2");
+
 			const inclusionMap: Record<string, string> = {};
 			const filterableMap: Record<string, string> = {};
-			
+
 			sheet.headerValues.forEach((header, colIndex) => {
-				inclusionMap[header] = sheet.getCell(0, colIndex).value?.toString() ?? "";
-				filterableMap[header] = sheet.getCell(1, colIndex).value?.toString() ?? "";
+				inclusionMap[header] =
+					sheet.getCell(0, colIndex).value?.toString() ?? "";
+				filterableMap[header] =
+					sheet.getCell(1, colIndex).value?.toString() ?? "";
 			});
 
 			// Columns to include are those where the first control row is "true"
@@ -140,9 +142,10 @@ export const googleSheetRouter = createTRPCRouter({
 			}
 
 			// Base filter logic: (All Filters Match) OR isAlwaysShow
-			const filterPart = filterConditions.length > 0 
-				? or(and(...filterConditions), eq(googleSheetData.isAlwaysShow, true))
-				: null;
+			const filterPart =
+				filterConditions.length > 0
+					? or(and(...filterConditions), eq(googleSheetData.isAlwaysShow, true))
+					: null;
 
 			// Handle global search independently
 			const searchCondition = input.search
@@ -152,7 +155,7 @@ export const googleSheetRouter = createTRPCRouter({
 			// Combine search and filters
 			const finalCondition = and(
 				searchCondition ?? undefined,
-				filterPart ?? undefined
+				filterPart ?? undefined,
 			);
 
 			const result = await ctx.db
