@@ -1,10 +1,10 @@
-import { type SQL, sql } from "drizzle-orm";
+import { and, eq, or, type SQL, sql } from "drizzle-orm";
 import { JWT } from "google-auth-library";
 import { GoogleSpreadsheet } from "google-spreadsheet";
 import { z } from "zod";
 import { env } from "~/env";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
-import { googleSheetData } from "~/server/db/schema";
+import { googleSheetConfig, googleSheetData } from "~/server/db/schema";
 
 export const googleSheetRouter = createTRPCRouter({
 	sync: publicProcedure.mutation(async ({ ctx }) => {
@@ -12,7 +12,7 @@ export const googleSheetRouter = createTRPCRouter({
 			const jwt = new JWT({
 				email: env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
 				key: env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n"),
-				scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
+				scopes: ["https://www.googleapis.com/auth/spreadsheets"],
 			});
 
 			const doc = new GoogleSpreadsheet(env.GOOGLE_SHEET_ID, jwt);
@@ -23,32 +23,85 @@ export const googleSheetRouter = createTRPCRouter({
 					`Sheet named "${env.GOOGLE_SHEET_PROCESS_NAME}" not found in the Google Spreadsheet.`,
 				);
 			}
-			const rows = await sheet.getRows();
+			// Load headers from index 2 (the row with "StartAt", "EndAt", etc.)
+			await sheet.loadHeaderRow(3); // row 3 is index 2
+			const allRows = await sheet.getRows();
 
-			const dataToSave = rows.map((row) => {
-				const obj = row.toObject();
-				// Normalize line breaks in all string values
-				for (const key in obj) {
-					if (typeof obj[key] === "string") {
-						obj[key] = (obj[key] as string).replace(/\r\n/g, "\n");
-					}
-				}
-				return obj;
-			});
-
-			// Delete old data as requested
-			await ctx.db.delete(googleSheetData);
-
-			// Insert new data
-			if (dataToSave.length > 0) {
-				await ctx.db.insert(googleSheetData).values(
-					dataToSave.map((data) => ({
-						data,
-					})),
-				);
+			// We need at least the control rows (0, 1), header row (2), and 1 data row (3+)
+			// allRows starts from index 3 in the sheet.
+			if (allRows.length === 0) {
+				// No data rows found
 			}
 
-			return { success: true, count: dataToSave.length };
+			// Now allRows[0] is index 3 in the sheet (the first actual data row).
+			// We still need the control rows at index 0 and 1.
+			// We can use loadCells for those.
+			await sheet.loadCells('A1:Z2');
+			
+			const inclusionMap: Record<string, string> = {};
+			const filterableMap: Record<string, string> = {};
+			
+			sheet.headerValues.forEach((header, colIndex) => {
+				inclusionMap[header] = sheet.getCell(0, colIndex).value?.toString() ?? "";
+				filterableMap[header] = sheet.getCell(1, colIndex).value?.toString() ?? "";
+			});
+
+			// Columns to include are those where the first control row is "true"
+			const includedColumns = Object.keys(inclusionMap).filter(
+				(key) => inclusionMap[key]?.toLowerCase() === "true",
+			);
+
+			// Configuration for UI filters
+			const configToSave = includedColumns.map((col, index) => ({
+				columnName: col,
+				isFilterable: filterableMap[col]?.toLowerCase() === "true",
+				displayOrder: index,
+			}));
+
+			// Data Rows (start from allRows[0] which is index 3 in sheet)
+			const dataToSave = allRows.map((row) => {
+				const fullObj = row.toObject();
+				const filteredObj: Record<string, string> = {};
+				let isAlwaysShow = false;
+
+				for (const col of includedColumns) {
+					let val = fullObj[col] ?? "";
+					if (typeof val === "string") {
+						val = val.replace(/\r\n/g, "\n").trim();
+						if (val.toLowerCase() === "all") {
+							isAlwaysShow = true;
+						}
+					}
+					filteredObj[col] = val;
+				}
+
+				return {
+					data: filteredObj,
+					isAlwaysShow,
+				};
+			});
+
+			// Delete old data and config
+			await ctx.db.transaction(async (tx) => {
+				await tx.delete(googleSheetData);
+				await tx.delete(googleSheetConfig);
+
+				// Insert new config
+				if (configToSave.length > 0) {
+					await tx.insert(googleSheetConfig).values(configToSave);
+				}
+
+				// Insert new data
+				if (dataToSave.length > 0) {
+					await tx.insert(googleSheetData).values(dataToSave);
+				}
+			});
+
+			return {
+				success: true,
+				rowCount: dataToSave.length,
+				colCount: includedColumns.length,
+			};
 		} catch (error) {
 			console.error("Google Sheet Sync Error:", error);
 			const err = error as { message?: string };
@@ -63,52 +116,79 @@ export const googleSheetRouter = createTRPCRouter({
 			z
 				.object({
 					search: z.string().optional(),
-					filterColumn: z.string().optional(),
-					exactValue: z.string().optional(),
+					filters: z.record(z.array(z.string())).optional(),
 				})
 				.default({}),
 		)
 		.query(async ({ ctx, input }) => {
-			let conditions: SQL | undefined;
+			const conditions: SQL[] = [];
 
-			if (input.filterColumn && input.filterColumn !== "all") {
-				if (input.exactValue) {
-					// Exact match for category filtering
-					conditions = sql`${googleSheetData.data}->>${input.filterColumn} = ${input.exactValue}`;
-				} else if (input.search) {
-					// Search within specific column
-					conditions = sql`${googleSheetData.data}->>${input.filterColumn} ILIKE ${`%${input.search}%`}`;
+			// Handle multi-select filters
+			if (input.filters) {
+				for (const [col, values] of Object.entries(input.filters)) {
+					if (values.length > 0) {
+						const filterConditions = values.map((val) => {
+							return sql`regexp_split_to_array(${googleSheetData.data}->>${col}, '[\\s,\\n\\r]+') && ARRAY[${val}]::text[]`;
+						});
+						const filterCondition = or(...filterConditions);
+						if (filterCondition) {
+							conditions.push(filterCondition);
+						}
+					}
 				}
-			} else if (input.search) {
-				// Global search across all values
-				conditions = sql`${googleSheetData.data}::text ILIKE ${`%${input.search}%`}`;
 			}
 
-			return await ctx.db
-				.select()
-				.from(googleSheetData)
-				.where(conditions);
+			// Handle global search
+			if (input.search) {
+				conditions.push(
+					sql`${googleSheetData.data}::text ILIKE ${`%${input.search}%`}`,
+				);
+			}
+
+			const result =
+				conditions.length > 0
+					? await ctx.db
+							.select()
+							.from(googleSheetData)
+							.where(
+								or(and(...conditions), eq(googleSheetData.isAlwaysShow, true)),
+							)
+					: await ctx.db.select().from(googleSheetData);
+
+			return result;
 		}),
 
 	getColumns: publicProcedure.query(async ({ ctx }) => {
-		// Get unique keys from JSONB data
-		const result = await ctx.db.execute<{ column_name: string }>(
-			sql`SELECT DISTINCT jsonb_object_keys(${googleSheetData.data}) as column_name FROM ${googleSheetData}`,
-		);
-		return result.map((row) => row.column_name);
+		const result = await ctx.db
+			.select()
+			.from(googleSheetConfig)
+			.orderBy(googleSheetConfig.displayOrder);
+		return result;
 	}),
 
 	getUniqueValues: publicProcedure
 		.input(z.object({ columnName: z.string() }))
 		.query(async ({ ctx, input }) => {
+			// Get all raw values for the column
 			const result = await ctx.db.execute<{ value: string | null }>(
-				sql`SELECT DISTINCT ${googleSheetData.data}->>${input.columnName} as value 
+				sql`SELECT ${googleSheetData.data}->>${input.columnName} as value 
             FROM ${googleSheetData} 
-            WHERE ${googleSheetData.data}->>${input.columnName} IS NOT NULL
-            ORDER BY value ASC`,
+            WHERE ${googleSheetData.data}->>${input.columnName} IS NOT NULL`,
 			);
-			return result.map((row) => row.value).filter((v): v is string => v !== null);
+
+			const uniqueValues = new Set<string>();
+			for (const row of result) {
+				if (row.value) {
+					// Split by comma or line break
+					const parts = row.value.split(/[,\n\r]+/).map((p) => p.trim());
+					for (const p of parts) {
+						if (p && p.toLowerCase() !== "all") {
+							uniqueValues.add(p);
+						}
+					}
+				}
+			}
+
+			return Array.from(uniqueValues).sort();
 		}),
 });
-
-

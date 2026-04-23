@@ -77,6 +77,11 @@
   - 在執行 `insert`, `update`, `delete` 等異動操作後，必須立即調用 `revalidateTag(tagName)` 來清除對應的快取，確保 UI 資料即時更新。
 
 ### 9. Google Sheets 資料處理與格式化 (Data Handling)
+- **動態控制列 (Control Rows Logic)**:
+  - **第一列 (Inclusion Row)**: 決定哪些欄位需要匯入資料庫。只有在該列值為 `true` 的欄位才會被儲存。
+  - **第二列 (Filter Configuration Row)**: 決定哪些欄位支援「多選過濾」。若值為 `true`，該欄位的值會以逗號 (`,`) 或換行符拆分並去重，生成多選下拉選單。
+  - **「All」排除邏輯**: 如果儲存格的值完全等於 `"All"`（不分大小寫），該列會被標記為 `isAlwaysShow: true`，不論過濾條件為何都會顯示在前端。
+  - **資料列**: 真正的資料從第三列 (Data Row) 開始。
 - **後端正規化 (Backend Normalization)**: 
   - 在將 Google Sheets 資料同步至資料庫時，必須統一將所有字串中的 `\r\n` 替換為標準的 `\n`。
   - 這能確保跨平台輸入的資料在 JSONB 儲存中保持一致性，防止比對或過濾時因隱藏字元導致錯誤。
@@ -108,3 +113,6 @@
 - [ ] 異動操作後是否已調用 `revalidateTag` 清除對應快取？
 - [ ] Google Sheets 資料同步時是否已執行 `\r\n` -> `\n` 的正規化？
 - [ ] UI 組件（如 Table Cell）是否已加上 `whitespace-pre-wrap` 類別以保留換行？
+- [ ] 是否正確處理 Google Sheet 的動態控制列（Inclusion & Filter Config）？
+- [ ] 多選過濾器是否正確處理逗號分隔值並移除多餘空格？
+- [ ] 包含 "All" 的列是否在任何過濾條件下都保持顯示？

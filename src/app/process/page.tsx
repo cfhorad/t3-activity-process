@@ -4,6 +4,7 @@ import {
 	Button,
 	Card,
 	Input,
+	// type Key,
 	Label,
 	ListBox,
 	Select,
@@ -18,31 +19,25 @@ export default function ProcessPage() {
 	const utils = api.useUtils();
 	const [search, setSearch] = useState("");
 	const [debouncedSearch, setDebouncedSearch] = useState("");
-	const [filterColumn, setFilterColumn] = useState<string>("all");
-	const [selectedCategory, setSelectedCategory] = useState<string>("all");
+	const [selectedFilters, setSelectedFilters] = useState<
+		Record<string, string[]>
+	>({});
 
 	const { data: syncedData, isLoading: isQueryLoading } =
 		api.googleSheet.getAll.useQuery({
 			search: debouncedSearch,
-			filterColumn: filterColumn,
-			exactValue: selectedCategory === "all" ? undefined : selectedCategory,
+			filters: selectedFilters,
 		});
 
-	const { data: availableColumns } = api.googleSheet.getColumns.useQuery();
-
-	const { data: categories } = api.googleSheet.getUniqueValues.useQuery(
-		{ columnName: filterColumn },
-		{ enabled: filterColumn !== "all" },
-	);
+	const { data: config } = api.googleSheet.getColumns.useQuery();
 
 	const syncMutation = api.googleSheet.sync.useMutation({
 		onSuccess: (data) => {
 			void utils.googleSheet.getAll.invalidate();
 			void utils.googleSheet.getColumns.invalidate();
-			console.log(`Synced ${data.count} rows`);
+			console.log(`Synced ${data.rowCount} rows and ${data.colCount} columns`);
 		},
 	});
-
 
 	// Handle search debounce
 	useEffect(() => {
@@ -56,10 +51,8 @@ export default function ProcessPage() {
 		syncMutation.mutate();
 	};
 
-	// Determine columns from data keys
-	const displayColumns = syncedData?.[0]?.data
-		? Object.keys(syncedData[0].data as Record<string, unknown>)
-		: availableColumns ?? [];
+	const displayColumns = config?.map((c) => c.columnName) ?? [];
+	const filterableColumns = config?.filter((c) => c.isFilterable) ?? [];
 
 	return (
 		<main className="container mx-auto flex flex-col gap-6 p-4 md:p-8">
@@ -98,76 +91,25 @@ export default function ProcessPage() {
 				<Input
 					className="w-full sm:max-w-[300px]"
 					onChange={(e) => setSearch(e.target.value)}
-					placeholder={
-						filterColumn === "all"
-							? "Search all data..."
-							: `Search in ${filterColumn}...`
-					}
+					placeholder="Search all data..."
 					value={search}
 					variant="primary"
 				/>
-				<Select
-					className="w-full sm:max-w-[200px]"
-					onChange={(key) => {
-						setFilterColumn(String(key));
-						setSelectedCategory("all");
-					}}
-					placeholder="Filter by column"
-					value={filterColumn}
-					variant="primary"
-				>
-					<Label>Filter Column</Label>
-					<Select.Trigger>
-						<Select.Value />
-						<Select.Indicator />
-					</Select.Trigger>
-					<Select.Popover>
-						<ListBox>
-							<ListBox.Item id="all" textValue="All Columns">
-								All Columns
-								<ListBox.ItemIndicator />
-							</ListBox.Item>
-							{(availableColumns ?? []).map((col: string) => (
-								<ListBox.Item id={col} key={col} textValue={col}>
-									<div className="whitespace-pre-wrap">{col}</div>
-									<ListBox.ItemIndicator />
-								</ListBox.Item>
-							))}
-						</ListBox>
-					</Select.Popover>
-				</Select>
 
-				{filterColumn !== "all" && categories && categories.length > 0 && (
-					<Select
-						className="w-full sm:max-w-[200px]"
-						onChange={(key) => setSelectedCategory(String(key))}
-						placeholder="Select category"
-						value={selectedCategory}
-						variant="primary"
-					>
-						<Label>Category</Label>
-						<Select.Trigger>
-							<Select.Value />
-							<Select.Indicator />
-						</Select.Trigger>
-						<Select.Popover>
-							<ListBox>
-								<ListBox.Item id="all" textValue="All Categories">
-									All Categories
-									<ListBox.ItemIndicator />
-								</ListBox.Item>
-								{categories.map((cat: string) => (
-									<ListBox.Item id={cat} key={cat} textValue={cat}>
-										<div className="whitespace-pre-wrap">{cat}</div>
-										<ListBox.ItemIndicator />
-									</ListBox.Item>
-								))}
-							</ListBox>
-						</Select.Popover>
-					</Select>
-				)}
+				{filterableColumns.map((col) => (
+					<FilterSelect
+						columnName={col.columnName}
+						key={col.columnName}
+						onSelectionChange={(values) => {
+							setSelectedFilters((prev) => ({
+								...prev,
+								[col.columnName]: values,
+							}));
+						}}
+						selectedKeys={selectedFilters[col.columnName] ?? []}
+					/>
+				))}
 			</div>
-
 
 			<Card className="border-none bg-content1 shadow-md">
 				{isQueryLoading ? (
@@ -186,12 +128,10 @@ export default function ProcessPage() {
 									selectionMode="none"
 								>
 									<Table.Header>
-										{displayColumns.map((col: string) => (
+										{displayColumns.map((col) => (
 											<Table.Column
 												id={col}
-												isRowHeader={
-													col.toLowerCase() === "id" || col === displayColumns[0]
-												}
+												isRowHeader={col === displayColumns[0]}
 												key={col}
 											>
 												<div className="whitespace-pre-wrap">{col}</div>
@@ -201,11 +141,12 @@ export default function ProcessPage() {
 									<Table.Body items={syncedData}>
 										{(row) => (
 											<Table.Row id={row.id} key={row.id}>
-												{displayColumns.map((col: string) => (
+												{displayColumns.map((col) => (
 													<Table.Cell key={`${row.id}-${col}`}>
 														<div className="whitespace-pre-wrap py-1 leading-relaxed">
 															{String(
-																(row.data as Record<string, unknown>)[col] ?? "-",
+																(row.data as Record<string, unknown>)[col] ??
+																	"-",
 															)}
 														</div>
 													</Table.Cell>
@@ -225,8 +166,8 @@ export default function ProcessPage() {
 						<div className="space-y-1">
 							<p className="font-semibold text-xl">No Data Synced</p>
 							<p className="mx-auto max-w-xs text-muted-foreground">
-								Your local database is currently empty. Start by syncing with
-								the "test" sheet from Google Sheets.
+								Your local database is currently empty. Start by syncing from
+								Google Sheets.
 							</p>
 						</div>
 						<Button
@@ -245,5 +186,50 @@ export default function ProcessPage() {
 				)}
 			</Card>
 		</main>
+	);
+}
+
+function FilterSelect({
+	columnName,
+	selectedKeys,
+	onSelectionChange,
+}: {
+	columnName: string;
+	selectedKeys: string[];
+	onSelectionChange: (keys: string[]) => void;
+}) {
+	const { data: values } = api.googleSheet.getUniqueValues.useQuery({
+		columnName,
+	});
+
+	if (!values || values.length === 0) return null;
+
+	return (
+		<Select
+			className="w-full sm:max-w-[200px]"
+			onChange={(value) => {
+				onSelectionChange((value as string[]) || []);
+			}}
+			placeholder={`Filter by ${columnName}`}
+			selectionMode="multiple"
+			value={selectedKeys}
+			variant="primary"
+		>
+			<Label>{columnName}</Label>
+			<Select.Trigger>
+				<Select.Value />
+				<Select.Indicator />
+			</Select.Trigger>
+			<Select.Popover>
+				<ListBox selectionMode="multiple">
+					{values.map((val) => (
+						<ListBox.Item id={val} key={val} textValue={val}>
+							<div className="whitespace-pre-wrap">{val}</div>
+							<ListBox.ItemIndicator />
+						</ListBox.Item>
+					))}
+				</ListBox>
+			</Select.Popover>
+		</Select>
 	);
 }
