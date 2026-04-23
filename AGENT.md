@@ -76,6 +76,14 @@
 - **隨選重驗證 (Revalidation)**:
   - 在執行 `insert`, `update`, `delete` 等異動操作後，必須立即調用 `revalidateTag(tagName)` 來清除對應的快取，確保 UI 資料即時更新。
 
+### 9. Google Sheets 資料處理與格式化 (Data Handling)
+- **後端正規化 (Backend Normalization)**: 
+  - 在將 Google Sheets 資料同步至資料庫時，必須統一將所有字串中的 `\r\n` 替換為標準的 `\n`。
+  - 這能確保跨平台輸入的資料在 JSONB 儲存中保持一致性，防止比對或過濾時因隱藏字元導致錯誤。
+- **前端顯示 (Frontend Presentation)**:
+  - 為了在 HeroUI 組件中完整呈現 Google Sheet 儲存格內的換行 (Alt+Enter) 與空格，必須對內容容器使用 `whitespace-pre-wrap` 類別。
+  - **適用場景**: `Table.Cell`、`ListBox.Item`、`Table.Column` 等需要保留原始格式的區域。
+
 ---
 
 ## 📂 專案結構規範
@@ -98,3 +106,5 @@
 - [ ] 是否已手動在 Neon Console 檢查 Scale-to-Zero 的閒置超時設定？
 - [ ] 頻繁或耗時的讀取操作是否已實作 `unstable_cache`？
 - [ ] 異動操作後是否已調用 `revalidateTag` 清除對應快取？
+- [ ] Google Sheets 資料同步時是否已執行 `\r\n` -> `\n` 的正規化？
+- [ ] UI 組件（如 Table Cell）是否已加上 `whitespace-pre-wrap` 類別以保留換行？

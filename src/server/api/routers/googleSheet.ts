@@ -25,7 +25,16 @@ export const googleSheetRouter = createTRPCRouter({
 			}
 			const rows = await sheet.getRows();
 
-			const dataToSave = rows.map((row) => row.toObject());
+			const dataToSave = rows.map((row) => {
+				const obj = row.toObject();
+				// Normalize line breaks in all string values
+				for (const key in obj) {
+					if (typeof obj[key] === "string") {
+						obj[key] = (obj[key] as string).replace(/\r\n/g, "\n");
+					}
+				}
+				return obj;
+			});
 
 			// Delete old data as requested
 			await ctx.db.delete(googleSheetData);

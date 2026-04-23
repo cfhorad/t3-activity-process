@@ -129,7 +129,7 @@ export default function ProcessPage() {
 							</ListBox.Item>
 							{(availableColumns ?? []).map((col: string) => (
 								<ListBox.Item id={col} key={col} textValue={col}>
-									{col}
+									<div className="whitespace-pre-wrap">{col}</div>
 									<ListBox.ItemIndicator />
 								</ListBox.Item>
 							))}
@@ -158,7 +158,7 @@ export default function ProcessPage() {
 								</ListBox.Item>
 								{categories.map((cat: string) => (
 									<ListBox.Item id={cat} key={cat} textValue={cat}>
-										{cat}
+										<div className="whitespace-pre-wrap">{cat}</div>
 										<ListBox.ItemIndicator />
 									</ListBox.Item>
 								))}
@@ -194,7 +194,7 @@ export default function ProcessPage() {
 												}
 												key={col}
 											>
-												{col}
+												<div className="whitespace-pre-wrap">{col}</div>
 											</Table.Column>
 										))}
 									</Table.Header>
@@ -203,9 +203,11 @@ export default function ProcessPage() {
 											<Table.Row id={row.id} key={row.id}>
 												{displayColumns.map((col: string) => (
 													<Table.Cell key={`${row.id}-${col}`}>
-														{String(
-															(row.data as Record<string, unknown>)[col] ?? "-",
-														)}
+														<div className="whitespace-pre-wrap py-1 leading-relaxed">
+															{String(
+																(row.data as Record<string, unknown>)[col] ?? "-",
+															)}
+														</div>
 													</Table.Cell>
 												))}
 											</Table.Row>
