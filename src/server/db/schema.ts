@@ -14,9 +14,6 @@ export const createTable = pgTableCreator((name) => `pg-drizzle_${name}`);
 export const googleSheetData = createTable("google_sheet_data", {
 	id: integer().primaryKey().generatedByDefaultAsIdentity(),
 	data: jsonb("data").notNull(),
-	syncedAt: timestamp("synced_at", { withTimezone: true })
-		.$defaultFn(() => new Date())
-		.notNull(),
 });
 
 export const posts = createTable(

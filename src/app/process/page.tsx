@@ -197,7 +197,6 @@ export default function ProcessPage() {
 												{col}
 											</Table.Column>
 										))}
-										<Table.Column id="syncedAt">Synced At</Table.Column>
 									</Table.Header>
 									<Table.Body items={syncedData}>
 										{(row) => (
@@ -209,11 +208,6 @@ export default function ProcessPage() {
 														)}
 													</Table.Cell>
 												))}
-												<Table.Cell>
-													<span className="whitespace-nowrap text-muted-foreground text-xs">
-														{new Date(row.syncedAt).toLocaleString()}
-													</span>
-												</Table.Cell>
 											</Table.Row>
 										)}
 									</Table.Body>
