@@ -64,22 +64,17 @@ export const googleSheetRouter = createTRPCRouter({
 			const dataToSave = allRows.map((row) => {
 				const fullObj = row.toObject();
 				const filteredObj: Record<string, string> = {};
-				let isAlwaysShow = false;
 
 				for (const col of includedColumns) {
 					let val = fullObj[col] ?? "";
 					if (typeof val === "string") {
 						val = val.replace(/\r\n/g, "\n").trim();
-						if (val.toLowerCase() === "all") {
-							isAlwaysShow = true;
-						}
 					}
 					filteredObj[col] = val;
 				}
 
 				return {
 					data: filteredObj,
-					isAlwaysShow,
 				};
 			});
 
@@ -133,7 +128,14 @@ export const googleSheetRouter = createTRPCRouter({
 							// Split by comma or line break only, not whitespace
 							return sql`regexp_split_to_array(${googleSheetData.data}->>${col}, '[,\n\r]+') && ARRAY[${val}]::text[]`;
 						});
-						const colFilterCondition = or(...colFilterConditions);
+
+						// Also show if the column value is "all" (case-insensitive check)
+						const allCondition = sql`EXISTS (
+							SELECT 1 FROM unnest(regexp_split_to_array(${googleSheetData.data}->>${col}, '[,\n\r]+')) as x 
+							WHERE lower(trim(x)) = 'all'
+						)`;
+
+						const colFilterCondition = or(...colFilterConditions, allCondition);
 						if (colFilterCondition) {
 							filterConditions.push(colFilterCondition);
 						}
@@ -141,11 +143,9 @@ export const googleSheetRouter = createTRPCRouter({
 				}
 			}
 
-			// Base filter logic: (All Filters Match) OR isAlwaysShow
+			// Base filter logic: (All Filters Match)
 			const filterPart =
-				filterConditions.length > 0
-					? or(and(...filterConditions), eq(googleSheetData.isAlwaysShow, true))
-					: null;
+				filterConditions.length > 0 ? and(...filterConditions) : null;
 
 			// Handle global search independently
 			const searchCondition = input.search
@@ -161,7 +161,8 @@ export const googleSheetRouter = createTRPCRouter({
 			const result = await ctx.db
 				.select()
 				.from(googleSheetData)
-				.where(finalCondition);
+				.where(finalCondition)
+				.orderBy(sql`${googleSheetData.data}->>'StartAt' ASC`);
 
 			return result;
 		}),

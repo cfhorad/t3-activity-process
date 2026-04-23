@@ -9,7 +9,6 @@ interface ProcessCardProps {
 	row: {
 		id: number;
 		data: unknown;
-		isAlwaysShow: boolean;
 	};
 }
 
@@ -21,7 +20,7 @@ export function ProcessCard({ row }: ProcessCardProps) {
 
 	return (
 		<Card
-			className="group h-full transition-all duration-200 hover:-translate-y-1 hover:shadow-lg"
+			className="group mx-auto h-full w-full max-w-2xl transition-all duration-200 hover:-translate-y-1 hover:shadow-lg"
 			variant="secondary"
 		>
 			<Card.Header>

@@ -14,7 +14,6 @@ export const createTable = pgTableCreator((name) => `pg-drizzle_${name}`);
 export const googleSheetData = createTable("google_sheet_data", {
 	id: integer().primaryKey().generatedByDefaultAsIdentity(),
 	data: jsonb("data").notNull(),
-	isAlwaysShow: boolean("is_always_show").default(false).notNull(),
 });
 
 export const googleSheetConfig = createTable("google_sheet_config", {

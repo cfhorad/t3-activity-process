@@ -25,9 +25,9 @@ export default function ProcessPage() {
 		<main className="container mx-auto flex flex-col gap-6 p-4 md:p-8">
 			<ProcessHeader isSyncing={syncMutation.isPending} onSync={handleSync} />
 
-			<div className="flex flex-wrap items-center gap-4">
+			<div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
 				<SearchField
-					className="w-full sm:max-w-[300px]"
+					className="w-full"
 					onChange={setSearch}
 					value={search}
 					variant="secondary"
@@ -41,21 +41,23 @@ export default function ProcessPage() {
 					</SearchField.Group>
 				</SearchField>
 
-				{filterableColumns.map((col) => (
-					<FilterSelect
-						columnName={col.columnName}
-						key={col.columnName}
-						onSelectionChange={(values) => updateFilter(col.columnName, values)}
-						selectedKeys={selectedFilters[col.columnName] ?? []}
-					/>
-				))}
+				<div className="flex flex-col flex-wrap gap-4 sm:flex-row">
+					{filterableColumns.map((col) => (
+						<FilterSelect
+							columnName={col.columnName}
+							key={col.columnName}
+							onSelectionChange={(values) => updateFilter(col.columnName, values)}
+							selectedKeys={selectedFilters[col.columnName] ?? []}
+						/>
+					))}
+				</div>
 			</div>
 
-			<Card className="border-none bg-content1 shadow-md">
+			<Card className="mx-auto w-full max-w-2xl border-none bg-content1 shadow-md">
 				{isQueryLoading ? (
 					<SkeletonGrid />
 				) : syncedData && syncedData.length > 0 ? (
-					<div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+					<div className="grid grid-cols-1 gap-4 p-4">
 						{syncedData.map((row) => (
 							<ProcessCard key={row.id} row={row} />
 						))}

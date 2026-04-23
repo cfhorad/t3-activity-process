@@ -4,10 +4,10 @@ import { Card, Skeleton } from "@heroui/react";
 
 export function SkeletonGrid() {
 	return (
-		<div className="grid grid-cols-1 gap-4 p-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+		<div className="grid grid-cols-1 gap-4 p-4">
 			{Array.from({ length: 8 }).map((_, i) => (
 				<Card
-					className="h-[200px] gap-3"
+					className="mx-auto h-[200px] w-full max-w-2xl gap-3"
 					// biome-ignore lint/suspicious/noArrayIndexKey: skeletons are static
 					key={`skeleton-card-${i}`}
 				>
