@@ -1,19 +1,14 @@
 "use client";
 
-import { Breadcrumbs, Button } from "@heroui/react";
-import { RefreshCcw } from "lucide-react";
+import { Breadcrumbs } from "@heroui/react";
 import Link from "next/link";
 
 interface ActivityHeaderProps {
-	isSyncing: boolean;
-	onSync: () => void;
 	title?: string;
 	modeLabel: string;
 }
 
 export function ActivityHeader({
-	isSyncing,
-	onSync,
 	title = "Activity",
 	modeLabel,
 }: ActivityHeaderProps) {
@@ -34,23 +29,6 @@ export function ActivityHeader({
 					<p className="text-muted-foreground">
 						Manage and synchronize data from Google Sheets.
 					</p>
-				</div>
-				<div className="flex items-center gap-3">
-					<Button
-						className="font-medium shadow-sm"
-						isPending={isSyncing}
-						onPress={onSync}
-						variant="primary"
-					>
-						{({ isPending }) => (
-							<div className="flex items-center gap-2">
-								<RefreshCcw
-									className={`size-4 ${isPending ? "animate-spin" : ""}`}
-								/>
-								{isPending ? "Syncing..." : "Sync from Google Sheet"}
-							</div>
-						)}
-					</Button>
 				</div>
 			</div>
 		</div>

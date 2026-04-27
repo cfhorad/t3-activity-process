@@ -3,11 +3,29 @@ import { JWT } from "google-auth-library";
 import { GoogleSpreadsheet } from "google-spreadsheet";
 import { env } from "~/env";
 import type { db as database } from "~/server/db";
-import { googleSheetConfig, googleSheetData } from "~/server/db/schema";
+import { activities, googleSheetData } from "~/server/db/schema";
 
 export type DB = typeof database;
+type GoogleSheetDataInsert = typeof googleSheetData.$inferInsert;
 
 export const googleSheetService = {
+	/**
+	 * Deduplicate headers by appending a numeric suffix if needed
+	 */
+	deduplicateHeaders(headers: string[]): string[] {
+		const seen = new Map<string, number>();
+		return headers.map((header) => {
+			const cleanHeader = header || "Column";
+			if (!seen.has(cleanHeader)) {
+				seen.set(cleanHeader, 1);
+				return cleanHeader;
+			}
+			const count = seen.get(cleanHeader) ?? 1;
+			seen.set(cleanHeader, count + 1);
+			return `${cleanHeader}_${count}`;
+		});
+	},
+
 	/**
 	 * Synchronize database with Google Sheets data
 	 */
@@ -36,23 +54,35 @@ export const googleSheetService = {
 		const inclusionMap: Record<string, string> = {};
 		const filterableMap: Record<string, string> = {};
 
+		let headerValues: string[] = [];
 		if (isSimpleDisplay) {
 			// For simple display, headers are on row 1 (1-based index 1)
-			await sheet.loadHeaderRow(1);
+			// We load cells manually to handle deduplication of headers
+			await sheet.loadCells({ startRowIndex: 0, endRowIndex: 1 });
+			const rawHeaders: string[] = [];
+			for (let i = 0; i < sheet.columnCount; i++) {
+				const val = sheet.getCell(0, i).value?.toString()?.trim() || "";
+				rawHeaders.push(val);
+			}
+			headerValues = this.deduplicateHeaders(rawHeaders);
 
 			// All columns are included and none are filterable by default in simple mode
-			sheet.headerValues.forEach((header) => {
+			headerValues.forEach((header) => {
 				inclusionMap[header] = "true";
 				filterableMap[header] = "false";
 			});
 		} else {
 			// For process mode, headers are on row 3 (1-based index 3)
-			await sheet.loadHeaderRow(3);
+			// We load cells manually to handle deduplication of headers
+			await sheet.loadCells({ startRowIndex: 0, endRowIndex: 3 });
+			const rawHeaders: string[] = [];
+			for (let i = 0; i < sheet.columnCount; i++) {
+				const val = sheet.getCell(2, i).value?.toString()?.trim() || "";
+				rawHeaders.push(val);
+			}
+			headerValues = this.deduplicateHeaders(rawHeaders);
 
-			// Load control rows (A1:Z2)
-			await sheet.loadCells("A1:Z2");
-
-			sheet.headerValues.forEach((header, colIndex) => {
+			headerValues.forEach((header, colIndex) => {
 				inclusionMap[header] =
 					sheet.getCell(0, colIndex).value?.toString() ?? "";
 				filterableMap[header] =
@@ -66,7 +96,7 @@ export const googleSheetService = {
 
 		return {
 			sheet,
-			headerValues: sheet.headerValues,
+			headerValues,
 			inclusionMap,
 			filterableMap,
 			includedColumns,
@@ -85,18 +115,15 @@ export const googleSheetService = {
 		const { sheet, includedColumns, filterableMap } =
 			await this.getMetadata(params);
 
-		const allRows = await sheet.getRows();
-
-		const configToSave = includedColumns.map((col, index) => ({
-			activityId: params.activityId,
+		const sheetConfig = includedColumns.map((col, index) => ({
 			columnName: col,
 			isFilterable: filterableMap[col]?.toLowerCase() === "true",
 			displayOrder: index,
 		}));
 
-		// Load cells to get formatting (background, text color)
+		// Load cells to get data
 		// We'll load up to the number of rows we have + some extra for potential empty styled rows
-		const rowCount = Math.max(allRows.length + 5, 50);
+		const rowCount = Math.max(sheet.rowCount, 50);
 		const colCount = sheet.columnCount;
 		await sheet.loadCells({
 			startRowIndex: 0,
@@ -105,18 +132,14 @@ export const googleSheetService = {
 			endColumnIndex: colCount,
 		});
 
-		const dataToSave = [];
+		const dataToSave: GoogleSheetDataInsert[] = [];
 		const isSimpleDisplay = params.handlingMode === "simple display";
 
-		// For process mode, data starts from row 4 (index 3). For simple, row 2 (index 1).
-		const startIdx = isSimpleDisplay ? 1 : 3;
+		// For process mode, data starts from row 3 (index 2). For simple, row 1 (index 0).
+		const startIdx = isSimpleDisplay ? 0 : 2;
 
 		for (let i = startIdx; i < rowCount; i++) {
 			const rowData: Record<string, string> = {};
-			const rowStyles: Record<
-				string,
-				Record<string, string | boolean | null>
-			> = {};
 			let hasData = false;
 
 			includedColumns.forEach((col, colIdx) => {
@@ -124,30 +147,12 @@ export const googleSheetService = {
 				const val = cell.value?.toString() ?? "";
 				rowData[col] = val.replace(/\r\n/g, "\n").trim();
 				if (val) hasData = true;
-
-				// Capture styles
-				const bg = cell.backgroundColorStyle?.rgbColor;
-				const fg = cell.textFormat?.foregroundColorStyle?.rgbColor;
-
-				if (bg || fg) {
-					rowStyles[col] = {
-						bg: bg
-							? `rgb(${Math.round(bg.red * 255)}, ${Math.round(bg.green * 255)}, ${Math.round(bg.blue * 255)})`
-							: null,
-						fg: fg
-							? `rgb(${Math.round(fg.red * 255)}, ${Math.round(fg.green * 255)}, ${Math.round(fg.blue * 255)})`
-							: null,
-						bold: cell.textFormat?.bold || false,
-					};
-				}
 			});
 
-			// If simple display, we might want to keep empty rows if they have styles
-			if (hasData || (isSimpleDisplay && Object.keys(rowStyles).length > 0)) {
+			if (hasData) {
 				dataToSave.push({
 					activityId: params.activityId,
 					data: rowData,
-					styles: rowStyles,
 					rowOrder: i,
 				});
 			}
@@ -157,13 +162,11 @@ export const googleSheetService = {
 			await tx
 				.delete(googleSheetData)
 				.where(eq(googleSheetData.activityId, params.activityId));
-			await tx
-				.delete(googleSheetConfig)
-				.where(eq(googleSheetConfig.activityId, params.activityId));
 
-			if (configToSave.length > 0) {
-				await tx.insert(googleSheetConfig).values(configToSave);
-			}
+			await tx
+				.update(activities)
+				.set({ sheetConfig })
+				.where(eq(activities.id, params.activityId));
 
 			if (dataToSave.length > 0) {
 				await tx.insert(googleSheetData).values(dataToSave);
@@ -248,19 +251,5 @@ export const googleSheetService = {
 
 		return Array.from(uniqueValues).sort();
 	},
-	async getColumnsPreview(params: {
-		googleSheetId: string;
-		googleSheetName: string;
-		handlingMode: string;
-	}) {
-		const { headerValues, inclusionMap, filterableMap } =
-			await this.getMetadata(params);
 
-		return headerValues.map((header, index) => ({
-			name: header,
-			isIncluded: inclusionMap[header]?.toLowerCase() === "true",
-			isFilterable: filterableMap[header]?.toLowerCase() === "true",
-			displayOrder: index,
-		}));
-	},
 };

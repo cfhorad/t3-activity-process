@@ -18,18 +18,7 @@ export const googleSheetData = createTable("google_sheet_data", {
 		onDelete: "cascade",
 	}),
 	data: jsonb("data").notNull(),
-	styles: jsonb("styles"),
 	rowOrder: integer("row_order").default(0).notNull(),
-});
-
-export const googleSheetConfig = createTable("google_sheet_config", {
-	id: integer().primaryKey().generatedByDefaultAsIdentity(),
-	activityId: uuid("activity_id").references(() => activities.id, {
-		onDelete: "cascade",
-	}),
-	columnName: text("column_name").notNull(),
-	isFilterable: boolean("is_filterable").default(false).notNull(),
-	displayOrder: integer("display_order").notNull(),
 });
 
 export const activities = createTable(
@@ -42,6 +31,7 @@ export const activities = createTable(
 		googleSheetId: text("google_sheet_id"),
 		googleSheetName: text("google_sheet_name"),
 		handlingMode: text("handling_mode").default("simple display").notNull(),
+		sheetConfig: jsonb("sheet_config"),
 		createdById: text("created_by_id")
 			.notNull()
 			.references(() => user.id),

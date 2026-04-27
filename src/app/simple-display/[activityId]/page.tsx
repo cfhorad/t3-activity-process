@@ -16,18 +16,6 @@ export default function SimpleDisplayPage() {
 		});
 	const { data: columns } = api.googleSheet.getColumns.useQuery({ activityId });
 
-	const utils = api.useUtils();
-	const syncMutation = api.googleSheet.sync.useMutation({
-		onSuccess: () => {
-			void utils.googleSheet.getAll.invalidate({ activityId });
-			void utils.googleSheet.getColumns.invalidate({ activityId });
-		},
-	});
-
-	const handleSync = () => {
-		syncMutation.mutate({ activityId });
-	};
-
 	if (!activity && !isQueryLoading) {
 		return <div className="p-8 text-center">Activity not found</div>;
 	}
@@ -35,9 +23,7 @@ export default function SimpleDisplayPage() {
 	return (
 		<main className="container mx-auto flex flex-col gap-6 p-4 md:p-8">
 			<ActivityHeader
-				isSyncing={syncMutation.isPending}
 				modeLabel="Simple Display"
-				onSync={handleSync}
 				title={activity?.name ?? "Loading..."}
 			/>
 
@@ -69,24 +55,13 @@ export default function SimpleDisplayPage() {
 							</thead>
 							<tbody>
 								{syncedData.map((row) => {
-									const rowStyles =
-										(row.styles as Record<
-											string,
-											Record<string, string | boolean>
-										>) || {};
 									return (
 										<tr className="hover:bg-white/5" key={row.id}>
 											{columns.map((col) => {
-												const cellStyle = rowStyles[col.columnName] || {};
 												return (
 													<td
 														className="border-white/10 border-r border-b px-4 py-2"
 														key={`${row.id}-${col.columnName}`}
-														style={{
-															backgroundColor: cellStyle.bg || "transparent",
-															color: cellStyle.fg || "inherit",
-															fontWeight: cellStyle.bold ? "bold" : "normal",
-														}}
 													>
 														{String(
 															(row.data as Record<string, unknown>)[
@@ -104,9 +79,9 @@ export default function SimpleDisplayPage() {
 					</div>
 				) : (
 					<div className="flex flex-col items-center justify-center gap-4 p-20 text-center">
-						<p className="font-semibold text-xl">No Data Synced</p>
+						<p className="font-semibold text-xl">No Data Available</p>
 						<p className="text-white/60">
-							Please sync from Google Sheet to display data here.
+							Please ensure the activity was successfully synced from the dashboard.
 						</p>
 					</div>
 				)}

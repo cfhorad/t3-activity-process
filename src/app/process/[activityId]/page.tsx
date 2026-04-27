@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Card, SearchField, Spinner } from "@heroui/react";
+import { Card, SearchField, Spinner } from "@heroui/react";
 import { Search } from "lucide-react";
 import { useParams } from "next/navigation";
 import { api } from "~/trpc/react";
@@ -23,17 +23,13 @@ export default function ProcessPage() {
 		updateFilter,
 		syncedData,
 		isQueryLoading,
-		syncMutation,
-		handleSync,
 		filterableColumns,
 	} = useProcessData(activityId);
 
 	return (
 		<main className="container mx-auto flex flex-col gap-6 p-4 md:p-8">
 			<ActivityHeader
-				isSyncing={syncMutation.isPending}
 				modeLabel="Process"
-				onSync={handleSync}
 				title={activity?.name ?? "Processing"}
 			/>
 
@@ -83,24 +79,11 @@ export default function ProcessPage() {
 							<Spinner className="opacity-50" color="current" size="sm" />
 						</div>
 						<div className="space-y-1">
-							<p className="font-semibold text-xl">No Data Synced</p>
+							<p className="font-semibold text-xl">No Data Available</p>
 							<p className="mx-auto max-w-xs text-muted-foreground">
-								Your local database is currently empty. Start by syncing from
-								Google Sheets.
+								Please ensure the activity was successfully synced from the dashboard.
 							</p>
 						</div>
-						<Button
-							isPending={syncMutation.isPending}
-							onPress={handleSync}
-							variant="tertiary"
-						>
-							{({ isPending }) => (
-								<>
-									{isPending && <Spinner color="current" size="sm" />}
-									Start First Sync
-								</>
-							)}
-						</Button>
 					</div>
 				)}
 			</Card>

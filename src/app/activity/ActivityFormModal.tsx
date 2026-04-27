@@ -4,7 +4,7 @@ import {
 	Alert,
 	Button,
 	Calendar,
-	Chip,
+
 	DateField,
 	DatePicker,
 	Form,
@@ -13,7 +13,7 @@ import {
 	ListBox,
 	Modal,
 	Select,
-	Skeleton,
+
 	TextArea,
 	TextField,
 } from "@heroui/react";
@@ -79,11 +79,7 @@ export function ActivityFormModal({
 			{ enabled: googleSheetId.length > 5 },
 		);
 
-	const { data: previewColumns, isLoading: isPreviewLoading } =
-		api.googleSheet.getColumnsPreview.useQuery(
-			{ googleSheetId, googleSheetName, handlingMode },
-			{ enabled: googleSheetId.length > 5 && googleSheetName.length > 0 },
-		);
+
 
 	const utils = api.useUtils();
 	const createMutation = api.activity.create.useMutation({
@@ -267,42 +263,6 @@ export function ActivityFormModal({
 										</ListBox>
 									</Select.Popover>
 								</Select>
-
-								{googleSheetId && googleSheetName && (
-									<div className="flex flex-col gap-2 rounded-lg border border-white/10 bg-white/5 p-4">
-										<Label className="font-medium text-white/60 text-xs uppercase tracking-wider">
-											Column Preview
-										</Label>
-										{isPreviewLoading ? (
-											<div className="flex flex-wrap gap-2">
-												{[1, 2, 3, 4].map((i) => (
-													<Skeleton className="h-6 w-20 rounded-full" key={i} />
-												))}
-											</div>
-										) : (
-											<div className="flex flex-wrap gap-2">
-												{previewColumns?.map((col) => (
-													<Chip
-														color={col.isIncluded ? "accent" : "default"}
-														key={col.name}
-														size="sm"
-														variant="soft"
-													>
-														{col.name}
-														{col.isFilterable && (
-															<span className="ml-1 opacity-60">(Filter)</span>
-														)}
-													</Chip>
-												))}
-												{(!previewColumns || previewColumns.length === 0) && (
-													<p className="text-white/40 text-xs">
-														No columns found or detected.
-													</p>
-												)}
-											</div>
-										)}
-									</div>
-								)}
 
 								<Select
 									className="w-full"

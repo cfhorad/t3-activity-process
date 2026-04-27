@@ -3,7 +3,6 @@ import { z } from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 import {
 	activities,
-	googleSheetConfig,
 	googleSheetData,
 } from "~/server/db/schema";
 import { googleSheetService } from "~/server/services/googleSheet";
@@ -12,6 +11,7 @@ export const googleSheetRouter = createTRPCRouter({
 	sync: publicProcedure
 		.input(z.object({ activityId: z.string() }))
 		.mutation(async ({ ctx, input }) => {
+			console.log("Sync Mutation Input:", input);
 			try {
 				const [activity] = await ctx.db
 					.select()
@@ -73,12 +73,20 @@ export const googleSheetRouter = createTRPCRouter({
 	getColumns: publicProcedure
 		.input(z.object({ activityId: z.string() }))
 		.query(async ({ ctx, input }) => {
-			const result = await ctx.db
-				.select()
-				.from(googleSheetConfig)
-				.where(eq(googleSheetConfig.activityId, input.activityId))
-				.orderBy(googleSheetConfig.displayOrder);
-			return result;
+			const [activity] = await ctx.db
+				.select({ sheetConfig: activities.sheetConfig })
+				.from(activities)
+				.where(eq(activities.id, input.activityId));
+
+			if (!activity?.sheetConfig) return [];
+
+			const config = activity.sheetConfig as {
+				columnName: string;
+				isFilterable: boolean;
+				displayOrder: number;
+			}[];
+
+			return config.sort((a, b) => a.displayOrder - b.displayOrder);
 		}),
 
 	getUniqueValues: publicProcedure
@@ -91,15 +99,5 @@ export const googleSheetRouter = createTRPCRouter({
 			);
 		}),
 
-	getColumnsPreview: publicProcedure
-		.input(
-			z.object({
-				googleSheetId: z.string(),
-				googleSheetName: z.string(),
-				handlingMode: z.string(),
-			}),
-		)
-		.query(async ({ input }) => {
-			return googleSheetService.getColumnsPreview(input);
-		}),
+
 });
