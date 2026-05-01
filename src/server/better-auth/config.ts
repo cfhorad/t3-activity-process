@@ -25,6 +25,10 @@ export const auth = betterAuth({
 				required: true,
 				defaultValue: "VIEWER",
 			},
+			area: {
+				type: "string",
+				required: false,
+			},
 		},
 	},
 });

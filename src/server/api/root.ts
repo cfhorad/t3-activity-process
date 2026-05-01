@@ -1,5 +1,6 @@
+import { activityRouter } from "~/server/api/routers/activity";
 import { googleSheetRouter } from "~/server/api/routers/googleSheet";
-import { postRouter } from "~/server/api/routers/post";
+import { processRouter } from "~/server/api/routers/process";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
 
 /**
@@ -8,8 +9,9 @@ import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
  * All routers added in /api/routers should be manually added here.
  */
 export const appRouter = createTRPCRouter({
-	post: postRouter,
+	activity: activityRouter,
 	googleSheet: googleSheetRouter,
+	process: processRouter,
 });
 
 // export type definition of API

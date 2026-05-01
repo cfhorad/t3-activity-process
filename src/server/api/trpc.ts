@@ -132,3 +132,25 @@ export const protectedProcedure = t.procedure
 			},
 		});
 	});
+
+/**
+ * Manager procedure (ADMIN or MANAGER)
+ */
+export const managerProcedure = protectedProcedure.use(({ ctx, next }) => {
+	const role = ctx.session.user.role;
+	if (role !== "ADMIN" && role !== "MANAGER") {
+		throw new TRPCError({ code: "FORBIDDEN" });
+	}
+	return next();
+});
+
+/**
+ * Admin procedure (ADMIN only)
+ */
+export const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
+	const role = ctx.session.user.role;
+	if (role !== "ADMIN") {
+		throw new TRPCError({ code: "FORBIDDEN" });
+	}
+	return next();
+});
