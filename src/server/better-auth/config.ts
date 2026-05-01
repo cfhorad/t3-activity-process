@@ -18,6 +18,15 @@ export const auth = betterAuth({
 			clientSecret: env.BETTER_AUTH_GITHUB_CLIENT_SECRET,
 		},
 	},
+	user: {
+		additionalFields: {
+			role: {
+				type: "string",
+				required: true,
+				defaultValue: "VIEWER",
+			},
+		},
+	},
 });
 
 export type Session = typeof auth.$Infer.Session;
