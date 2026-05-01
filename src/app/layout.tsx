@@ -16,13 +16,18 @@ const geist = Geist({
 	variable: "--font-geist-sans",
 });
 
+import { Toast } from "@heroui/react";
+
 export default function RootLayout({
 	children,
 }: Readonly<{ children: React.ReactNode }>) {
 	return (
 		<html className={`${geist.variable}`} lang="en">
 			<body>
-				<TRPCReactProvider>{children}</TRPCReactProvider>
+				<TRPCReactProvider>
+					<Toast.Provider />
+					{children}
+				</TRPCReactProvider>
 			</body>
 		</html>
 	);

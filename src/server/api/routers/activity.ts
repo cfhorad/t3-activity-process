@@ -49,7 +49,6 @@ export const activityRouter = createTRPCRouter({
 			return activity;
 		}),
 
-
 	update: managerProcedure
 		.input(
 			z.object({

@@ -31,9 +31,6 @@ export function ProcessCard({ row }: ProcessCardProps) {
 					<div className="flex items-center gap-2">
 						<Clock className="size-4 text-primary" />
 						<div className="flex flex-col">
-							{/* <span className="font-medium text-[10px] text-muted-foreground uppercase">
-								Time
-							</span> */}
 							<div className="flex flex-col gap-1">
 								<span className="font-semibold text-foreground">
 									{formatTimeDisplay(data.StartAt)} —{" "}
@@ -86,9 +83,6 @@ export function ProcessCard({ row }: ProcessCardProps) {
 						<Users className="size-4 text-primary" />
 					</div>
 					<div className="flex flex-col">
-						{/* <span className="font-semibold text-[10px] text-muted-foreground uppercase tracking-wider">
-							{footerField}
-						</span> */}
 						<span className="font-bold text-sm">
 							{data[footerField] ?? "-"}
 						</span>

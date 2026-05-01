@@ -29,19 +29,18 @@ export const googleSheetConfig = createTable("google_sheet_config", {
 });
 
 export const activities = createTable("activity", (d) => ({
-		id: d.integer().primaryKey().generatedByDefaultAsIdentity(),
-		name: d.varchar({ length: 256 }).notNull(),
-		googleSheetId: d.varchar({ length: 255 }).notNull(),
-		createdById: text("created_by_id")
-			.notNull()
-			.references(() => user.id),
-		createdAt: d
-			.timestamp({ withTimezone: true })
-			.$defaultFn(() => new Date())
-			.notNull(),
-		updatedAt: d.timestamp({ withTimezone: true }).$onUpdate(() => new Date()),
-	}),
-);
+	id: d.integer().primaryKey().generatedByDefaultAsIdentity(),
+	name: d.varchar({ length: 256 }).notNull(),
+	googleSheetId: d.varchar({ length: 255 }).notNull(),
+	createdById: text("created_by_id")
+		.notNull()
+		.references(() => user.id),
+	createdAt: d
+		.timestamp({ withTimezone: true })
+		.$defaultFn(() => new Date())
+		.notNull(),
+	updatedAt: d.timestamp({ withTimezone: true }).$onUpdate(() => new Date()),
+}));
 
 export const processes = createTable("process", (d) => ({
 	id: d.integer().primaryKey().generatedByDefaultAsIdentity(),
