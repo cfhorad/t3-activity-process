@@ -11,12 +11,17 @@ import {
 } from "@heroui/react";
 import { LayoutGrid, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { api } from "~/trpc/react";
+import { extractSpreadsheetId } from "~/utils/google-sheet-parser";
 
 export function CreateActivityButton({ userRole }: { userRole: string }) {
 	const state = useOverlayState();
 	const router = useRouter();
 	const utils = api.useUtils();
+
+	const [spreadsheetInput, setSpreadsheetInput] = useState("");
+	const [spreadsheetId, setSpreadsheetId] = useState("");
 
 	const createActivity = api.activity.create.useMutation({
 		onSuccess: (data) => {
@@ -27,7 +32,18 @@ export function CreateActivityButton({ userRole }: { userRole: string }) {
 		},
 	});
 
-	if (userRole !== "ADMIN" && userRole !== "MANAGER") {
+	// Extract ID when input changes
+	useEffect(() => {
+		const id = extractSpreadsheetId(spreadsheetInput);
+		if (id) {
+			setSpreadsheetId(id);
+		} else {
+			setSpreadsheetId("");
+		}
+	}, [spreadsheetInput]);
+
+	const normalizedRole = userRole?.toUpperCase();
+	if (normalizedRole !== "ADMIN" && normalizedRole !== "MANAGER") {
 		return null;
 	}
 
@@ -35,7 +51,7 @@ export function CreateActivityButton({ userRole }: { userRole: string }) {
 		e.preventDefault();
 		const formData = new FormData(e.currentTarget);
 		const name = formData.get("name") as string;
-		const googleSheetId = formData.get("googleSheetId") as string;
+		const googleSheetId = spreadsheetId;
 
 		createActivity.mutate({ name, googleSheetId });
 	};
@@ -47,7 +63,16 @@ export function CreateActivityButton({ userRole }: { userRole: string }) {
 				New Activity
 			</Button>
 
-			<Modal.Backdrop isOpen={state.isOpen} onOpenChange={state.setOpen}>
+			<Modal.Backdrop
+				isOpen={state.isOpen}
+				onOpenChange={(open) => {
+					state.setOpen(open);
+					if (!open) {
+						setSpreadsheetInput("");
+						setSpreadsheetId("");
+					}
+				}}
+			>
 				<Modal.Container>
 					<Modal.Dialog className="sm:max-w-md">
 						<Modal.CloseTrigger />
@@ -57,7 +82,7 @@ export function CreateActivityButton({ userRole }: { userRole: string }) {
 							</Modal.Icon>
 							<Modal.Heading>Create Activity</Modal.Heading>
 							<p className="mt-1.5 text-muted-foreground text-sm">
-								Add a new activity by connecting a Google Spreadsheet ID.
+								Add a new activity by connecting a Google Spreadsheet.
 							</p>
 						</Modal.Header>
 
@@ -71,10 +96,13 @@ export function CreateActivityButton({ userRole }: { userRole: string }) {
 											variant="secondary"
 										/>
 									</TextField>
+
 									<TextField isRequired name="googleSheetId">
-										<Label>Google Spreadsheet ID</Label>
+										<Label>Google Spreadsheet URL or ID</Label>
 										<Input
-											placeholder="Enter the spreadsheet ID"
+											onChange={(e) => setSpreadsheetInput(e.target.value)}
+											placeholder="Paste spreadsheet URL here"
+											value={spreadsheetInput}
 											variant="secondary"
 										/>
 									</TextField>
@@ -84,7 +112,11 @@ export function CreateActivityButton({ userRole }: { userRole: string }) {
 								<Button onPress={state.close} variant="secondary">
 									Cancel
 								</Button>
-								<Button isPending={createActivity.isPending} type="submit">
+								<Button
+									isDisabled={!spreadsheetId}
+									isPending={createActivity.isPending}
+									type="submit"
+								>
 									{createActivity.isPending ? "Creating..." : "Create Activity"}
 								</Button>
 							</Modal.Footer>

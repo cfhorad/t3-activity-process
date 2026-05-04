@@ -173,4 +173,19 @@ export const googleSheetService = {
 
 		return Array.from(uniqueValues).sort();
 	},
+
+	/**
+	 * Fetch sheet names from a spreadsheet
+	 */
+	async getSheetMetadata(spreadsheetId: string) {
+		const jwt = new JWT({
+			email: env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+			key: env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n"),
+			scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+		});
+
+		const doc = new GoogleSpreadsheet(spreadsheetId, jwt);
+		await doc.loadInfo();
+		return doc.sheetsByIndex.map((sheet) => sheet.title);
+	},
 };

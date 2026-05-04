@@ -70,11 +70,9 @@ export function ProcessActions({
 	return (
 		<>
 			<Dropdown>
-				<Dropdown.Trigger>
-					<Button isIconOnly size="sm" variant="tertiary">
-						<EllipsisVertical className="h-4 w-4" />
-					</Button>
-				</Dropdown.Trigger>
+				<Button isIconOnly size="sm" variant="secondary">
+					<EllipsisVertical className="h-4 w-4" />
+				</Button>
 				<Dropdown.Popover>
 					<Dropdown.Menu>
 						<Dropdown.Item id="edit" onPress={editState.open} textValue="Edit">

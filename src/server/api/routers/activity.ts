@@ -5,7 +5,7 @@ import {
 	managerProcedure,
 	publicProcedure,
 } from "~/server/api/trpc";
-import { activities } from "~/server/db/schema";
+import { activities, processes } from "~/server/db/schema";
 
 export const activityRouter = createTRPCRouter({
 	getAll: publicProcedure.query(async ({ ctx }) => {
@@ -35,17 +35,27 @@ export const activityRouter = createTRPCRouter({
 			z.object({
 				name: z.string().min(1),
 				googleSheetId: z.string().min(1),
+				sheetName: z.string().optional(),
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {
+			const { sheetName, ...activityData } = input;
 			const [activity] = await ctx.db
 				.insert(activities)
 				.values({
-					name: input.name,
-					googleSheetId: input.googleSheetId,
+					...activityData,
 					createdById: ctx.session.user.id,
 				})
 				.returning();
+
+			if (sheetName && activity) {
+				await ctx.db.insert(processes).values({
+					name: activityData.name,
+					activityId: activity.id,
+					sheetName,
+				});
+			}
+
 			return activity;
 		}),
 

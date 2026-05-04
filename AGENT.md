@@ -51,6 +51,9 @@
 - **Selection API (Beta)**: 在 HeroUI v3 Beta 中，`Select` 的 `selectedKey` 與 `onSelectionChange` 已標註為 **deprecated**。
   - **Single Selection**: 應改用 `value` 與 `onChange` 屬性。
   - **State**: 使用純值型別 (string, number) 作為 useState 的初始值，避免在單選模式下使用複雜的 `Set<Key>`。
+- **Dropdown 嵌套錯誤 (Hydration Fix)**: 
+  - **問題**: 在 `Dropdown.Trigger` 內放置 `Button` 會導致 `<button> cannot be a descendant of <button>` 錯誤。
+  - **解決方案**: 移除 `Dropdown.Trigger`，直接將 `Button` 放在 `Dropdown` 下作為第一個子元件。HeroUI v3 會自動將 Button 識別為觸發器。
 
 ### 6. TypeScript 與錯誤處理 (Error Handling)
 - **避免使用 `any` 型別**: 在 `try...catch` 區塊中，絕對不要使用 `catch (error: any)`。這會觸發 ESLint 警告。TypeScript 中的錯誤預設為 `unknown`，應使用型別斷言 (Type Assertion) 或型別守衛 (Type Guard) 來安全地存取錯誤屬性。

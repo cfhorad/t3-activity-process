@@ -81,27 +81,27 @@ export default function ProcessPage({
 					) : (
 						<div className="flex flex-col items-center justify-center gap-4 p-20 text-center">
 							<div className="rounded-full bg-default-100 p-4">
-								<Spinner className="opacity-50" color="current" size="sm" />
+								<Spinner className="opacity-50" color="current" size="lg" />
 							</div>
 							<div className="space-y-1">
-								<p className="font-semibold text-xl">No Data Synced</p>
+								<p className="font-semibold text-xl">
+									{syncMutation.isPending ? "Syncing Data..." : "No Data Synced"}
+								</p>
 								<p className="mx-auto max-w-xs text-muted-foreground">
-									Your local database is currently empty. Start by syncing from
-									Google Sheets.
+									{syncMutation.isPending
+										? "Please wait while we fetch the latest data from Google Sheets for the first time."
+										: "Your local database is currently empty. Start by syncing from Google Sheets."}
 								</p>
 							</div>
-							<Button
-								isPending={syncMutation.isPending}
-								onPress={handleSync}
-								variant="tertiary"
-							>
-								{({ isPending }) => (
-									<>
-										{isPending && <Spinner color="current" size="sm" />}
-										Start First Sync
-									</>
-								)}
-							</Button>
+							{!syncMutation.isPending && (
+								<Button
+									isPending={syncMutation.isPending}
+									onPress={handleSync}
+									variant="tertiary"
+								>
+									Start First Sync
+								</Button>
+							)}
 						</div>
 					)}
 				</Card>

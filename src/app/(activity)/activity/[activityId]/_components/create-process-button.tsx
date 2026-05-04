@@ -5,31 +5,63 @@ import {
 	Form,
 	Input,
 	Label,
+	ListBox,
 	Modal,
+	Select,
 	TextField,
 	useOverlayState,
 } from "@heroui/react";
-import { Plus, TableProperties } from "lucide-react";
+import { Plus, Sheet, TableProperties } from "lucide-react";
+import { useState } from "react";
 import { api } from "~/trpc/react";
 
 export function CreateProcessButton({
 	activityId,
 	userRole,
+	variant = "secondary",
+	size = "md",
+	className,
 }: {
 	activityId: number;
 	userRole: string;
+	variant?:
+		| "primary"
+		| "secondary"
+		| "tertiary"
+		| "danger"
+		| "danger-soft"
+		| "ghost"
+		| "outline";
+	size?: "sm" | "md" | "lg";
+	className?: string;
 }) {
 	const state = useOverlayState();
 	const utils = api.useUtils();
+	const [selectedSheet, setSelectedSheet] = useState<string>("");
+
+	const isAuthorized =
+		userRole?.toUpperCase() === "ADMIN" ||
+		userRole?.toUpperCase() === "MANAGER";
+	const { data: activity } = api.activity.getById.useQuery(
+		{ id: activityId },
+		{ enabled: isAuthorized },
+	);
+	const { data: sheetNames, isLoading: isLoadingSheets } =
+		api.googleSheet.getSheetMetadata.useQuery(
+			{ spreadsheetId: activity?.googleSheetId ?? "" },
+			{ enabled: isAuthorized && !!activity?.googleSheetId },
+		);
 
 	const createProcess = api.process.create.useMutation({
 		onSuccess: () => {
 			void utils.process.getByActivityId.invalidate({ activityId });
 			state.close();
+			setSelectedSheet("");
 		},
 	});
 
-	if (userRole !== "ADMIN" && userRole !== "MANAGER") {
+	const normalizedRole = userRole?.toUpperCase();
+	if (normalizedRole !== "ADMIN" && normalizedRole !== "MANAGER") {
 		return null;
 	}
 
@@ -37,19 +69,30 @@ export function CreateProcessButton({
 		e.preventDefault();
 		const formData = new FormData(e.currentTarget);
 		const name = formData.get("name") as string;
-		const sheetName = formData.get("sheetName") as string;
+		const sheetName = selectedSheet;
 
 		createProcess.mutate({ name, activityId, sheetName });
 	};
 
 	return (
 		<>
-			<Button className="font-bold" onPress={state.open} variant="secondary">
+			<Button
+				className={className}
+				onPress={state.open}
+				size={size}
+				variant={variant}
+			>
 				<Plus className="h-5 w-5" />
 				New Process
 			</Button>
 
-			<Modal.Backdrop isOpen={state.isOpen} onOpenChange={state.setOpen}>
+			<Modal.Backdrop
+				isOpen={state.isOpen}
+				onOpenChange={(open) => {
+					state.setOpen(open);
+					if (!open) setSelectedSheet("");
+				}}
+			>
 				<Modal.Container>
 					<Modal.Dialog className="sm:max-w-md">
 						<Modal.CloseTrigger />
@@ -70,17 +113,46 @@ export function CreateProcessButton({
 										<Label>Process Name</Label>
 										<Input placeholder="e.g. Master List" variant="secondary" />
 									</TextField>
-									<TextField isRequired name="sheetName">
+
+									<Select
+										isRequired
+										onChange={(val) => {
+											setSelectedSheet(val as string);
+										}}
+										placeholder={
+											isLoadingSheets ? "Loading sheets..." : "Select a sheet"
+										}
+										value={selectedSheet}
+										variant="secondary"
+									>
 										<Label>Google Sheet Tab Name</Label>
-										<Input placeholder="e.g. Sheet1" variant="secondary" />
-									</TextField>
+										<Select.Trigger>
+											<Select.Value />
+											<Select.Indicator />
+										</Select.Trigger>
+										<Select.Popover>
+											<ListBox>
+												{(sheetNames ?? []).map((name) => (
+													<ListBox.Item id={name} key={name} textValue={name}>
+														<Sheet className="mr-2 h-4 w-4 text-muted-foreground" />
+														{name}
+														<ListBox.ItemIndicator />
+													</ListBox.Item>
+												))}
+											</ListBox>
+										</Select.Popover>
+									</Select>
 								</div>
 							</Modal.Body>
 							<Modal.Footer>
 								<Button onPress={state.close} variant="secondary">
 									Cancel
 								</Button>
-								<Button isPending={createProcess.isPending} type="submit">
+								<Button
+									isDisabled={!selectedSheet}
+									isPending={createProcess.isPending}
+									type="submit"
+								>
 									{createProcess.isPending ? "Creating..." : "Create Process"}
 								</Button>
 							</Modal.Footer>

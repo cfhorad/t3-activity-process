@@ -10,6 +10,7 @@ export function useProcessData(processId: number) {
 	const [selectedFilters, setSelectedFilters] = useState<
 		Record<string, string[]>
 	>({});
+	const [hasAttemptedAutoSync, setHasAttemptedAutoSync] = useState(false);
 
 	const { data: syncedData, isLoading: isQueryLoading } =
 		api.googleSheet.getAll.useQuery({
@@ -27,6 +28,35 @@ export function useProcessData(processId: number) {
 			console.log(`Synced ${data.rowCount} rows and ${data.colCount} columns`);
 		},
 	});
+
+	// Auto-trigger sync if data is empty and no filters are active
+	useEffect(() => {
+		const hasActiveFilters = Object.values(selectedFilters).some(
+			(v) => v.length > 0,
+		);
+
+		if (
+			!isQueryLoading &&
+			syncedData &&
+			syncedData.length === 0 &&
+			!syncMutation.isPending &&
+			!hasAttemptedAutoSync &&
+			search === "" &&
+			!hasActiveFilters
+		) {
+			setHasAttemptedAutoSync(true);
+			syncMutation.mutate({ processId });
+		}
+	}, [
+		isQueryLoading,
+		syncedData,
+		syncMutation.isPending,
+		hasAttemptedAutoSync,
+		search,
+		selectedFilters,
+		processId,
+		syncMutation,
+	]);
 
 	// Handle search debounce
 	useEffect(() => {
