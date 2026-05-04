@@ -32,6 +32,8 @@ export const activities = createTable("activity", (d) => ({
 	id: d.integer().primaryKey().generatedByDefaultAsIdentity(),
 	name: d.varchar({ length: 256 }).notNull(),
 	googleSheetId: d.varchar({ length: 255 }).notNull(),
+	activityDate: d.text("activity_date").notNull(),
+	activityMemo: text("activity_memo"),
 	createdById: text("created_by_id")
 		.notNull()
 		.references(() => user.id),

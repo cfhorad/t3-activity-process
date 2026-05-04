@@ -11,6 +11,8 @@ interface EditActivityModalProps {
 		id: number;
 		name: string;
 		googleSheetId: string;
+		activityDate?: string | null;
+		activityMemo?: string | null;
 	};
 	isOpen: boolean;
 	onOpenChange: (isOpen: boolean) => void;
@@ -28,6 +30,8 @@ export function EditActivityModal({
 		activity.googleSheetId,
 	);
 	const [nameInput, setNameInput] = useState(activity.name);
+	const [dateInput, setDateInput] = useState(activity.activityDate ?? "");
+	const [memoInput, setMemoInput] = useState(activity.activityMemo ?? "");
 
 	const updateActivity = api.activity.update.useMutation({
 		onSuccess: () => {
@@ -41,6 +45,8 @@ export function EditActivityModal({
 		if (isOpen) {
 			setSpreadsheetInput(activity.googleSheetId);
 			setNameInput(activity.name);
+			setDateInput(activity.activityDate ?? "");
+			setMemoInput(activity.activityMemo ?? "");
 		}
 	}, [isOpen, activity]);
 
@@ -53,6 +59,8 @@ export function EditActivityModal({
 			id: activity.id,
 			name: nameInput,
 			googleSheetId,
+			activityDate: dateInput,
+			activityMemo: memoInput,
 		});
 	};
 
@@ -88,6 +96,28 @@ export function EditActivityModal({
 										variant="secondary"
 									/>
 								</TextField>
+
+								<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+									<TextField isRequired name="activityDate">
+										<Label>Activity Date</Label>
+										<Input
+											onChange={(e) => setDateInput(e.target.value)}
+											type="date"
+											value={dateInput}
+											variant="secondary"
+										/>
+									</TextField>
+
+									<TextField name="activityMemo">
+										<Label>Memo</Label>
+										<Input
+											onChange={(e) => setMemoInput(e.target.value)}
+											placeholder="e.g. Annual dinner"
+											value={memoInput}
+											variant="secondary"
+										/>
+									</TextField>
+								</div>
 							</div>
 						</Modal.Body>
 						<Modal.Footer>

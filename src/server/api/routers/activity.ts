@@ -35,6 +35,8 @@ export const activityRouter = createTRPCRouter({
 			z.object({
 				name: z.string().min(1),
 				googleSheetId: z.string().min(1),
+				activityDate: z.string().min(1),
+				activityMemo: z.string().optional().nullable(),
 				sheetName: z.string().optional(),
 			}),
 		)
@@ -65,6 +67,8 @@ export const activityRouter = createTRPCRouter({
 				id: z.number(),
 				name: z.string().min(1),
 				googleSheetId: z.string().min(1),
+				activityDate: z.string().min(1),
+				activityMemo: z.string().optional().nullable(),
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {

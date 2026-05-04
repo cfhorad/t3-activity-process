@@ -85,7 +85,9 @@ export default function ProcessPage({
 							</div>
 							<div className="space-y-1">
 								<p className="font-semibold text-xl">
-									{syncMutation.isPending ? "Syncing Data..." : "No Data Synced"}
+									{syncMutation.isPending
+										? "Syncing Data..."
+										: "No Data Synced"}
 								</p>
 								<p className="mx-auto max-w-xs text-muted-foreground">
 									{syncMutation.isPending

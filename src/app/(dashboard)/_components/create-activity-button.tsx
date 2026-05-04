@@ -51,9 +51,11 @@ export function CreateActivityButton({ userRole }: { userRole: string }) {
 		e.preventDefault();
 		const formData = new FormData(e.currentTarget);
 		const name = formData.get("name") as string;
+		const activityDate = formData.get("activityDate") as string;
+		const activityMemo = formData.get("activityMemo") as string;
 		const googleSheetId = spreadsheetId;
 
-		createActivity.mutate({ name, googleSheetId });
+		createActivity.mutate({ name, googleSheetId, activityDate, activityMemo });
 	};
 
 	return (
@@ -106,6 +108,21 @@ export function CreateActivityButton({ userRole }: { userRole: string }) {
 											variant="secondary"
 										/>
 									</TextField>
+
+									<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+										<TextField isRequired name="activityDate">
+											<Label>Activity Date</Label>
+											<Input type="date" variant="secondary" />
+										</TextField>
+
+										<TextField name="activityMemo">
+											<Label>Memo</Label>
+											<Input
+												placeholder="e.g. Annual dinner"
+												variant="secondary"
+											/>
+										</TextField>
+									</div>
 								</div>
 							</Modal.Body>
 							<Modal.Footer>
