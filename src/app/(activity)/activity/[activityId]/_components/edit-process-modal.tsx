@@ -1,0 +1,53 @@
+"use client";
+
+import { api } from "~/trpc/react";
+import { ProcessFormModal } from "./process-form-modal";
+
+interface Process {
+	id: number;
+	name: string;
+	sheetName: string;
+	activityId: number;
+	processDate: string;
+	processMemo?: string | null;
+}
+
+interface EditProcessModalProps {
+	process: Process;
+	isOpen: boolean;
+	onClose: () => void;
+	onOpenChange: (open: boolean) => void;
+}
+
+export function EditProcessModal({
+	process,
+	isOpen,
+	onClose,
+	onOpenChange,
+}: EditProcessModalProps) {
+	const utils = api.useUtils();
+
+	const updateProcess = api.process.update.useMutation({
+		onSuccess: () => {
+			void utils.process.getByActivityId.invalidate({
+				activityId: process.activityId,
+			});
+			onClose();
+		},
+	});
+
+	return (
+		<ProcessFormModal
+			activityId={process.activityId}
+			initialData={process}
+			isOpen={isOpen}
+			isPending={updateProcess.isPending}
+			mode="edit"
+			onClose={onClose}
+			onOpenChange={onOpenChange}
+			onSubmit={(data) => updateProcess.mutate({ ...data, id: process.id })}
+			submitLabel="Save Changes"
+			title="Edit Process"
+		/>
+	);
+}

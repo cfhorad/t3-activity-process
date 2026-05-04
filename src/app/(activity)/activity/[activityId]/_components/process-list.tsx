@@ -1,11 +1,9 @@
 "use client";
 
-import { buttonVariants, Card, Spinner } from "@heroui/react";
-import { ChevronRight, TableProperties } from "lucide-react";
-import Link from "next/link";
+import { Spinner } from "@heroui/react";
+import { TableProperties } from "lucide-react";
 import { api } from "~/trpc/react";
-
-import { ProcessActions } from "./process-actions";
+import { ProcessCard } from "./process-card";
 
 export function ProcessList({
 	activityId,
@@ -44,45 +42,9 @@ export function ProcessList({
 	}
 
 	return (
-		<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+		<div className="grid grid-cols-1 gap-4">
 			{processes.map((process) => (
-				<Card
-					className="bg-content1 transition-colors hover:bg-content2"
-					key={process.id}
-				>
-					<Card.Header className="flex items-center justify-between px-6 py-4">
-						<div className="flex items-center gap-3">
-							<div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary/10 text-secondary">
-								<TableProperties className="h-5 w-5" />
-							</div>
-							<div className="flex flex-1 items-center justify-between">
-								<div className="flex flex-col">
-									<Card.Title className="font-bold text-sm">
-										{process.name}
-									</Card.Title>
-									<Card.Description className="text-muted-foreground text-xs">
-										Sheet: {process.sheetName}
-									</Card.Description>
-								</div>
-								<ProcessActions process={process} userRole={userRole} />
-							</div>
-						</div>
-					</Card.Header>
-					<Card.Footer className="px-6 py-4 pt-0">
-						<Link
-							className={buttonVariants({
-								variant: "secondary",
-								size: "sm",
-								fullWidth: true,
-								className: "justify-between",
-							})}
-							href={`/process/${process.id}`}
-						>
-							View Data
-							<ChevronRight className="h-4 w-4" />
-						</Link>
-					</Card.Footer>
-				</Card>
+				<ProcessCard key={process.id} process={process} userRole={userRole} />
 			))}
 		</div>
 	);

@@ -35,6 +35,8 @@ export const processRouter = createTRPCRouter({
 				name: z.string().min(1),
 				activityId: z.number(),
 				sheetName: z.string().min(1),
+				processDate: z.string().min(1),
+				processMemo: z.string().optional().nullable(),
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {
@@ -55,6 +57,8 @@ export const processRouter = createTRPCRouter({
 				id: z.number(),
 				name: z.string().min(1),
 				sheetName: z.string().min(1),
+				processDate: z.string().min(1),
+				processMemo: z.string().optional().nullable(),
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {

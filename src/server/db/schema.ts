@@ -52,6 +52,8 @@ export const processes = createTable("process", (d) => ({
 		.notNull()
 		.references(() => activities.id, { onDelete: "cascade" }),
 	sheetName: d.varchar({ length: 255 }).notNull(),
+	processDate: d.text("process_date").notNull().default("2024-01-01"),
+	processMemo: d.text("process_memo"),
 	createdAt: d
 		.timestamp({ withTimezone: true })
 		.$defaultFn(() => new Date())
