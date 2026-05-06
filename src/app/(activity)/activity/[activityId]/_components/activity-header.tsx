@@ -1,3 +1,5 @@
+"use client";
+
 import { Link } from "@heroui/react";
 import { Calendar, ExternalLink, LayoutGrid, User } from "lucide-react";
 

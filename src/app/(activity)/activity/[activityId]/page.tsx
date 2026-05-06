@@ -1,4 +1,3 @@
-import { buttonVariants } from "@heroui/react";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -39,15 +38,10 @@ export default async function ActivityPage({
 				<div className="mx-auto max-w-7xl">
 					<div className="mb-6">
 						<Link
-							className={buttonVariants({
-								variant: "tertiary",
-								size: "sm",
-								className:
-									"gap-1 px-0 text-muted-foreground hover:text-foreground",
-							})}
+							className="group flex items-center gap-1 text-muted-foreground text-sm transition-colors hover:text-foreground"
 							href="/"
 						>
-							<ChevronLeft className="h-4 w-4" />
+							<ChevronLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
 							Back to Dashboard
 						</Link>
 					</div>
