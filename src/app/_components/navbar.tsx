@@ -53,17 +53,27 @@ const teams = [
 ];
 
 const navItems = [
-	{ href: "#dashboard", label: "Dashboard" },
-	{ href: "#projects", label: "Projects" },
-	{ href: "#members", label: "Members" },
-	{ href: "#billing", label: "Billing" },
+	{ href: "#dashboard", label: "儀表板" },
+	{ href: "#projects", label: "專案" },
+	{ href: "#members", label: "成員" },
+	{ href: "#billing", label: "帳單" },
 ];
 
 import { authClient } from "~/server/better-auth/client";
+import type { Session } from "~/server/better-auth/config";
 
-export function NavbarComponent() {
-	const { data: session } = authClient.useSession();
+export function NavbarComponent({
+	session: serverSession,
+}: {
+	session?: Session | null;
+}) {
+	const { data: clientSession } = authClient.useSession();
+	const session = clientSession ?? serverSession;
 	const [activeTeam, setActiveTeam] = useState("heroui");
+
+	if (!session) {
+		return null;
+	}
 
 	const team = teams.find((t) => t.id === activeTeam) ?? teams[0];
 
@@ -87,9 +97,9 @@ export function NavbarComponent() {
 									}
 								}}
 							>
-								<Dropdown.Item id="team-settings" textValue="Team settings">
+								<Dropdown.Item id="team-settings" textValue="團隊設定">
 									<Gear className="size-4 text-muted" />
-									<Label>Team settings</Label>
+									<Label>團隊設定</Label>
 								</Dropdown.Item>
 								<Separator />
 								{teams.map((t) => (
@@ -99,9 +109,9 @@ export function NavbarComponent() {
 									</Dropdown.Item>
 								))}
 								<Separator />
-								<Dropdown.Item id="new-workspace" textValue="Create workspace">
+								<Dropdown.Item id="new-workspace" textValue="建立工作區">
 									<Plus className="size-4 text-muted" />
-									<Label>Create workspace…</Label>
+									<Label>建立工作區…</Label>
 								</Dropdown.Item>
 							</Dropdown.Menu>
 						</Dropdown.Popover>
@@ -132,80 +142,57 @@ export function NavbarComponent() {
 						</Navbar.Item>
 					</Navbar.Content>
 
-					{session ? (
-						<Dropdown>
-							<Button aria-label="User menu" isIconOnly variant="ghost">
-								<Avatar className="size-7">
-									<Avatar.Image
-										alt={session?.user?.name ?? "User"}
-										src={session?.user?.image ?? undefined}
-									/>
-									<Avatar.Fallback>
-										{session?.user?.name?.charAt(0).toUpperCase() ?? "U"}
-									</Avatar.Fallback>
-								</Avatar>
-							</Button>
-							<Dropdown.Popover
-								className="min-w-[200px]"
-								placement="bottom end"
-							>
-								<Dropdown.Menu>
-									<Dropdown.Item id="account" textValue="Your account">
-										<Person className="size-4 text-muted" />
-										<Label>Your account</Label>
-									</Dropdown.Item>
-									<Dropdown.Item id="preferences" textValue="Preferences">
-										<Gear className="size-4 text-muted" />
-										<Label>Preferences</Label>
-									</Dropdown.Item>
-									<Separator />
-									<Dropdown.Item id="security" textValue="Security & privacy">
-										<ShieldCheck className="size-4 text-muted" />
-										<Label>Security & privacy</Label>
-									</Dropdown.Item>
-									<Dropdown.Item id="feedback" textValue="Send feedback">
-										<Comment className="size-4 text-muted" />
-										<Label>Send feedback</Label>
-									</Dropdown.Item>
-									<Separator />
-									<Dropdown.Item
-										id="sign-out"
-										onAction={async () => {
-											await authClient.signOut({
-												fetchOptions: {
-													onSuccess: () => {
-														window.location.href = "/sign-in";
-													},
+					<Dropdown>
+						<Button aria-label="User menu" isIconOnly variant="ghost">
+							<Avatar className="size-7">
+								<Avatar.Image
+									alt={session?.user?.name ?? "User"}
+									src={session?.user?.image ?? undefined}
+								/>
+								<Avatar.Fallback>
+									{session?.user?.name?.charAt(0).toUpperCase() ?? "U"}
+								</Avatar.Fallback>
+							</Avatar>
+						</Button>
+						<Dropdown.Popover className="min-w-[200px]" placement="bottom end">
+							<Dropdown.Menu>
+								<Dropdown.Item id="account" textValue="您的帳戶">
+									<Person className="size-4 text-muted" />
+									<Label>您的帳戶</Label>
+								</Dropdown.Item>
+								<Dropdown.Item id="preferences" textValue="偏好設定">
+									<Gear className="size-4 text-muted" />
+									<Label>偏好設定</Label>
+								</Dropdown.Item>
+								<Separator />
+								<Dropdown.Item id="security" textValue="安全與隱私">
+									<ShieldCheck className="size-4 text-muted" />
+									<Label>安全與隱私</Label>
+								</Dropdown.Item>
+								<Dropdown.Item id="feedback" textValue="傳送回饋">
+									<Comment className="size-4 text-muted" />
+									<Label>傳送回饋</Label>
+								</Dropdown.Item>
+								<Separator />
+								<Dropdown.Item
+									id="sign-out"
+									onAction={async () => {
+										await authClient.signOut({
+											fetchOptions: {
+												onSuccess: () => {
+													window.location.href = "/sign-in";
 												},
-											});
-										}}
-										textValue="Log out"
-									>
-										<ArrowRightFromSquare className="size-4 text-muted" />
-										<Label>Log out</Label>
-									</Dropdown.Item>
-								</Dropdown.Menu>
-							</Dropdown.Popover>
-						</Dropdown>
-					) : (
-						<div className="flex items-center gap-2">
-							<a
-								className="rounded-md px-3 py-2 font-medium text-sm transition-colors hover:text-primary"
-								href="/sign-in"
-							>
-								Sign In
-							</a>
-							<Button
-								onPress={() => {
-									window.location.href = "/sign-up";
-								}}
-								size="sm"
-								variant="primary"
-							>
-								Sign Up
-							</Button>
-						</div>
-					)}
+											},
+										});
+									}}
+									textValue="登出"
+								>
+									<ArrowRightFromSquare className="size-4 text-muted" />
+									<Label>登出</Label>
+								</Dropdown.Item>
+							</Dropdown.Menu>
+						</Dropdown.Popover>
+					</Dropdown>
 				</Navbar.Header>
 
 				<Navbar.Menu>

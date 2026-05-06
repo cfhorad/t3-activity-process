@@ -1,7 +1,7 @@
 import { buttonVariants } from "@heroui/react";
 import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getSession } from "~/server/better-auth/server";
 import { api, HydrateClient } from "~/trpc/server";
 import { ActivityHeader } from "./_components/activity-header";
@@ -17,6 +17,10 @@ export default async function ActivityPage({
 	const id = parseInt(activityId, 10);
 	const session = await getSession();
 
+	if (!session) {
+		redirect("/sign-in");
+	}
+
 	if (Number.isNaN(id)) {
 		notFound();
 	}
@@ -26,6 +30,8 @@ export default async function ActivityPage({
 	if (!activity) {
 		notFound();
 	}
+
+	await api.process.getByActivityId.prefetch({ activityId: id });
 
 	return (
 		<HydrateClient>

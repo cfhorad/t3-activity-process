@@ -1,4 +1,4 @@
-import { LayoutGrid } from "lucide-react";
+import { redirect } from "next/navigation";
 import { getSession } from "~/server/better-auth/server";
 import { api, HydrateClient } from "~/trpc/server";
 import { ActivityList } from "./_components/activity-list";
@@ -7,9 +7,11 @@ import { CreateActivityButton } from "./_components/create-activity-button";
 export default async function DashboardPage() {
 	const session = await getSession();
 
-	if (session) {
-		void api.activity.getAll.prefetch();
+	if (!session) {
+		redirect("/sign-in");
 	}
+
+	await api.activity.getAll.prefetch();
 
 	return (
 		<HydrateClient>
@@ -25,25 +27,11 @@ export default async function DashboardPage() {
 							</p>
 						</div>
 						<div className="flex items-center gap-4">
-							{session && (
-								<CreateActivityButton userRole={session.user.role as string} />
-							)}
+							<CreateActivityButton userRole={session.user.role as string} />
 						</div>
 					</header>
 
-					{session ? (
-						<ActivityList userRole={session.user.role as string} />
-					) : (
-						<div className="flex h-64 flex-col items-center justify-center rounded-2xl border-2 border-divider border-dashed bg-content1/50 p-12 text-center">
-							<LayoutGrid className="mb-4 h-12 w-12 text-muted-foreground" />
-							<h3 className="font-bold text-xl">
-								Welcome to Activity Dashboard
-							</h3>
-							<p className="text-muted-foreground">
-								Please sign in to manage your activities and spreadsheets.
-							</p>
-						</div>
-					)}
+					<ActivityList userRole={session.user.role as string} />
 				</div>
 			</main>
 		</HydrateClient>
