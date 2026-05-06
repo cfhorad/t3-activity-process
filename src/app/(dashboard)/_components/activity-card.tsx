@@ -13,7 +13,7 @@ interface ActivityCardProps {
 		id: number;
 		name: string;
 		googleSheetId: string;
-		activityDate?: string | null;
+		activityDate: string;
 		activityMemo?: string | null;
 	};
 	userRole: string;

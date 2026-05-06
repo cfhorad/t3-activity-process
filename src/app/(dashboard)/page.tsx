@@ -1,5 +1,4 @@
 import { LayoutGrid } from "lucide-react";
-import { SignInButton, SignOutButton } from "~/app/_components/auth-buttons";
 import { getSession } from "~/server/better-auth/server";
 import { api, HydrateClient } from "~/trpc/server";
 import { ActivityList } from "./_components/activity-list";
@@ -26,24 +25,8 @@ export default async function DashboardPage() {
 							</p>
 						</div>
 						<div className="flex items-center gap-4">
-							{session ? (
-								<>
-									<div className="hidden text-right sm:block">
-										<p className="font-medium">{session.user.name}</p>
-										<p className="text-muted-foreground text-xs uppercase tracking-wider">
-											{session.user.role}
-										</p>
-										<p className="text-muted-foreground text-xs">
-											{session.user.email}
-										</p>
-									</div>
-									<CreateActivityButton
-										userRole={session.user.role as string}
-									/>
-									<SignOutButton />
-								</>
-							) : (
-								<SignInButton />
+							{session && (
+								<CreateActivityButton userRole={session.user.role as string} />
 							)}
 						</div>
 					</header>

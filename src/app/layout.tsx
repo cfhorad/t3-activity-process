@@ -17,16 +17,20 @@ const geist = Geist({
 });
 
 import { Toast } from "@heroui/react";
+import { NavbarComponent } from "./_components/navbar";
 
 export default function RootLayout({
 	children,
 }: Readonly<{ children: React.ReactNode }>) {
 	return (
 		<html className={`${geist.variable}`} lang="en">
-			<body>
+			<body className="min-h-screen bg-background antialiased">
 				<TRPCReactProvider>
 					<Toast.Provider />
-					{children}
+					<div className="relative flex min-h-screen flex-col">
+						<NavbarComponent />
+						<main className="flex-1">{children}</main>
+					</div>
 				</TRPCReactProvider>
 			</body>
 		</html>
