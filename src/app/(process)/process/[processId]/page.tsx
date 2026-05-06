@@ -10,7 +10,7 @@ export default async function ProcessPage({
 	const session = await getSession();
 
 	if (!session) {
-		redirect("/sign-in");
+		redirect("/auth");
 	}
 
 	return <ProcessPageClient params={params} />;

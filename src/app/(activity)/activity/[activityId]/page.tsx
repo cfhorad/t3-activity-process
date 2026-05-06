@@ -18,7 +18,7 @@ export default async function ActivityPage({
 	const session = await getSession();
 
 	if (!session) {
-		redirect("/sign-in");
+		redirect("/auth");
 	}
 
 	if (Number.isNaN(id)) {
