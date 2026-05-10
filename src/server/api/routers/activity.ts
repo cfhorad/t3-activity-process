@@ -12,6 +12,7 @@ export const activityRouter = createTRPCRouter({
 		return await ctx.db.query.activities.findMany({
 			with: {
 				creator: true,
+				processes: true,
 			},
 			orderBy: (activities, { desc }) => [desc(activities.createdAt)],
 		});

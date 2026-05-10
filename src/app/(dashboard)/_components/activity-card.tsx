@@ -1,8 +1,9 @@
 "use client";
 
-import { Button, Card, Link, useOverlayState } from "@heroui/react";
+import { Button, Card, useOverlayState } from "@heroui/react";
 import { Calendar, Pencil, Trash2 } from "lucide-react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { ConfirmDeleteDialog } from "~/components/confirm-delete-dialog";
 import { api } from "~/trpc/react";
 import { EditActivityModal } from "./edit-activity-modal";
@@ -14,11 +15,13 @@ interface ActivityCardProps {
 		googleSheetId: string;
 		activityDate: string;
 		activityMemo?: string | null;
+		processes?: { id: number }[];
 	};
 	userRole: string;
 }
 
 export function ActivityCard({ activity, userRole }: ActivityCardProps) {
+	const router = useRouter();
 	const editState = useOverlayState();
 	const deleteState = useOverlayState();
 	const utils = api.useUtils();
@@ -34,9 +37,15 @@ export function ActivityCard({ activity, userRole }: ActivityCardProps) {
 	const isAuthorized =
 		normalizedRole === "ADMIN" || normalizedRole === "MANAGER";
 
+	const linkHref = `/activity/${activity.id}`;
+
 	return (
 		<>
-			<div className="card group card--secondary relative w-full items-stretch overflow-hidden transition-all duration-200 hover:-translate-y-1 hover:shadow-lg md:flex-row">
+			<Card
+				className="group w-full cursor-pointer items-stretch transition-all duration-200 hover:-translate-y-1 hover:shadow-lg md:flex-row"
+				onClick={() => router.push(linkHref)}
+				variant="secondary"
+			>
 				<div className="relative h-[160px] w-full shrink-0 overflow-hidden rounded-t-2xl md:h-auto md:w-[200px] md:rounded-l-2xl md:rounded-tr-none">
 					<Image
 						alt={activity.name}
@@ -53,12 +62,7 @@ export function ActivityCard({ activity, userRole }: ActivityCardProps) {
 					<Card.Header className="flex flex-col items-start gap-1 px-6 pt-6">
 						<div className="flex w-full items-center justify-between">
 							<Card.Title className="truncate font-bold text-xl tracking-tight">
-								<Link
-									className="text-inherit no-underline outline-hidden after:absolute after:inset-0 after:z-0"
-									href={`/activity/${activity.id}`}
-								>
-									{activity.name}
-								</Link>
+								{activity.name}
 							</Card.Title>
 						</div>
 						<Card.Description className="flex w-full items-center justify-between gap-4 text-muted-foreground text-sm">
@@ -70,7 +74,7 @@ export function ActivityCard({ activity, userRole }: ActivityCardProps) {
 						</Card.Description>
 					</Card.Header>
 
-					<Card.Footer className="relative z-10 mt-auto flex items-center justify-end border-divider border-t px-6 py-4">
+					<Card.Footer className="mt-auto flex items-center justify-end border-divider border-t px-6 py-4">
 						{isAuthorized && (
 							<div className="flex gap-2">
 								<Button
@@ -99,7 +103,7 @@ export function ActivityCard({ activity, userRole }: ActivityCardProps) {
 						)}
 					</Card.Footer>
 				</div>
-			</div>
+			</Card>
 
 			<EditActivityModal
 				activity={activity}
