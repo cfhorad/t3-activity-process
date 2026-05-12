@@ -152,9 +152,8 @@ export function useCheckData(processId: number) {
 		updateCheckboxMutation.mutate({ databaseId, columnName, newValue });
 	};
 
-	const visibleColumns = columns?.filter((c) =>
-		visibleColumnNames.includes(c.columnName),
-	) ?? [];
+	const visibleColumns =
+		columns?.filter((c) => visibleColumnNames.includes(c.columnName)) ?? [];
 
 	return {
 		search,

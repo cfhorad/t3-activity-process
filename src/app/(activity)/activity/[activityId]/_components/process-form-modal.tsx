@@ -8,6 +8,7 @@ import {
 	ListBox,
 	Modal,
 	Select,
+	TextArea,
 	TextField,
 } from "@heroui/react";
 import { Pencil, Plus, Sheet } from "lucide-react";
@@ -17,9 +18,10 @@ import { api } from "~/trpc/react";
 interface ProcessFormData {
 	name: string;
 	sheetName: string;
-	type: "PROCESS" | "CHECK";
+	type: "PROCESS" | "CHECK" | "WEB";
 	processDate: string;
 	processMemo?: string | null;
+	iframeSrc?: string | null;
 }
 
 interface ProcessFormModalProps {
@@ -32,9 +34,10 @@ interface ProcessFormModalProps {
 	initialData?: {
 		name: string;
 		sheetName: string;
-		type: "PROCESS" | "CHECK";
+		type: "PROCESS" | "CHECK" | "WEB";
 		processDate: string;
 		processMemo?: string | null;
+		iframeSrc?: string | null;
 	};
 	title: string;
 	description?: string;
@@ -58,7 +61,7 @@ export function ProcessFormModal({
 	const [selectedSheet, setSelectedSheet] = useState<string>(
 		initialData?.sheetName ?? "",
 	);
-	const [selectedType, setSelectedType] = useState<"PROCESS" | "CHECK">(
+	const [selectedType, setSelectedType] = useState<"PROCESS" | "CHECK" | "WEB">(
 		initialData?.type ?? "PROCESS",
 	);
 
@@ -92,8 +95,22 @@ export function ProcessFormModal({
 		const type = selectedType;
 		const processDate = formData.get("processDate") as string;
 		const processMemo = formData.get("processMemo") as string;
+		const iframeCode = formData.get("iframeCode") as string;
 
-		onSubmit({ name, sheetName, type, processDate, processMemo });
+		let iframeSrc: string | null = initialData?.iframeSrc ?? null;
+		if (type === "WEB" && iframeCode) {
+			const srcMatch = iframeCode.match(/src="([^"]+)"/);
+			iframeSrc = (srcMatch ? srcMatch[1] : iframeCode) ?? null;
+		}
+
+		onSubmit({
+			name,
+			sheetName,
+			type,
+			processDate,
+			processMemo,
+			iframeSrc,
+		});
 	};
 
 	return (
@@ -174,7 +191,7 @@ export function ProcessFormModal({
 								<Select
 									isRequired
 									onChange={(val) => {
-										setSelectedType(val as "PROCESS" | "CHECK");
+										setSelectedType(val as "PROCESS" | "CHECK" | "WEB");
 									}}
 									value={selectedType}
 									variant="secondary"
@@ -192,9 +209,26 @@ export function ProcessFormModal({
 											<ListBox.Item id="CHECK" textValue="報到清單">
 												報到清單
 											</ListBox.Item>
+											<ListBox.Item id="WEB" textValue="網頁嵌入">
+												網頁嵌入
+											</ListBox.Item>
 										</ListBox>
 									</Select.Popover>
 								</Select>
+
+								{selectedType === "WEB" && (
+									<TextField
+										defaultValue={initialData?.iframeSrc ?? ""}
+										isRequired
+										name="iframeCode"
+									>
+										<Label>Iframe Embed Code</Label>
+										<TextArea
+											placeholder='e.g. <iframe src="..."></iframe>'
+											variant="secondary"
+										/>
+									</TextField>
+								)}
 
 								<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
 									<TextField

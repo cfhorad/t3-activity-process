@@ -21,7 +21,9 @@ export function SyncConfirmDialog({
 					variant="primary"
 				>
 					<div className="flex items-center gap-2">
-						<RefreshCcw className={`size-4 ${isSyncing ? "animate-spin" : ""}`} />
+						<RefreshCcw
+							className={`size-4 ${isSyncing ? "animate-spin" : ""}`}
+						/>
 						{isSyncing ? "Syncing..." : "Sync from Google Sheet"}
 					</div>
 				</Button>

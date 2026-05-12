@@ -35,9 +35,10 @@ export const processRouter = createTRPCRouter({
 				name: z.string().min(1),
 				activityId: z.number(),
 				sheetName: z.string().min(1),
-				type: z.enum(["PROCESS", "CHECK"]).default("PROCESS"),
+				type: z.enum(["PROCESS", "CHECK", "WEB"]).default("PROCESS"),
 				processDate: z.string().min(1),
 				processMemo: z.string().optional().nullable(),
+				iframeSrc: z.string().optional().nullable(),
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {
@@ -50,6 +51,7 @@ export const processRouter = createTRPCRouter({
 					type: input.type,
 					processDate: input.processDate,
 					processMemo: input.processMemo,
+					iframeSrc: input.iframeSrc,
 				})
 				.returning();
 			return process;
@@ -61,9 +63,10 @@ export const processRouter = createTRPCRouter({
 				id: z.number(),
 				name: z.string().min(1),
 				sheetName: z.string().min(1),
-				type: z.enum(["PROCESS", "CHECK"]).default("PROCESS"),
+				type: z.enum(["PROCESS", "CHECK", "WEB"]).default("PROCESS"),
 				processDate: z.string().min(1),
 				processMemo: z.string().optional().nullable(),
+				iframeSrc: z.string().optional().nullable(),
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {

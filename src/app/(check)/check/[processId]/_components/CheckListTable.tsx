@@ -47,10 +47,7 @@ export function CheckListTable({
 				<Table.Content aria-label="Check-in list data table">
 					<Table.Header>
 						{columns.map((col, index) => (
-							<Table.Column
-								isRowHeader={index === 0}
-								key={col.columnName}
-							>
+							<Table.Column isRowHeader={index === 0} key={col.columnName}>
 								{col.columnName}
 							</Table.Column>
 						))}

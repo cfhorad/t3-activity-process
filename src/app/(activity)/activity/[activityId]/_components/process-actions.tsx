@@ -10,10 +10,11 @@ interface Process {
 	id: number;
 	name: string;
 	sheetName: string;
-	type: "PROCESS" | "CHECK";
+	type: "PROCESS" | "CHECK" | "WEB";
 	activityId: number;
 	processDate: string;
 	processMemo?: string | null;
+	iframeSrc?: string | null;
 }
 
 export function ProcessActions({

@@ -1,6 +1,6 @@
 "use client";
 
-import { Badge, Card } from "@heroui/react";
+import { Card, Chip } from "@heroui/react";
 import { Calendar } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -11,10 +11,11 @@ interface ProcessCardProps {
 		id: number;
 		name: string;
 		sheetName: string;
-		type: "PROCESS" | "CHECK";
+		type: "PROCESS" | "CHECK" | "WEB";
 		activityId: number;
 		processDate: string;
 		processMemo?: string | null;
+		iframeSrc?: string | null;
 	};
 	userRole: string;
 }
@@ -29,7 +30,9 @@ export function ProcessCard({ process, userRole }: ProcessCardProps) {
 				router.push(
 					process.type === "CHECK"
 						? `/check/${process.id}`
-						: `/process/${process.id}`,
+						: process.type === "WEB"
+							? `/web/${process.id}`
+							: `/process/${process.id}`,
 				)
 			}
 			variant="secondary"
@@ -50,11 +53,23 @@ export function ProcessCard({ process, userRole }: ProcessCardProps) {
 					<div className="flex w-full items-center justify-between">
 						<Card.Title className="flex items-center gap-2 font-bold text-xl tracking-tight">
 							<span className="truncate">{process.name}</span>
-							<Badge
-								variant={process.type === "CHECK" ? "secondary" : "primary"}
+							<Chip
+								color={
+									process.type === "CHECK"
+										? "success"
+										: process.type === "WEB"
+											? "warning"
+											: "accent"
+								}
+								size="sm"
+								variant="soft"
 							>
-								{process.type === "CHECK" ? "報到清單" : "流程處理"}
-							</Badge>
+								{process.type === "CHECK"
+									? "報到清單"
+									: process.type === "WEB"
+										? "網頁嵌入"
+										: "流程處理"}
+							</Chip>
 						</Card.Title>
 					</div>
 					<Card.Description className="flex w-full items-center justify-between gap-4 text-muted-foreground text-sm">
