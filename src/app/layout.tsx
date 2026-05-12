@@ -27,9 +27,9 @@ export default async function RootLayout({
 			<body className="min-h-screen bg-background antialiased">
 				<TRPCReactProvider>
 					<Providers>
-						<div className="relative flex min-h-screen flex-col">
+						<div className="relative flex h-screen flex-col overflow-hidden">
 							<NavbarComponent session={session} />
-							<main className="flex-1">{children}</main>
+							<main className="flex-1 overflow-auto">{children}</main>
 						</div>
 					</Providers>
 				</TRPCReactProvider>

@@ -19,7 +19,7 @@ export function WebPageClient({
 
 	if (isLoading) {
 		return (
-			<div className="flex h-screen items-center justify-center">
+			<div className="flex h-full items-center justify-center">
 				<Spinner size="lg" />
 			</div>
 		);
@@ -27,7 +27,7 @@ export function WebPageClient({
 
 	if (!process) {
 		return (
-			<div className="flex h-screen flex-col items-center justify-center gap-4">
+			<div className="flex h-full flex-col items-center justify-center gap-4">
 				<p className="text-muted-foreground text-xl">Process not found</p>
 				<Button onPress={() => router.back()} variant="secondary">
 					Go Back
@@ -37,7 +37,7 @@ export function WebPageClient({
 	}
 
 	return (
-		<main className="flex h-screen flex-col overflow-hidden bg-background">
+		<main className="flex h-full flex-col overflow-hidden bg-background">
 			<header className="flex h-16 shrink-0 items-center justify-between border-divider border-b px-4 md:px-8">
 				<div className="flex items-center gap-4">
 					<Button

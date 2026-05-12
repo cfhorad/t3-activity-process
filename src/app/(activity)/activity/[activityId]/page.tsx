@@ -34,7 +34,7 @@ export default async function ActivityPage({
 
 	return (
 		<HydrateClient>
-			<main className="min-h-screen bg-linear-to-b from-background to-content2 p-4 md:p-8">
+			<main className="bg-linear-to-b from-background to-content2 p-4 md:p-8">
 				<div className="mx-auto max-w-7xl">
 					<div className="mb-6">
 						<Link

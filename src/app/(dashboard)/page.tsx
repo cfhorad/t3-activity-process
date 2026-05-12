@@ -15,7 +15,7 @@ export default async function DashboardPage() {
 
 	return (
 		<HydrateClient>
-			<main className="min-h-screen bg-linear-to-b from-background to-content2 p-4 md:p-8">
+			<main className="bg-linear-to-b from-background to-content2 p-4 md:p-8">
 				<div className="mx-auto max-w-7xl">
 					<header className="mb-12 flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
 						<div>

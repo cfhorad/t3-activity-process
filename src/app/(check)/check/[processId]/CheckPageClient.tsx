@@ -35,7 +35,7 @@ export function CheckPageClient({
 	} = useCheckData(id);
 
 	return (
-		<main className="min-h-screen bg-linear-to-b from-background to-content2 p-4 md:p-8">
+		<main className="bg-linear-to-b from-background to-content2 p-4 md:p-8">
 			<div className="mx-auto flex max-w-7xl flex-col gap-6">
 				<CheckHeader
 					isSyncing={syncMutation.isPending}
