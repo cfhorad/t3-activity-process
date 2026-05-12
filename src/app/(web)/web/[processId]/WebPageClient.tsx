@@ -57,7 +57,8 @@ export function WebPageClient({
 				</div>
 			</header>
 
-			<div className="relative flex-1 bg-content2">
+			<div className="relative flex-1 bg-content2 px-4 md:px-8">
+				{/* MEMO: 調整WebPage外觀. */}
 				{process.iframeSrc ? (
 					<iframe
 						className="h-full w-full border-none"
