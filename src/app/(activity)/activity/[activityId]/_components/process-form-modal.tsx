@@ -17,6 +17,7 @@ import { api } from "~/trpc/react";
 interface ProcessFormData {
 	name: string;
 	sheetName: string;
+	type: "PROCESS" | "CHECK";
 	processDate: string;
 	processMemo?: string | null;
 }
@@ -31,6 +32,7 @@ interface ProcessFormModalProps {
 	initialData?: {
 		name: string;
 		sheetName: string;
+		type: "PROCESS" | "CHECK";
 		processDate: string;
 		processMemo?: string | null;
 	};
@@ -56,13 +58,18 @@ export function ProcessFormModal({
 	const [selectedSheet, setSelectedSheet] = useState<string>(
 		initialData?.sheetName ?? "",
 	);
+	const [selectedType, setSelectedType] = useState<"PROCESS" | "CHECK">(
+		initialData?.type ?? "PROCESS",
+	);
 
 	// Reset selected sheet when initialData changes (for Edit mode)
 	useEffect(() => {
 		if (initialData?.sheetName) {
 			setSelectedSheet(initialData.sheetName);
+			setSelectedType(initialData.type);
 		} else if (mode === "create") {
 			setSelectedSheet("");
+			setSelectedType("PROCESS");
 		}
 	}, [initialData, mode]);
 
@@ -82,10 +89,11 @@ export function ProcessFormModal({
 		const formData = new FormData(e.currentTarget);
 		const name = formData.get("name") as string;
 		const sheetName = selectedSheet;
+		const type = selectedType;
 		const processDate = formData.get("processDate") as string;
 		const processMemo = formData.get("processMemo") as string;
 
-		onSubmit({ name, sheetName, processDate, processMemo });
+		onSubmit({ name, sheetName, type, processDate, processMemo });
 	};
 
 	return (
@@ -159,6 +167,31 @@ export function ProcessFormModal({
 													<ListBox.ItemIndicator />
 												</ListBox.Item>
 											))}
+										</ListBox>
+									</Select.Popover>
+								</Select>
+
+								<Select
+									isRequired
+									onChange={(val) => {
+										setSelectedType(val as "PROCESS" | "CHECK");
+									}}
+									value={selectedType}
+									variant="secondary"
+								>
+									<Label>Process Type</Label>
+									<Select.Trigger>
+										<Select.Value />
+										<Select.Indicator />
+									</Select.Trigger>
+									<Select.Popover>
+										<ListBox>
+											<ListBox.Item id="PROCESS" textValue="流程處理">
+												流程處理
+											</ListBox.Item>
+											<ListBox.Item id="CHECK" textValue="報到清單">
+												報到清單
+											</ListBox.Item>
 										</ListBox>
 									</Select.Popover>
 								</Select>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Card } from "@heroui/react";
+import { Badge, Card } from "@heroui/react";
 import { Calendar } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -11,6 +11,7 @@ interface ProcessCardProps {
 		id: number;
 		name: string;
 		sheetName: string;
+		type: "PROCESS" | "CHECK";
 		activityId: number;
 		processDate: string;
 		processMemo?: string | null;
@@ -24,7 +25,13 @@ export function ProcessCard({ process, userRole }: ProcessCardProps) {
 	return (
 		<Card
 			className="group w-full cursor-pointer items-stretch transition-all duration-200 hover:-translate-y-1 hover:shadow-lg md:flex-row"
-			onClick={() => router.push(`/process/${process.id}`)}
+			onClick={() =>
+				router.push(
+					process.type === "CHECK"
+						? `/check/${process.id}`
+						: `/process/${process.id}`,
+				)
+			}
 			variant="secondary"
 		>
 			<div className="relative h-[160px] w-full shrink-0 overflow-hidden rounded-t-2xl md:h-auto md:w-[200px] md:rounded-l-2xl md:rounded-tr-none">
@@ -41,8 +48,13 @@ export function ProcessCard({ process, userRole }: ProcessCardProps) {
 			<div className="flex flex-1 flex-col">
 				<Card.Header className="flex flex-col items-start gap-1 px-6 pt-6">
 					<div className="flex w-full items-center justify-between">
-						<Card.Title className="truncate font-bold text-xl tracking-tight">
-							{process.name}
+						<Card.Title className="flex items-center gap-2 font-bold text-xl tracking-tight">
+							<span className="truncate">{process.name}</span>
+							<Badge
+								variant={process.type === "CHECK" ? "secondary" : "primary"}
+							>
+								{process.type === "CHECK" ? "報到清單" : "流程處理"}
+							</Badge>
 						</Card.Title>
 					</div>
 					<Card.Description className="flex w-full items-center justify-between gap-4 text-muted-foreground text-sm">

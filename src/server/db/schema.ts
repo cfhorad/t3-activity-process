@@ -25,6 +25,7 @@ export const googleSheetConfig = createTable("google_sheet_config", {
 		.references(() => processes.id, { onDelete: "cascade" }),
 	columnName: text("column_name").notNull(),
 	isFilterable: boolean("is_filterable").default(false).notNull(),
+	isCheckbox: boolean("is_checkbox").default(false).notNull(),
 	displayOrder: integer("display_order").notNull(),
 });
 
@@ -52,6 +53,9 @@ export const processes = createTable("process", (d) => ({
 		.notNull()
 		.references(() => activities.id, { onDelete: "cascade" }),
 	sheetName: d.varchar({ length: 255 }).notNull(),
+	type: text("type", { enum: ["PROCESS", "CHECK"] })
+		.default("PROCESS")
+		.notNull(),
 	processDate: d.text("process_date").notNull().default("2024-01-01"),
 	processMemo: d.text("process_memo"),
 	createdAt: d

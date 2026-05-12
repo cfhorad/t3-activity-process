@@ -1,5 +1,6 @@
 "use client";
 
+import { toast } from "@heroui/react";
 import { useEffect, useState } from "react";
 import { api } from "~/trpc/react";
 
@@ -25,7 +26,10 @@ export function useProcessData(processId: number) {
 		onSuccess: (data) => {
 			void utils.googleSheet.getAll.invalidate({ processId });
 			void utils.googleSheet.getColumns.invalidate({ processId });
-			console.log(`Synced ${data.rowCount} rows and ${data.colCount} columns`);
+			toast.success(`Synced ${data.rowCount} rows successfully`);
+		},
+		onError: (err) => {
+			toast.danger(`Sync failed: ${err.message}`);
 		},
 	});
 

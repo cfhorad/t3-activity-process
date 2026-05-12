@@ -1,4 +1,5 @@
 import { activityRouter } from "~/server/api/routers/activity";
+import { checkSheetRouter } from "~/server/api/routers/checkSheet";
 import { googleSheetRouter } from "~/server/api/routers/googleSheet";
 import { processRouter } from "~/server/api/routers/process";
 import { createCallerFactory, createTRPCRouter } from "~/server/api/trpc";
@@ -12,6 +13,7 @@ export const appRouter = createTRPCRouter({
 	activity: activityRouter,
 	googleSheet: googleSheetRouter,
 	process: processRouter,
+	checkSheet: checkSheetRouter,
 });
 
 // export type definition of API

@@ -10,6 +10,7 @@ interface Process {
 	id: number;
 	name: string;
 	sheetName: string;
+	type: "PROCESS" | "CHECK";
 	activityId: number;
 	processDate: string;
 	processMemo?: string | null;

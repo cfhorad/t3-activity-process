@@ -35,6 +35,7 @@ export const processRouter = createTRPCRouter({
 				name: z.string().min(1),
 				activityId: z.number(),
 				sheetName: z.string().min(1),
+				type: z.enum(["PROCESS", "CHECK"]).default("PROCESS"),
 				processDate: z.string().min(1),
 				processMemo: z.string().optional().nullable(),
 			}),
@@ -46,6 +47,9 @@ export const processRouter = createTRPCRouter({
 					name: input.name,
 					activityId: input.activityId,
 					sheetName: input.sheetName,
+					type: input.type,
+					processDate: input.processDate,
+					processMemo: input.processMemo,
 				})
 				.returning();
 			return process;
@@ -57,6 +61,7 @@ export const processRouter = createTRPCRouter({
 				id: z.number(),
 				name: z.string().min(1),
 				sheetName: z.string().min(1),
+				type: z.enum(["PROCESS", "CHECK"]).default("PROCESS"),
 				processDate: z.string().min(1),
 				processMemo: z.string().optional().nullable(),
 			}),
