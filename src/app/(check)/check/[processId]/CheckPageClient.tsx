@@ -5,6 +5,7 @@ import { Search } from "lucide-react";
 import { use } from "react";
 import { CheckHeader } from "./_components/CheckHeader";
 import { CheckListTable } from "./_components/CheckListTable";
+import { ColumnSelect } from "./_components/ColumnSelect";
 import { FilterSelect } from "./_components/FilterSelect";
 import { useCheckData } from "./_hooks/useCheckData";
 
@@ -28,6 +29,9 @@ export function CheckPageClient({
 		handleSync,
 		filterableColumns,
 		updateCheckbox,
+		visibleColumns,
+		visibleColumnNames,
+		setVisibleColumnNames,
 	} = useCheckData(id);
 
 	return (
@@ -57,6 +61,11 @@ export function CheckPageClient({
 					</SearchField>
 
 					<div className="flex flex-col flex-wrap gap-4 sm:flex-row">
+						<ColumnSelect
+							columns={columns}
+							onSelectionChange={setVisibleColumnNames}
+							visibleColumnNames={visibleColumnNames}
+						/>
 						{filterableColumns.map((col: { columnName: string }) => (
 							<FilterSelect
 								columnName={col.columnName}
@@ -78,7 +87,7 @@ export function CheckPageClient({
 						</div>
 					) : syncedData && syncedData.length > 0 ? (
 						<CheckListTable
-							columns={columns}
+							columns={visibleColumns}
 							data={syncedData}
 							onCheckboxChange={updateCheckbox}
 						/>

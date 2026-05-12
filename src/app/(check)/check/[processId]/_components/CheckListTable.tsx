@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo } from "react";
 import { Checkbox, Table } from "@heroui/react";
+import { useMemo } from "react";
 
 interface Column {
 	id: number;
@@ -32,14 +32,23 @@ export function CheckListTable({
 		return [...data].sort((a, b) => a.id - b.id);
 	}, [data]);
 
+	if (columns.length === 0) {
+		return (
+			<div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+				<p className="font-medium">No columns selected</p>
+				<p className="text-sm">Please select at least one column to display.</p>
+			</div>
+		);
+	}
+
 	return (
 		<Table variant="secondary">
 			<Table.ScrollContainer>
 				<Table.Content aria-label="Check-in list data table">
 					<Table.Header>
-						{columns.map((col) => (
+						{columns.map((col, index) => (
 							<Table.Column
-								isRowHeader={col.displayOrder === 0}
+								isRowHeader={index === 0}
 								key={col.columnName}
 							>
 								{col.columnName}

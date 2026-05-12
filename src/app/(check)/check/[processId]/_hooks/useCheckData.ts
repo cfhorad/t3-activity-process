@@ -12,6 +12,7 @@ export function useCheckData(processId: number) {
 		Record<string, string[]>
 	>({});
 	const [hasAttemptedAutoSync, setHasAttemptedAutoSync] = useState(false);
+	const [visibleColumnNames, setVisibleColumnNames] = useState<string[]>([]);
 
 	const { data: syncedData, isLoading: isQueryLoading } =
 		api.checkSheet.getAll.useQuery({
@@ -21,6 +22,13 @@ export function useCheckData(processId: number) {
 		});
 
 	const { data: columns } = api.checkSheet.getColumns.useQuery({ processId });
+
+	// Initialize visible columns when data is loaded
+	useEffect(() => {
+		if (columns && visibleColumnNames.length === 0) {
+			setVisibleColumnNames(columns.map((c) => c.columnName));
+		}
+	}, [columns, visibleColumnNames.length]);
 
 	const syncMutation = api.checkSheet.sync.useMutation({
 		onSuccess: (data) => {
@@ -144,6 +152,10 @@ export function useCheckData(processId: number) {
 		updateCheckboxMutation.mutate({ databaseId, columnName, newValue });
 	};
 
+	const visibleColumns = columns?.filter((c) =>
+		visibleColumnNames.includes(c.columnName),
+	) ?? [];
+
 	return {
 		search,
 		setSearch,
@@ -151,10 +163,13 @@ export function useCheckData(processId: number) {
 		updateFilter,
 		syncedData,
 		columns: columns ?? [],
+		visibleColumns,
 		isQueryLoading,
 		syncMutation,
 		handleSync,
 		filterableColumns,
 		updateCheckbox,
+		visibleColumnNames,
+		setVisibleColumnNames,
 	};
 }
