@@ -59,6 +59,7 @@ export default async function ActivityPage({
 					<div className="space-y-6">
 						<h2 className="font-bold text-2xl">Processes</h2>
 						<ProcessList
+							activity={activity}
 							activityId={activity.id}
 							userRole={session?.user.role as string}
 						/>

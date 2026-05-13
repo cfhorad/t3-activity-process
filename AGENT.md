@@ -11,6 +11,7 @@
   - Buttons: Use `variant` (e.g. `danger-soft`). NO `flat`/`shadow`/`bordered`.
   - Select: Use `value`/`onChange`. NO `selectedKey`.
   - Dropdown: NEVER wrap `Dropdown.Trigger` inside a `Button`.
+  - Modal: Use compound anatomy: `<Modal.Backdrop>` (state holder: `isOpen`, `onOpenChange`) > `<Modal.Container>` > `<Modal.Dialog>`. Use `<Modal.Heading>` for titles.
 - **Google Sheets**:
   - Backend: Normalize `\r\n` to `\n`.
   - Frontend: Use `whitespace-pre-wrap` for cell content.

@@ -25,24 +25,6 @@ export function ActivityHeader({ activity }: ActivityHeaderProps) {
 				<h1 className="font-bold text-3xl tracking-tight md:text-4xl">
 					{activity.name}
 				</h1>
-				<div className="mt-2 flex flex-wrap items-center gap-x-6 gap-y-2 text-muted-foreground">
-					<Link
-						className="flex items-center gap-1.5 text-small transition-colors hover:text-primary"
-						href={`https://docs.google.com/spreadsheets/d/${activity.googleSheetId}`}
-						target="_blank"
-					>
-						<ExternalLink className="h-4 w-4" />
-						Spreadsheet ID: {activity.googleSheetId}
-					</Link>
-					<div className="flex items-center gap-1.5 text-small">
-						<User className="h-4 w-4" />
-						Created by {activity.creator?.name ?? "Unknown"}
-					</div>
-					<div className="flex items-center gap-1.5 text-small">
-						<Calendar className="h-4 w-4" />
-						Created on {new Date(activity.createdAt).toLocaleDateString()}
-					</div>
-				</div>
 			</div>
 		</div>
 	);

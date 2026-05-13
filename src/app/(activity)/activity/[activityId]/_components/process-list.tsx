@@ -8,9 +8,15 @@ import { ProcessCard } from "./process-card";
 export function ProcessList({
 	activityId,
 	userRole,
+	activity,
 }: {
 	activityId: number;
 	userRole: string;
+	activity: {
+		googleSheetId: string;
+		creator?: { name: string | null } | null;
+		createdAt: Date;
+	};
 }) {
 	const { data: processes, isLoading } = api.process.getByActivityId.useQuery({
 		activityId,
@@ -42,9 +48,14 @@ export function ProcessList({
 	}
 
 	return (
-		<div className="grid grid-cols-1 gap-4">
+		<div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
 			{processes.map((process) => (
-				<ProcessCard key={process.id} process={process} userRole={userRole} />
+				<ProcessCard
+					activity={activity}
+					key={process.id}
+					process={process}
+					userRole={userRole}
+				/>
 			))}
 		</div>
 	);

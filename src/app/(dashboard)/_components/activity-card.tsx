@@ -66,7 +66,11 @@ export function ActivityCard({ activity, userRole }: ActivityCardProps) {
 								<span>
 									{activity.activityDate}
 									<span className="ml-1 opacity-70">
-										({new Intl.DateTimeFormat("zh-TW", { weekday: "short" }).format(new Date(activity.activityDate))})
+										(
+										{new Intl.DateTimeFormat("zh-TW", {
+											weekday: "short",
+										}).format(new Date(activity.activityDate))}
+										)
 									</span>
 								</span>
 							</span>
