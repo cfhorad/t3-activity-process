@@ -18,38 +18,38 @@ export function ColumnSelect({
 
 	return (
 		<Select
-			aria-label="Select visible columns"
+			aria-label="選擇可見欄位"
 			className="w-full sm:max-w-[240px]"
 			onChange={(val) => {
 				if (Array.isArray(val)) {
 					onSelectionChange(val.map((v) => String(v)));
 				}
 			}}
-			placeholder="Show/Hide Columns"
+			placeholder="顯示/隱藏欄位"
 			selectionMode="multiple"
 			value={visibleColumnNames}
 			variant="primary"
 		>
 			<Label className="flex items-center gap-2">
 				<Settings2 className="size-4" />
-				Visible Columns
+				可見欄位
 			</Label>
 			<Select.Trigger>
 				<Select.Value>
 					{({ isPlaceholder, state }) => {
 						if (isPlaceholder || state.selectedItems.length === 0) {
-							return "Show/Hide Columns";
+							return "顯示/隱藏欄位";
 						}
 
 						return (
 							<div className="flex flex-wrap gap-1">
 								{state.selectedItems.length === columns.length ? (
 									<Chip className="font-medium" size="sm" variant="soft">
-										All Columns
+										全部欄位
 									</Chip>
 								) : (
 									<Chip className="font-medium" size="sm" variant="soft">
-										{state.selectedItems.length} Columns
+										{state.selectedItems.length} 個欄位
 									</Chip>
 								)}
 							</div>

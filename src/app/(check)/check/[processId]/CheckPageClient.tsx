@@ -46,13 +46,13 @@ export function CheckPageClient({
 
 				<Tabs variant="secondary">
 					<Tabs.ListContainer>
-						<Tabs.List aria-label="Check Options">
+						<Tabs.List aria-label="核取選項">
 							<Tabs.Tab id="data-list">
-								Data List
+								數據清單
 								<Tabs.Indicator />
 							</Tabs.Tab>
 							<Tabs.Tab id="statistics">
-								Statistics
+								統計數據
 								<Tabs.Indicator />
 							</Tabs.Tab>
 						</Tabs.List>
@@ -62,7 +62,7 @@ export function CheckPageClient({
 						<div className="flex flex-col gap-6 pt-6">
 							<div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
 								<SearchField
-									aria-label="Search attendees"
+									aria-label="搜尋參與者"
 									className="w-full"
 									onChange={setSearch}
 									value={search}
@@ -72,7 +72,7 @@ export function CheckPageClient({
 										<SearchField.SearchIcon>
 											<Search className="size-4 text-muted-foreground" />
 										</SearchField.SearchIcon>
-										<SearchField.Input placeholder="Search attendees..." />
+										<SearchField.Input placeholder="搜尋參與者..." />
 										<SearchField.ClearButton />
 									</SearchField.Group>
 								</SearchField>
@@ -120,13 +120,13 @@ export function CheckPageClient({
 										<div className="space-y-1">
 											<p className="font-semibold text-xl">
 												{syncMutation.isPending
-													? "Syncing Data..."
-													: "No Data Synced"}
+													? "同步數據中..."
+													: "尚未同步數據"}
 											</p>
 											<p className="mx-auto max-w-xs text-muted-foreground">
 												{syncMutation.isPending
-													? "Please wait while we fetch the latest data from Google Sheets for the first time."
-													: "Your local database is currently empty. Start by syncing from Google Sheets."}
+													? "請稍候，我們正在首次從 Google 試算表獲取最新數據。"
+													: "您的本地資料庫目前是空的。請從 Google 試算表開始同步。"}
 											</p>
 										</div>
 									</div>

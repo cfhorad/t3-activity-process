@@ -35,8 +35,8 @@ export function CheckListTable({
 	if (columns.length === 0) {
 		return (
 			<div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-				<p className="font-medium">No columns selected</p>
-				<p className="text-sm">Please select at least one column to display.</p>
+				<p className="font-medium">未選擇欄位</p>
+				<p className="text-sm">請至少選擇一個欄位進行顯示。</p>
 			</div>
 		);
 	}
@@ -44,17 +44,21 @@ export function CheckListTable({
 	return (
 		<Table variant="secondary">
 			<Table.ScrollContainer>
-				<Table.Content aria-label="Check-in list data table">
+				<Table.Content aria-label="報到清單數據表">
 					<Table.Header>
 						{columns.map((col, index) => (
-							<Table.Column isRowHeader={index === 0} key={col.columnName}>
+							<Table.Column
+								id={col.columnName}
+								isRowHeader={index === 0}
+								key={col.columnName}
+							>
 								{col.columnName}
 							</Table.Column>
 						))}
 					</Table.Header>
 					<Table.Body>
 						{sortedData.map((row) => (
-							<Table.Row key={row.id}>
+							<Table.Row id={row.id.toString()} key={row.id}>
 								{columns.map((col) => {
 									const value = (row.data as Record<string, unknown>)[
 										col.columnName
@@ -65,7 +69,7 @@ export function CheckListTable({
 											{col.isCheckbox ? (
 												<div className="flex justify-center">
 													<Checkbox
-														aria-label={`Check-in ${col.columnName} for row ${row.id}`}
+														aria-label={`為第 ${row.id} 列核取 ${col.columnName}`}
 														isSelected={!!value}
 														onChange={(isSelected) => {
 															onCheckboxChange(

@@ -61,7 +61,7 @@ export function CheckboxStatsTable({ columns, data }: CheckboxStatsTableProps) {
 		for (const row of data) {
 			const rowData = row.data as Record<string, unknown>;
 			const rawGroupValue = rowData[groupByColumn];
-			const groupValue = rawGroupValue ? String(rawGroupValue) : "Unknown";
+			const groupValue = rawGroupValue ? String(rawGroupValue) : "未知";
 
 			if (!groups[groupValue]) {
 				const initialCounts: Record<string, number> = {};
@@ -123,9 +123,9 @@ export function CheckboxStatsTable({ columns, data }: CheckboxStatsTableProps) {
 	if (checkboxColumns.length === 0) {
 		return (
 			<div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-				<p className="font-medium">No Checkbox Columns Found</p>
+				<p className="font-medium">未找到核取方塊欄位</p>
 				<p className="text-sm">
-					Statistics require at least one checkbox column in your Google Sheet.
+					統計需要您的 Google 試算表中至少有一個核取方塊欄位。
 				</p>
 			</div>
 		);
@@ -141,7 +141,7 @@ export function CheckboxStatsTable({ columns, data }: CheckboxStatsTableProps) {
 					value={groupByColumn || null}
 					variant="primary"
 				>
-					<Label>Group By (Y-Axis)</Label>
+					<Label>分組依據 (Y 軸)</Label>
 					<Select.Trigger>
 						<Select.Value />
 						<Select.Indicator />
@@ -162,12 +162,12 @@ export function CheckboxStatsTable({ columns, data }: CheckboxStatsTableProps) {
 				</Select>
 			</div>
 
-			<Table aria-label="Checkbox Statistics Table" variant="secondary">
+			<Table aria-label="核取方塊統計表" variant="secondary">
 				<Table.ScrollContainer>
 					<Table.Content>
 						<Table.Header>
 							<Table.Column id="group-column" isRowHeader>
-								{groupByColumn || "Group"}
+								{groupByColumn || "分組"}
 							</Table.Column>
 							{checkboxColumns.map((col) => (
 								<Table.Column id={col.columnName} key={col.columnName}>
@@ -178,7 +178,7 @@ export function CheckboxStatsTable({ columns, data }: CheckboxStatsTableProps) {
 						<Table.Body>
 							{statsData.length === 0 ? (
 								<Table.Row id="no-data">
-									<Table.Cell>No data available for statistics.</Table.Cell>
+									<Table.Cell>無可用統計數據。</Table.Cell>
 									{checkboxColumns.map((col) => (
 										<Table.Cell key={col.columnName}>-</Table.Cell>
 									))}

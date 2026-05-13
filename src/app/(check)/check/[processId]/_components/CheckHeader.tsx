@@ -20,10 +20,10 @@ export function CheckHeader({
 
 	return (
 		<div className="flex flex-col gap-4">
-			<Breadcrumbs aria-label="Breadcrumb navigation">
+			<Breadcrumbs aria-label="麵包屑導覽">
 				<Breadcrumbs.Item>
 					<Link className="link hover:underline" href="/">
-						Dashboard
+						儀表板
 					</Link>
 				</Breadcrumbs.Item>
 				<Breadcrumbs.Item>
@@ -32,24 +32,24 @@ export function CheckHeader({
 							className="link hover:underline"
 							href={`/activity/${process.activityId}`}
 						>
-							{process.activity?.name ?? "Activity"}
+							{process.activity?.name ?? "活動"}
 						</Link>
 					) : (
-						"Activity"
+						"活動"
 					)}
 				</Breadcrumbs.Item>
-				<Breadcrumbs.Item>{process?.name ?? "Check-in List"}</Breadcrumbs.Item>
+				<Breadcrumbs.Item>{process?.name ?? "報到清單"}</Breadcrumbs.Item>
 			</Breadcrumbs>
 
 			<div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
 				<div>
 					<h1 className="font-bold text-3xl tracking-tight">
-						{process?.name ?? "Check-in List"}
+						{process?.name ?? "報到清單"}
 					</h1>
 					<p className="text-muted-foreground">
 						{process
-							? `Sheet: ${process.sheetName} (Check-in Mode)`
-							: "Synchronize attendees and track check-ins."}
+							? `工作表：${process.sheetName} (報到模式)`
+							: "同步參與者並追蹤報到狀態。"}
 					</p>
 				</div>
 

@@ -24,7 +24,7 @@ export function SyncConfirmDialog({
 						<RefreshCcw
 							className={`size-4 ${isSyncing ? "animate-spin" : ""}`}
 						/>
-						{isSyncing ? "Syncing..." : "Sync from Google Sheet"}
+						{isSyncing ? "同步中..." : "從 Google 試算表同步"}
 					</div>
 				</Button>
 			</AlertDialog.Trigger>
@@ -35,21 +35,21 @@ export function SyncConfirmDialog({
 						<AlertDialog.Header>
 							<AlertDialog.Icon status="warning" />
 							<AlertDialog.Heading id="sync-confirm-heading">
-								Confirm Data Sync
+								確認同步數據
 							</AlertDialog.Heading>
 						</AlertDialog.Header>
 						<AlertDialog.Body>
 							<p>
-								Syncing will fetch fresh data from Google Sheets and replace
-								your local check-in states. This action cannot be undone.
+								同步將從 Google 試算表獲取最新數據並替換您的本地報到狀態。
+								此操作無法撤銷。
 							</p>
 						</AlertDialog.Body>
 						<AlertDialog.Footer>
 							<Button slot="close" variant="tertiary">
-								Cancel
+								取消
 							</Button>
 							<Button onPress={onSync} slot="close" variant="primary">
-								Sync Now
+								立即同步
 							</Button>
 						</AlertDialog.Footer>
 					</AlertDialog.Dialog>

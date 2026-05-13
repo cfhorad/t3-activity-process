@@ -31,7 +31,7 @@ export function FilterSelect({
 					onSelectionChange(val.map((v) => String(v)));
 				}
 			}}
-			placeholder={`Filter by ${columnName}`}
+			placeholder={`篩選：${columnName}`}
 			selectionMode="multiple"
 			value={selectedKeys}
 			variant="primary"
@@ -41,7 +41,7 @@ export function FilterSelect({
 				<Select.Value>
 					{({ isPlaceholder, state }) => {
 						if (isPlaceholder || state.selectedItems.length === 0) {
-							return `Filter by ${columnName}`;
+							return `篩選：${columnName}`;
 						}
 
 						return (
