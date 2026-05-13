@@ -57,14 +57,16 @@ export function WebPageClient({
 				</div>
 			</header>
 
-			<div className="relative flex-1 bg-content2 px-4 md:px-8">
-				{/* MEMO: 調整WebPage外觀. */}
+			{/* MEMO: 調整WebPage外觀. */}
+			<div className="relative flex-1 bg-content2 p-4 md:p-8">
 				{process.iframeSrc ? (
-					<iframe
-						className="h-full w-full border-none"
-						src={process.iframeSrc}
-						title={process.name}
-					/>
+					<Card className="h-full w-full overflow-hidden shadow-sm">
+						<iframe
+							className="h-full w-full border-none bg-background"
+							src={process.iframeSrc}
+							title={process.name}
+						/>
+					</Card>
 				) : (
 					<div className="flex h-full flex-col items-center justify-center gap-4 p-8 text-center">
 						<Card className="max-w-md p-8">
