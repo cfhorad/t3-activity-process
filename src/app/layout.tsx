@@ -23,7 +23,7 @@ export default async function RootLayout({
 	const session = await getSession();
 
 	return (
-		<html className={`${geist.variable}`} lang="en">
+		<html className={`${geist.variable}`} lang="en" suppressHydrationWarning>
 			<body className="min-h-screen bg-background antialiased">
 				<TRPCReactProvider>
 					<Providers>

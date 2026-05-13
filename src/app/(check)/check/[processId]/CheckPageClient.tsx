@@ -1,8 +1,9 @@
 "use client";
 
-import { Card, SearchField, Spinner } from "@heroui/react";
+import { Card, SearchField, Spinner, Tabs } from "@heroui/react";
 import { Search } from "lucide-react";
 import { use } from "react";
+import { CheckboxStatsTable } from "./_components/CheckboxStatsTable";
 import { CheckHeader } from "./_components/CheckHeader";
 import { CheckListTable } from "./_components/CheckListTable";
 import { ColumnSelect } from "./_components/ColumnSelect";
@@ -43,74 +44,105 @@ export function CheckPageClient({
 					processId={id}
 				/>
 
-				<div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
-					<SearchField
-						aria-label="Search attendees"
-						className="w-full"
-						onChange={setSearch}
-						value={search}
-						variant="secondary"
-					>
-						<SearchField.Group>
-							<SearchField.SearchIcon>
-								<Search className="size-4 text-muted-foreground" />
-							</SearchField.SearchIcon>
-							<SearchField.Input placeholder="Search attendees..." />
-							<SearchField.ClearButton />
-						</SearchField.Group>
-					</SearchField>
+				<Tabs variant="secondary">
+					<Tabs.ListContainer>
+						<Tabs.List aria-label="Check Options">
+							<Tabs.Tab id="data-list">
+								Data List
+								<Tabs.Indicator />
+							</Tabs.Tab>
+							<Tabs.Tab id="statistics">
+								Statistics
+								<Tabs.Indicator />
+							</Tabs.Tab>
+						</Tabs.List>
+					</Tabs.ListContainer>
 
-					<div className="flex flex-col flex-wrap gap-4 sm:flex-row">
-						<ColumnSelect
-							columns={columns}
-							onSelectionChange={setVisibleColumnNames}
-							visibleColumnNames={visibleColumnNames}
-						/>
-						{filterableColumns.map((col: { columnName: string }) => (
-							<FilterSelect
-								columnName={col.columnName}
-								key={col.columnName}
-								onSelectionChange={(values: string[]) =>
-									updateFilter(col.columnName, values)
-								}
-								processId={id}
-								selectedKeys={selectedFilters[col.columnName] ?? []}
-							/>
-						))}
-					</div>
-				</div>
+					<Tabs.Panel id="data-list">
+						<div className="flex flex-col gap-6 pt-6">
+							<div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
+								<SearchField
+									aria-label="Search attendees"
+									className="w-full"
+									onChange={setSearch}
+									value={search}
+									variant="secondary"
+								>
+									<SearchField.Group>
+										<SearchField.SearchIcon>
+											<Search className="size-4 text-muted-foreground" />
+										</SearchField.SearchIcon>
+										<SearchField.Input placeholder="Search attendees..." />
+										<SearchField.ClearButton />
+									</SearchField.Group>
+								</SearchField>
 
-				<Card className="mx-auto w-full max-w-7xl overflow-hidden border-none bg-content1 shadow-md">
-					{isQueryLoading ? (
-						<div className="flex h-64 items-center justify-center">
-							<Spinner size="lg" />
-						</div>
-					) : syncedData && syncedData.length > 0 ? (
-						<CheckListTable
-							columns={visibleColumns}
-							data={syncedData}
-							onCheckboxChange={updateCheckbox}
-						/>
-					) : (
-						<div className="flex flex-col items-center justify-center gap-4 p-20 text-center">
-							<div className="rounded-full bg-default-100 p-4">
-								<Spinner className="opacity-50" color="current" size="lg" />
+								<div className="flex flex-col flex-wrap gap-4 sm:flex-row">
+									<ColumnSelect
+										columns={columns}
+										onSelectionChange={setVisibleColumnNames}
+										visibleColumnNames={visibleColumnNames}
+									/>
+									{filterableColumns.map((col: { columnName: string }) => (
+										<FilterSelect
+											columnName={col.columnName}
+											key={col.columnName}
+											onSelectionChange={(values: string[]) =>
+												updateFilter(col.columnName, values)
+											}
+											processId={id}
+											selectedKeys={selectedFilters[col.columnName] ?? []}
+										/>
+									))}
+								</div>
 							</div>
-							<div className="space-y-1">
-								<p className="font-semibold text-xl">
-									{syncMutation.isPending
-										? "Syncing Data..."
-										: "No Data Synced"}
-								</p>
-								<p className="mx-auto max-w-xs text-muted-foreground">
-									{syncMutation.isPending
-										? "Please wait while we fetch the latest data from Google Sheets for the first time."
-										: "Your local database is currently empty. Start by syncing from Google Sheets."}
-								</p>
-							</div>
+
+							<Card className="mx-auto w-full max-w-7xl overflow-hidden border-none bg-content1 shadow-md">
+								{isQueryLoading ? (
+									<div className="flex h-64 items-center justify-center">
+										<Spinner size="lg" />
+									</div>
+								) : syncedData && syncedData.length > 0 ? (
+									<CheckListTable
+										columns={visibleColumns}
+										data={syncedData}
+										onCheckboxChange={updateCheckbox}
+									/>
+								) : (
+									<div className="flex flex-col items-center justify-center gap-4 p-20 text-center">
+										<div className="rounded-full bg-default-100 p-4">
+											<Spinner
+												className="opacity-50"
+												color="current"
+												size="lg"
+											/>
+										</div>
+										<div className="space-y-1">
+											<p className="font-semibold text-xl">
+												{syncMutation.isPending
+													? "Syncing Data..."
+													: "No Data Synced"}
+											</p>
+											<p className="mx-auto max-w-xs text-muted-foreground">
+												{syncMutation.isPending
+													? "Please wait while we fetch the latest data from Google Sheets for the first time."
+													: "Your local database is currently empty. Start by syncing from Google Sheets."}
+											</p>
+										</div>
+									</div>
+								)}
+							</Card>
 						</div>
-					)}
-				</Card>
+					</Tabs.Panel>
+
+					<Tabs.Panel id="statistics">
+						<div className="pt-6">
+							<Card className="mx-auto w-full max-w-7xl border-none bg-content1 p-6 shadow-md">
+								<CheckboxStatsTable columns={columns} data={syncedData ?? []} />
+							</Card>
+						</div>
+					</Tabs.Panel>
+				</Tabs>
 			</div>
 		</main>
 	);
