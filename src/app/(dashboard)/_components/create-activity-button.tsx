@@ -27,21 +27,26 @@ export function CreateActivityButton({ userRole }: { userRole: string }) {
 
 	return (
 		<>
-			<Button className="font-bold" onPress={state.open} variant="primary">
+			<Button
+				aria-label="新增活動"
+				className="rounded-full"
+				isIconOnly
+				onPress={state.open}
+				variant="primary"
+			>
 				<Plus className="h-5 w-5" />
-				New Activity
 			</Button>
 
 			<ActivityFormModal
-				description="Add a new activity by connecting a Google Spreadsheet."
+				description="透過連接 Google 試算表來新增活動。"
 				isOpen={state.isOpen}
 				isPending={createActivity.isPending}
 				mode="create"
 				onClose={state.close}
 				onOpenChange={state.setOpen}
 				onSubmit={(data) => createActivity.mutate(data)}
-				submitLabel="Create Activity"
-				title="Create Activity"
+				submitLabel="建立活動"
+				title="建立活動"
 			/>
 		</>
 	);

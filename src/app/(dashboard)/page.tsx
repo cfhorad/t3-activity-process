@@ -17,16 +17,12 @@ export default async function DashboardPage() {
 		<HydrateClient>
 			<main className="bg-linear-to-b from-background to-content2 p-4 md:p-8">
 				<div className="mx-auto max-w-7xl">
-					<header className="mb-12 flex flex-col items-start justify-between gap-4 md:flex-row md:items-center">
-						<div>
-							<h1 className="font-extrabold text-4xl tracking-tight sm:text-5xl">
-								Activity <span className="text-primary">Dashboard</span>
-							</h1>
-							<p className="mt-2 text-muted-foreground text-xl">
-								Manage your activities and connected Google Sheets.
-							</p>
-						</div>
-						<div className="flex items-center gap-4">
+					<header className="mb-12 grid grid-cols-3 items-center gap-4">
+						<div />
+						<h1 className="text-center font-extrabold text-2xl tracking-tight sm:text-3xl">
+							活動管理
+						</h1>
+						<div className="flex items-center justify-end">
 							<CreateActivityButton userRole={session.user.role as string} />
 						</div>
 					</header>

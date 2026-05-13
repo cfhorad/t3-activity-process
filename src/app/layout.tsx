@@ -7,8 +7,7 @@ import { NavbarComponent } from "./_components/navbar";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
-	title: "Activity Dashboard",
-	description: "Manage your activities and connected Google Sheets",
+	title: "活動管理系統",
 	icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 
@@ -23,7 +22,7 @@ export default async function RootLayout({
 	const session = await getSession();
 
 	return (
-		<html className={`${geist.variable}`} lang="en" suppressHydrationWarning>
+		<html className={`${geist.variable}`} lang="zh-TW" suppressHydrationWarning>
 			<body className="min-h-screen bg-background antialiased">
 				<TRPCReactProvider>
 					<Providers>
