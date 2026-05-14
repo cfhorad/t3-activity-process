@@ -82,7 +82,11 @@ export function ActivityCard({ activity, userRole }: ActivityCardProps) {
 
 					<Card.Content className="px-4 pt-0 pb-4">
 						{isAuthorized && (
-							<Accordion className="w-full" hideSeparator>
+							<Accordion
+								className="w-full"
+								hideSeparator
+								onClick={(e) => e.stopPropagation()}
+							>
 								<Accordion.Item id="actions">
 									<Accordion.Heading>
 										<Accordion.Trigger className="py-1 text-muted-foreground text-xs hover:text-foreground">

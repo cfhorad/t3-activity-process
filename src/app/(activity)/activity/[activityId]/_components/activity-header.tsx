@@ -1,7 +1,6 @@
 "use client";
 
-import { Link } from "@heroui/react";
-import { Calendar, ExternalLink, LayoutGrid, User } from "lucide-react";
+import { LayoutGrid } from "lucide-react";
 
 interface ActivityHeaderProps {
 	activity: {

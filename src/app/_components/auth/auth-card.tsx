@@ -47,7 +47,7 @@ export function AuthCard({
 						<LockIcon className="size-6" />
 					</div>
 					<h1 className="font-semibold text-2xl text-foreground tracking-tight">
-						歡迎使用安和流程管理系統
+						歡迎使用流程管理系統
 					</h1>
 					<p className="mt-2 text-muted-foreground text-sm">
 						請登入或註冊以繼續

@@ -143,12 +143,16 @@ export function ProcessCard({ process, userRole, activity }: ProcessCardProps) {
 							</span>
 						</div>
 						<Card.Description className="line-clamp-1 text-muted-foreground text-xs">
-							{process.processMemo || "無備註"}
+							{process.processMemo}
 						</Card.Description>
 					</Card.Header>
 
 					<Card.Content className="px-4 pt-0 pb-4">
-						<Accordion className="w-full" hideSeparator>
+						<Accordion
+							className="w-full"
+							hideSeparator
+							onClick={(e) => e.stopPropagation()}
+						>
 							<Accordion.Item id="actions">
 								<Accordion.Heading>
 									<Accordion.Trigger className="py-1 text-muted-foreground text-xs hover:text-foreground">
@@ -227,7 +231,10 @@ export function ProcessCard({ process, userRole, activity }: ProcessCardProps) {
 				title="確定要刪除程序嗎？"
 			/>
 
-			<Modal.Backdrop isOpen={infoState.isOpen} onOpenChange={infoState.setOpen}>
+			<Modal.Backdrop
+				isOpen={infoState.isOpen}
+				onOpenChange={infoState.setOpen}
+			>
 				<Modal.Container>
 					<Modal.Dialog className="sm:max-w-md">
 						<Modal.CloseTrigger />

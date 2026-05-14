@@ -12,6 +12,7 @@
   - Select: Use `value`/`onChange`. NO `selectedKey`.
   - Dropdown: NEVER wrap `Dropdown.Trigger` inside a `Button`.
   - Modal: Use compound anatomy: `<Modal.Backdrop>` (state holder: `isOpen`, `onOpenChange`) > `<Modal.Container>` > `<Modal.Dialog>`. Use `<Modal.Heading>` for titles.
+  - Event Bubbling: When placing interactive elements inside a clickable parent (e.g., a `Card` with `onClick`), add a native `onClick={(e) => e.stopPropagation()}` to the child wrapper. React Aria's `onPress` does not stop native click bubbling.
 - **Google Sheets**:
   - Backend: Normalize `\r\n` to `\n`.
   - Frontend: Use `whitespace-pre-wrap` for cell content.
