@@ -3,7 +3,7 @@
 import { Button, Card, SearchField, Spinner } from "@heroui/react";
 import { Search } from "lucide-react";
 import { use } from "react";
-import { FilterSelect } from "./_components/FilterSelect";
+import { FilterSelect } from "~/app/_components/filter-select";
 import { ProcessCard } from "./_components/ProcessCard";
 import { ProcessHeader } from "./_components/ProcessHeader";
 import { SkeletonGrid } from "./_components/SkeletonGrid";
@@ -65,6 +65,7 @@ export function ProcessPageClient({
 								}
 								processId={id}
 								selectedKeys={selectedFilters[col.columnName] ?? []}
+								type="google"
 							/>
 						))}
 					</div>

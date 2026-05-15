@@ -3,11 +3,11 @@
 import { Card, SearchField, Spinner, Tabs } from "@heroui/react";
 import { Search } from "lucide-react";
 import { use } from "react";
+import { FilterSelect } from "~/app/_components/filter-select";
 import { CheckboxStatsTable } from "./_components/CheckboxStatsTable";
 import { CheckHeader } from "./_components/CheckHeader";
 import { CheckListTable } from "./_components/CheckListTable";
 import { ColumnSelect } from "./_components/ColumnSelect";
-import { FilterSelect } from "./_components/FilterSelect";
 import { useCheckData } from "./_hooks/useCheckData";
 
 export function CheckPageClient({
@@ -92,6 +92,7 @@ export function CheckPageClient({
 											}
 											processId={id}
 											selectedKeys={selectedFilters[col.columnName] ?? []}
+											type="check"
 										/>
 									))}
 								</div>
