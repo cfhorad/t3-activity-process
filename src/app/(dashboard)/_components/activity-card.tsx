@@ -1,11 +1,10 @@
 "use client";
 
-import { Accordion, Button, Card, useOverlayState } from "@heroui/react";
-import { Icon } from "@iconify/react";
-import { Calendar, Pencil, Trash2 } from "lucide-react";
+import { useOverlayState } from "@heroui/react";
 import { useRouter } from "next/navigation";
 import { ConfirmDeleteDialog } from "~/components/confirm-delete-dialog";
 import { api } from "~/trpc/react";
+import { DashboardItemCard } from "../../_components/dashboard-item-card";
 import { EditActivityModal } from "./edit-activity-modal";
 
 interface ActivityCardProps {
@@ -41,91 +40,16 @@ export function ActivityCard({ activity, userRole }: ActivityCardProps) {
 
 	return (
 		<>
-			<Card
-				className="group flex w-full cursor-pointer flex-row items-stretch transition-all duration-200 hover:-translate-y-1 hover:shadow-lg"
+			<DashboardItemCard
+				date={activity.activityDate}
+				description={activity.activityMemo}
+				icon="meteocons:wind-offshore"
 				onClick={() => router.push(linkHref)}
-				variant="secondary"
-			>
-				<div className="relative flex w-[110px] shrink-0 items-center justify-center overflow-hidden rounded-l-2xl bg-linear-to-br from-zinc-900 to-accent/40 shadow-inner">
-					<div className="absolute inset-0 bg-black/20" />
-					<Icon
-						className="relative z-10 size-24 text-white/90 transition-all duration-500 group-hover:scale-110 group-hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]"
-						icon="meteocons:wind-offshore"
-					/>
-				</div>
-
-				<div className="flex flex-1 flex-col">
-					<Card.Header className="flex flex-col items-start gap-0.5 p-4 pb-2">
-						<div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-							<Card.Title className="font-bold text-base tracking-tight">
-								{activity.name}
-							</Card.Title>
-							<span className="flex items-center gap-1 text-muted-foreground text-xs">
-								<span className="opacity-30">•</span>
-								<Calendar className="h-3 w-3" />
-								<span>
-									{activity.activityDate}
-									<span className="ml-1 opacity-70">
-										(
-										{new Intl.DateTimeFormat("zh-TW", {
-											weekday: "short",
-										}).format(new Date(activity.activityDate))}
-										)
-									</span>
-								</span>
-							</span>
-						</div>
-						<Card.Description className="line-clamp-1 text-muted-foreground text-xs">
-							{activity.activityMemo}
-						</Card.Description>
-					</Card.Header>
-
-					<Card.Content className="px-4 pt-0 pb-4">
-						{isAuthorized && (
-							<Accordion
-								className="w-full"
-								hideSeparator
-								onClick={(e) => e.stopPropagation()}
-							>
-								<Accordion.Item id="actions">
-									<Accordion.Heading>
-										<Accordion.Trigger className="py-1 text-muted-foreground text-xs hover:text-foreground">
-											更多操作
-											<Accordion.Indicator />
-										</Accordion.Trigger>
-									</Accordion.Heading>
-									<Accordion.Panel>
-										<Accordion.Body className="flex gap-2 pt-2">
-											<Button
-												className="h-8 flex-1 text-xs"
-												onPress={(e) => {
-													e.continuePropagation();
-													editState.open();
-												}}
-												variant="secondary"
-											>
-												<Pencil className="mr-1 h-3 w-3" />
-												編輯
-											</Button>
-											<Button
-												className="h-8 flex-1 text-xs"
-												onPress={(e) => {
-													e.continuePropagation();
-													deleteState.open();
-												}}
-												variant="danger-soft"
-											>
-												<Trash2 className="mr-1 h-3 w-3 text-danger" />
-												刪除
-											</Button>
-										</Accordion.Body>
-									</Accordion.Panel>
-								</Accordion.Item>
-							</Accordion>
-						)}
-					</Card.Content>
-				</div>
-			</Card>
+				onDelete={() => deleteState.open()}
+				onEdit={() => editState.open()}
+				showEditDelete={isAuthorized}
+				title={activity.name}
+			/>
 
 			<EditActivityModal
 				activity={activity}

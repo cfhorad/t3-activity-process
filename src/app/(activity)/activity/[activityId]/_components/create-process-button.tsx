@@ -8,7 +8,7 @@ import { ProcessFormModal } from "./process-form-modal";
 export function CreateProcessButton({
 	activityId,
 	userRole,
-	variant = "secondary",
+	variant = "primary",
 	size = "md",
 	className,
 }: {
@@ -43,26 +43,27 @@ export function CreateProcessButton({
 	return (
 		<>
 			<Button
-				className={className}
+				aria-label="新增程序"
+				className={`${className} rounded-full`}
+				isIconOnly
 				onPress={state.open}
 				size={size}
 				variant={variant}
 			>
 				<Plus className="h-5 w-5" />
-				New Process
 			</Button>
 
 			<ProcessFormModal
 				activityId={activityId}
-				description="Add a new sheet (tab) from the spreadsheet to track."
+				description="從試算表中新增分頁（Sheet）以進行追蹤管理。"
 				isOpen={state.isOpen}
 				isPending={createProcess.isPending}
 				mode="create"
 				onClose={state.close}
 				onOpenChange={state.setOpen}
 				onSubmit={(data) => createProcess.mutate({ ...data, activityId })}
-				submitLabel="Create Process"
-				title="Create Process"
+				submitLabel="建立程序"
+				title="建立程序"
 			/>
 		</>
 	);
