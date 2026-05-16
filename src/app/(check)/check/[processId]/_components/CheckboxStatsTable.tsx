@@ -1,7 +1,7 @@
 "use client";
 
-import { Label, ListBox, Select, Table } from "@heroui/react";
-import { useMemo, useState } from "react";
+import { Checkbox, Label, ListBox, Select, Table } from "@heroui/react";
+import { useCheckboxStats } from "../_hooks/useCheckboxStats";
 
 interface Column {
 	id: number;
@@ -22,99 +22,16 @@ interface CheckboxStatsTableProps {
 	data: DataRow[];
 }
 
-interface StatRow {
-	id: string;
-	groupName: string;
-	[key: string]: string | number;
-}
-
 export function CheckboxStatsTable({ columns, data }: CheckboxStatsTableProps) {
-	// 1. Identify all checkbox columns (X-axis)
-	const checkboxColumns = useMemo(
-		() =>
-			columns
-				.filter((col) => col.isCheckbox)
-				.sort((a, b) => a.displayOrder - b.displayOrder),
-		[columns],
-	);
-
-	// 2. Identify eligible Y-axis columns (non-checkbox columns)
-	const groupableColumns = useMemo(
-		() =>
-			columns
-				.filter((col) => !col.isCheckbox)
-				.sort((a, b) => a.displayOrder - b.displayOrder),
-		[columns],
-	);
-
-	// Default to the first groupable column
-	const [groupByColumn, setGroupByColumn] = useState<string>(
-		groupableColumns[0]?.columnName ?? "",
-	);
-
-	// 3. Process the data
-	const statsData = useMemo<StatRow[]>(() => {
-		if (!groupByColumn || checkboxColumns.length === 0) return [];
-
-		const groups: Record<string, Record<string, number>> = {};
-
-		for (const row of data) {
-			const rowData = row.data as Record<string, unknown>;
-			const rawGroupValue = rowData[groupByColumn];
-			const groupValue = rawGroupValue ? String(rawGroupValue) : "未知";
-
-			if (!groups[groupValue]) {
-				const initialCounts: Record<string, number> = {};
-				// Initialize all checkbox counts to 0
-				for (const col of checkboxColumns) {
-					initialCounts[col.columnName] = 0;
-				}
-				groups[groupValue] = initialCounts;
-			}
-
-			const currentGroup = groups[groupValue];
-			if (currentGroup) {
-				// Add to sums
-				for (const col of checkboxColumns) {
-					const val = rowData[col.columnName];
-					// If the value is truthy (checked)
-					if (val) {
-						currentGroup[col.columnName] =
-							(currentGroup[col.columnName] ?? 0) + 1;
-					}
-				}
-			}
-		}
-
-		// Convert object map to array for the table
-		const rows = Object.entries(groups).map(([groupName, counts]) => ({
-			id: groupName,
-			groupName,
-			...counts,
-		}));
-
-		// Calculate Grand Total
-		const totals: Record<string, number> = {};
-		for (const col of checkboxColumns) {
-			totals[col.columnName] = data.reduce((sum, row) => {
-				const rowData = row.data as Record<string, unknown>;
-				return sum + (rowData[col.columnName] ? 1 : 0);
-			}, 0);
-		}
-
-		if (rows.length > 0) {
-			return [
-				{
-					id: "grand-total",
-					groupName: "總計",
-					...totals,
-				},
-				...rows,
-			];
-		}
-
-		return rows;
-	}, [data, groupByColumn, checkboxColumns]);
+	const {
+		checkboxColumns,
+		groupableColumns,
+		groupByColumn,
+		setGroupByColumn,
+		showRowRatio,
+		setShowRowRatio,
+		statsData,
+	} = useCheckboxStats(columns, data);
 
 	if (columns.length === 0) {
 		return null;
@@ -133,44 +50,68 @@ export function CheckboxStatsTable({ columns, data }: CheckboxStatsTableProps) {
 
 	return (
 		<div className="flex flex-col gap-4">
-			<div className="flex w-full max-w-xs flex-col gap-2">
-				<Select
-					onChange={(val) => {
-						if (val) setGroupByColumn(String(val));
-					}}
-					value={groupByColumn || null}
-					variant="primary"
-				>
-					<Label>分組依據 (Y 軸)</Label>
-					<Select.Trigger>
-						<Select.Value />
-						<Select.Indicator />
-					</Select.Trigger>
-					<Select.Popover>
-						<ListBox>
-							{groupableColumns.map((col) => (
-								<ListBox.Item
-									id={col.columnName}
-									key={col.columnName}
-									textValue={col.columnName}
-								>
-									{col.columnName}
-								</ListBox.Item>
-							))}
-						</ListBox>
-					</Select.Popover>
-				</Select>
+			<div className="flex w-full flex-wrap items-end justify-between gap-4">
+				<div className="flex max-w-xs flex-col gap-2">
+					<Select
+						onChange={(val) => {
+							if (val) setGroupByColumn(String(val));
+						}}
+						value={groupByColumn || null}
+						variant="primary"
+					>
+						<Label>分組依據 (Y 軸)</Label>
+						<Select.Trigger>
+							<Select.Value />
+							<Select.Indicator />
+						</Select.Trigger>
+						<Select.Popover>
+							<ListBox>
+								{groupableColumns.map((col) => (
+									<ListBox.Item
+										id={col.columnName}
+										key={col.columnName}
+										textValue={col.columnName}
+									>
+										{col.columnName}
+									</ListBox.Item>
+								))}
+							</ListBox>
+						</Select.Popover>
+					</Select>
+				</div>
+
+				<Checkbox isSelected={showRowRatio} onChange={setShowRowRatio}>
+					<Checkbox.Control>
+						<Checkbox.Indicator />
+					</Checkbox.Control>
+					<Label className="cursor-pointer font-medium text-sm">
+						顯示比率欄位
+					</Label>
+				</Checkbox>
 			</div>
 
 			<Table aria-label="核取方塊統計表" variant="secondary">
 				<Table.ScrollContainer>
 					<Table.Content>
 						<Table.Header>
-							<Table.Column id="group-column" isRowHeader>
+							<Table.Column
+								className="whitespace-nowrap"
+								id="group-column"
+								isRowHeader
+							>
 								{groupByColumn || "分組"}
 							</Table.Column>
+							{showRowRatio && (
+								<Table.Column className="whitespace-nowrap" id="row-ratio">
+									比率
+								</Table.Column>
+							)}
 							{checkboxColumns.map((col) => (
-								<Table.Column id={col.columnName} key={col.columnName}>
+								<Table.Column
+									className="whitespace-nowrap"
+									id={col.columnName}
+									key={col.columnName}
+								>
 									{col.columnName}
 								</Table.Column>
 							))}
@@ -178,29 +119,55 @@ export function CheckboxStatsTable({ columns, data }: CheckboxStatsTableProps) {
 						<Table.Body>
 							{statsData.length === 0 ? (
 								<Table.Row id="no-data">
-									<Table.Cell>無可用統計數據。</Table.Cell>
+									<Table.Cell className="whitespace-nowrap">
+										無可用統計數據。
+									</Table.Cell>
+									{showRowRatio && (
+										<Table.Cell className="whitespace-nowrap">-</Table.Cell>
+									)}
 									{checkboxColumns.map((col) => (
-										<Table.Cell key={col.columnName}>-</Table.Cell>
+										<Table.Cell
+											className="whitespace-nowrap"
+											key={col.columnName}
+										>
+											-
+										</Table.Cell>
 									))}
 								</Table.Row>
 							) : (
 								statsData.map((row) => {
 									const isTotal = row.id === "grand-total";
+									const isRatio = row.id === "grand-ratio";
+									const isSpecialRow = isTotal || isRatio;
+
 									return (
 										<Table.Row id={row.id} key={row.id}>
 											<Table.Cell
-												className={
-													isTotal ? "font-bold text-danger" : "font-medium"
-												}
+												className={`${
+													isSpecialRow ? "font-bold" : "font-medium"
+												} ${isTotal ? "text-danger" : ""} ${
+													isRatio ? "text-accent" : ""
+												} whitespace-nowrap`}
 											>
 												{row.groupName}
 											</Table.Cell>
+											{showRowRatio && (
+												<Table.Cell
+													className={`${
+														isSpecialRow ? "font-bold" : ""
+													} whitespace-nowrap text-accent`}
+												>
+													{row.rowRatio}
+												</Table.Cell>
+											)}
 											{checkboxColumns.map((col) => (
 												<Table.Cell
-													className={isTotal ? "font-bold text-danger" : ""}
+													className={`${isSpecialRow ? "font-bold" : ""} ${
+														isTotal ? "text-danger" : ""
+													} ${isRatio ? "text-accent" : ""} whitespace-nowrap`}
 													key={col.columnName}
 												>
-													{row[col.columnName] as number}
+													{row[col.columnName]}
 												</Table.Cell>
 											))}
 										</Table.Row>

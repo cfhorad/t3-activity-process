@@ -2,7 +2,6 @@
 
 import { Button, Checkbox, Table } from "@heroui/react";
 import { Save } from "lucide-react";
-import { useMemo } from "react";
 import { ColumnSelect } from "./ColumnSelect";
 
 interface Column {
@@ -40,10 +39,6 @@ export function CheckListTable({
 	onSaveVisibleColumns,
 	isSavingVisibleColumns,
 }: CheckListTableProps) {
-	const sortedData = useMemo(() => {
-		return [...data].sort((a, b) => a.id - b.id);
-	}, [data]);
-
 	return (
 		<div className="flex flex-col gap-4">
 			<div className="flex w-full items-center justify-between gap-4">
@@ -74,6 +69,7 @@ export function CheckListTable({
 							) : (
 								visibleColumns.map((col, index) => (
 									<Table.Column
+										className="whitespace-nowrap"
 										id={col.columnName}
 										isRowHeader={index === 0}
 										key={col.columnName}
@@ -94,15 +90,17 @@ export function CheckListTable({
 									</Table.Cell>
 								</Table.Row>
 							) : (
-								sortedData.map((row) => (
+								data.map((row) => (
 									<Table.Row id={row.id.toString()} key={row.id}>
 										{visibleColumns.map((col) => {
 											const value = (row.data as Record<string, unknown>)[
 												col.columnName
 											];
-
 											return (
-												<Table.Cell key={`${row.id}-${col.columnName}`}>
+												<Table.Cell
+													className="whitespace-nowrap"
+													key={`${row.id}-${col.columnName}`}
+												>
 													{col.isCheckbox ? (
 														<div className="flex justify-center">
 															<Checkbox
@@ -122,7 +120,7 @@ export function CheckListTable({
 															</Checkbox>
 														</div>
 													) : (
-														<span className="whitespace-pre-wrap text-sm">
+														<span className="whitespace-nowrap text-sm">
 															{value?.toString() ?? ""}
 														</span>
 													)}

@@ -23,6 +23,7 @@ export function CheckPageClient({
 		selectedFilters,
 		updateFilter,
 		syncedData,
+		sortedData,
 		columns,
 		isQueryLoading,
 		syncMutation,
@@ -85,7 +86,7 @@ export function CheckPageClient({
 								) : syncedData && syncedData.length > 0 ? (
 									<CheckListTable
 										allColumns={columns}
-										data={syncedData ?? []}
+										data={sortedData}
 										isSavingVisibleColumns={isSavingVisibleColumns}
 										onCheckboxChange={updateCheckbox}
 										onSaveVisibleColumns={handleSaveVisibleColumns}

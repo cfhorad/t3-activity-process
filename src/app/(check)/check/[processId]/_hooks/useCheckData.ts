@@ -1,7 +1,7 @@
 "use client";
 
 import { toast } from "@heroui/react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { api } from "~/trpc/react";
 
 export function useCheckData(processId: number) {
@@ -37,10 +37,10 @@ export function useCheckData(processId: number) {
 		onSuccess: (data) => {
 			void utils.checkSheet.getAll.invalidate({ processId });
 			void utils.checkSheet.getColumns.invalidate({ processId });
-			toast.success(`Synced ${data.rowCount} rows successfully`);
+			toast.success(`成功同步 ${data.rowCount} 筆資料`);
 		},
 		onError: (error) => {
-			toast.danger(`Sync failed: ${error.message}`);
+			toast.danger(`同步失敗: ${error.message}`);
 		},
 	});
 
@@ -97,7 +97,7 @@ export function useCheckData(processId: number) {
 					context.previousData,
 				);
 			}
-			toast.danger(`Update failed: ${err.message}`);
+			toast.danger(`更新失敗: ${err.message}`);
 		},
 		onSettled: () => {
 			void utils.checkSheet.getAll.invalidate({
@@ -169,6 +169,10 @@ export function useCheckData(processId: number) {
 	const visibleColumns =
 		columns?.filter((c) => visibleColumnNames.includes(c.columnName)) ?? [];
 
+	const sortedData = useMemo(() => {
+		return syncedData ? [...syncedData].sort((a, b) => a.id - b.id) : [];
+	}, [syncedData]);
+
 	const handleSaveVisibleColumns = () => {
 		saveVisibleColumnsMutation.mutate({
 			processId,
@@ -182,6 +186,7 @@ export function useCheckData(processId: number) {
 		selectedFilters,
 		updateFilter,
 		syncedData,
+		sortedData,
 		columns: columns ?? [],
 		visibleColumns,
 		isQueryLoading,

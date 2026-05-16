@@ -26,10 +26,10 @@ export function useProcessData(processId: number) {
 		onSuccess: (data) => {
 			void utils.googleSheet.getAll.invalidate({ processId });
 			void utils.googleSheet.getColumns.invalidate({ processId });
-			toast.success(`Synced ${data.rowCount} rows successfully`);
+			toast.success(`成功同步 ${data.rowCount} 筆資料`);
 		},
 		onError: (err) => {
-			toast.danger(`Sync failed: ${err.message}`);
+			toast.danger(`同步失敗: ${err.message}`);
 		},
 	});
 

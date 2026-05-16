@@ -52,7 +52,7 @@ export function DataFilterToolbar({
 			<div
 				className={`grid w-full gap-4 ${
 					filterCount >= 3
-						? "grid-cols-2 sm:grid-cols-3"
+						? "grid-cols-3"
 						: filterCount === 2
 							? "grid-cols-2"
 							: "grid-cols-1"
