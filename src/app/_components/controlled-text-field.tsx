@@ -8,7 +8,7 @@ import {
 	type FieldPath,
 	type FieldValues,
 } from "react-hook-form";
-import { EyeIcon, EyeOffIcon } from "./auth-icons";
+import { EyeIcon, EyeOffIcon } from "./auth/auth-icons";
 
 interface ControlledTextFieldProps<TFieldValues extends FieldValues> {
 	control: Control<TFieldValues>;

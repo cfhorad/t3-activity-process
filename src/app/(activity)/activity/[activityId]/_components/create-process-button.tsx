@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, useOverlayState } from "@heroui/react";
+import { Button, Tooltip, useOverlayState } from "@heroui/react";
 import { Plus } from "lucide-react";
 import { api } from "~/trpc/react";
 import { ProcessFormModal } from "./process-form-modal";
@@ -42,16 +42,19 @@ export function CreateProcessButton({
 
 	return (
 		<>
-			<Button
-				aria-label="新增程序"
-				className={`${className} rounded-full`}
-				isIconOnly
-				onPress={state.open}
-				size={size}
-				variant={variant}
-			>
-				<Plus className="h-5 w-5" />
-			</Button>
+			<Tooltip delay={0}>
+				<Button
+					aria-label="新增程序"
+					className={`${className} rounded-full`}
+					isIconOnly
+					onPress={state.open}
+					size={size}
+					variant={variant}
+				>
+					<Plus className="h-5 w-5" />
+				</Button>
+				<Tooltip.Content placement="bottom">新增程序</Tooltip.Content>
+			</Tooltip>
 
 			<ProcessFormModal
 				activityId={activityId}

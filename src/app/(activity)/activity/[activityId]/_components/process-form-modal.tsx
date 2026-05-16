@@ -2,8 +2,8 @@
 
 import {
 	Button,
+	FieldError,
 	Form,
-	Input,
 	Label,
 	ListBox,
 	Modal,
@@ -12,33 +12,19 @@ import {
 	TextField,
 } from "@heroui/react";
 import { Pencil, Plus, Sheet } from "lucide-react";
-import { useEffect, useState } from "react";
-import { api } from "~/trpc/react";
-
-interface ProcessFormData {
-	name: string;
-	sheetName: string;
-	type: "PROCESS" | "CHECK" | "WEB";
-	processDate?: string | null;
-	processMemo?: string | null;
-	iframeSrc?: string | null;
-}
+import { Controller } from "react-hook-form";
+import { ControlledTextField } from "~/app/_components/controlled-text-field";
+import { useProcessForm } from "../_hooks/useProcessForm";
+import type { ProcessFormData } from "./process-form-schema";
 
 interface ProcessFormModalProps {
 	isOpen: boolean;
 	onClose: () => void;
 	onOpenChange: (open: boolean) => void;
-	onSubmit: (data: ProcessFormData) => void;
+	onSubmit: (data: ProcessFormData & { iframeCode?: string }) => void;
 	isPending: boolean;
 	activityId: number;
-	initialData?: {
-		name: string;
-		sheetName: string;
-		type: "PROCESS" | "CHECK" | "WEB";
-		processDate?: string | null;
-		processMemo?: string | null;
-		iframeSrc?: string | null;
-	};
+	initialData?: Partial<ProcessFormData & { iframeSrc?: string | null }>;
 	title: string;
 	description?: string;
 	submitLabel: string;
@@ -58,60 +44,14 @@ export function ProcessFormModal({
 	submitLabel,
 	mode,
 }: ProcessFormModalProps) {
-	const [selectedSheet, setSelectedSheet] = useState<string>(
-		initialData?.sheetName ?? "",
-	);
-	const [selectedType, setSelectedType] = useState<"PROCESS" | "CHECK" | "WEB">(
-		initialData?.type ?? "PROCESS",
-	);
-
-	// Reset selected sheet when initialData changes (for Edit mode)
-	useEffect(() => {
-		if (initialData?.sheetName) {
-			setSelectedSheet(initialData.sheetName);
-			setSelectedType(initialData.type);
-		} else if (mode === "create") {
-			setSelectedSheet("");
-			setSelectedType("PROCESS");
-		}
-	}, [initialData, mode]);
-
-	const { data: activity } = api.activity.getById.useQuery(
-		{ id: activityId },
-		{ enabled: isOpen },
-	);
-
-	const { data: sheetNames, isLoading: isLoadingSheets } =
-		api.googleSheet.getSheetMetadata.useQuery(
-			{ spreadsheetId: activity?.googleSheetId ?? "" },
-			{ enabled: !!activity?.googleSheetId && isOpen },
-		);
-
-	const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-		e.preventDefault();
-		const formData = new FormData(e.currentTarget);
-		const name = formData.get("name") as string;
-		const sheetName = selectedSheet;
-		const type = selectedType;
-		const processDate = formData.get("processDate") as string;
-		const processMemo = formData.get("processMemo") as string;
-		const iframeCode = formData.get("iframeCode") as string;
-
-		let iframeSrc: string | null = initialData?.iframeSrc ?? null;
-		if (type === "WEB" && iframeCode) {
-			const srcMatch = iframeCode.match(/src="([^"]+)"/);
-			iframeSrc = (srcMatch ? srcMatch[1] : iframeCode) ?? null;
-		}
-
-		onSubmit({
-			name,
-			sheetName,
-			type,
-			processDate,
-			processMemo,
-			iframeSrc,
+	const { form, handleSubmit, sheetNames, isLoadingSheets, selectedType } =
+		useProcessForm({
+			initialData,
+			onSubmit,
+			isOpen,
+			activityId,
+			mode,
 		});
-	};
 
 	return (
 		<Modal.Backdrop
@@ -119,7 +59,7 @@ export function ProcessFormModal({
 			onOpenChange={(open) => {
 				onOpenChange(open);
 				if (!open && mode === "create") {
-					setSelectedSheet("");
+					form.reset();
 				}
 			}}
 		>
@@ -145,108 +85,124 @@ export function ProcessFormModal({
 					<Form onSubmit={handleSubmit}>
 						<Modal.Body className="p-6">
 							<div className="flex flex-col gap-4">
-								<TextField
-									defaultValue={initialData?.name ?? ""}
-									isRequired
+								<ControlledTextField
+									control={form.control}
+									label="流程名稱"
 									name="name"
-								>
-									<Label>流程名稱</Label>
-									<Input
-										placeholder={mode === "create" ? "例如：總表" : undefined}
-										variant="secondary"
-									/>
-								</TextField>
+									placeholder={mode === "create" ? "例如：總表" : undefined}
+								/>
 
-								<Select
-									isRequired
-									onChange={(val) => {
-										setSelectedSheet(val as string);
-									}}
-									placeholder={
-										isLoadingSheets ? "載入工作表中..." : "選擇工作表"
-									}
-									value={selectedSheet}
-									variant="secondary"
-								>
-									<Label>Google 試算表分頁名稱</Label>
-									<Select.Trigger>
-										<Select.Value />
-										<Select.Indicator />
-									</Select.Trigger>
-									<Select.Popover>
-										<ListBox>
-											{(sheetNames ?? []).map((name) => (
-												<ListBox.Item id={name} key={name} textValue={name}>
-													<Sheet className="mr-2 h-4 w-4 text-muted-foreground" />
-													{name}
-													<ListBox.ItemIndicator />
-												</ListBox.Item>
-											))}
-										</ListBox>
-									</Select.Popover>
-								</Select>
+								<Controller
+									control={form.control}
+									name="sheetName"
+									render={({ field, fieldState }) => (
+										<Select
+											isInvalid={!!fieldState.error}
+											isRequired
+											onChange={field.onChange}
+											placeholder={
+												isLoadingSheets ? "載入工作表中..." : "選擇工作表"
+											}
+											value={field.value}
+											variant="secondary"
+										>
+											<Label>Google 試算表分頁名稱</Label>
+											<Select.Trigger>
+												<Select.Value />
+												<Select.Indicator />
+											</Select.Trigger>
+											<Select.Popover>
+												<ListBox>
+													{(sheetNames ?? []).map((name) => (
+														<ListBox.Item id={name} key={name} textValue={name}>
+															<Sheet className="mr-2 h-4 w-4 text-muted-foreground" />
+															{name}
+															<ListBox.ItemIndicator />
+														</ListBox.Item>
+													))}
+												</ListBox>
+											</Select.Popover>
+											{fieldState.error && (
+												<p className="mt-1 text-danger text-xs">
+													{fieldState.error.message}
+												</p>
+											)}
+										</Select>
+									)}
+								/>
 
-								<Select
-									isRequired
-									onChange={(val) => {
-										setSelectedType(val as "PROCESS" | "CHECK" | "WEB");
-									}}
-									value={selectedType}
-									variant="secondary"
-								>
-									<Label>流程類型</Label>
-									<Select.Trigger>
-										<Select.Value />
-										<Select.Indicator />
-									</Select.Trigger>
-									<Select.Popover>
-										<ListBox>
-											<ListBox.Item id="PROCESS" textValue="流程處理">
-												流程處理
-											</ListBox.Item>
-											<ListBox.Item id="CHECK" textValue="報到清單">
-												報到清單
-											</ListBox.Item>
-											<ListBox.Item id="WEB" textValue="網頁嵌入">
-												網頁嵌入
-											</ListBox.Item>
-										</ListBox>
-									</Select.Popover>
-								</Select>
+								<Controller
+									control={form.control}
+									name="type"
+									render={({ field }) => (
+										<Select
+											isRequired
+											onChange={field.onChange}
+											value={field.value}
+											variant="secondary"
+										>
+											<Label>流程類型</Label>
+											<Select.Trigger>
+												<Select.Value />
+												<Select.Indicator />
+											</Select.Trigger>
+											<Select.Popover>
+												<ListBox>
+													<ListBox.Item id="PROCESS" textValue="流程處理">
+														流程處理
+													</ListBox.Item>
+													<ListBox.Item id="CHECK" textValue="報到清單">
+														報到清單
+													</ListBox.Item>
+													<ListBox.Item id="WEB" textValue="網頁嵌入">
+														網頁嵌入
+													</ListBox.Item>
+												</ListBox>
+											</Select.Popover>
+										</Select>
+									)}
+								/>
 
 								{selectedType === "WEB" && (
-									<TextField
-										defaultValue={initialData?.iframeSrc ?? ""}
-										isRequired
+									<Controller
+										control={form.control}
 										name="iframeCode"
-									>
-										<Label>Iframe 嵌入程式碼</Label>
-										<TextArea
-											placeholder='例如：<iframe src="..."></iframe>'
-											variant="secondary"
-										/>
-									</TextField>
+										render={({ field, fieldState }) => (
+											<TextField
+												isInvalid={!!fieldState.error}
+												name={field.name}
+												onBlur={field.onBlur}
+												onChange={field.onChange}
+												value={field.value ?? ""}
+												variant="secondary"
+											>
+												<Label>Iframe 嵌入程式碼</Label>
+												<TextArea
+													placeholder='例如：<iframe src="..."></iframe>'
+													rows={4}
+												/>
+												<FieldError>{fieldState.error?.message}</FieldError>
+											</TextField>
+										)}
+									/>
 								)}
 
 								<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-									<TextField
-										defaultValue={initialData?.processDate ?? ""}
+									<ControlledTextField
+										control={form.control}
+										isRequired={false}
+										label="執行日期"
 										name="processDate"
-									>
-										<Label>執行日期</Label>
-										<Input type="date" variant="secondary" />
-									</TextField>
-								</div>
-								<TextField
-									defaultValue={initialData?.processMemo ?? ""}
-									name="processMemo"
-								>
-									<Label>備註 (選填)</Label>
-									<Input
-										placeholder={mode === "create" ? "新增備註..." : undefined}
-										variant="secondary"
+										type="date"
 									/>
-								</TextField>
+								</div>
+								<ControlledTextField
+									control={form.control}
+									isRequired={false}
+									label="備註 (選填)"
+									name="processMemo"
+									placeholder={mode === "create" ? "新增備註..." : undefined}
+								/>
 							</div>
 						</Modal.Body>
 						<Modal.Footer>
@@ -254,7 +210,7 @@ export function ProcessFormModal({
 								取消
 							</Button>
 							<Button
-								isDisabled={!selectedSheet}
+								isDisabled={!form.watch("sheetName")}
 								isPending={isPending}
 								type="submit"
 							>

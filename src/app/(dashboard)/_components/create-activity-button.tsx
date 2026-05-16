@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, useOverlayState } from "@heroui/react";
+import { Button, Tooltip, useOverlayState } from "@heroui/react";
 import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { api } from "~/trpc/react";
@@ -27,15 +27,18 @@ export function CreateActivityButton({ userRole }: { userRole: string }) {
 
 	return (
 		<>
-			<Button
-				aria-label="新增活動"
-				className="rounded-full"
-				isIconOnly
-				onPress={state.open}
-				variant="primary"
-			>
-				<Plus className="h-5 w-5" />
-			</Button>
+			<Tooltip delay={0}>
+				<Button
+					aria-label="建立新活動"
+					className="rounded-full"
+					isIconOnly
+					onPress={state.open}
+					variant="primary"
+				>
+					<Plus className="h-5 w-5" />
+				</Button>
+				<Tooltip.Content placement="bottom">建立新活動</Tooltip.Content>
+			</Tooltip>
 
 			<ActivityFormModal
 				description="透過連接 Google 試算表來新增活動。"

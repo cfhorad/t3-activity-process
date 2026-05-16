@@ -2,15 +2,9 @@
 
 import { Button, Form, Input, Label, Modal, TextField } from "@heroui/react";
 import { Pencil, Plus } from "lucide-react";
-import { useEffect, useState } from "react";
-import { extractSpreadsheetId } from "~/utils/google-sheet-parser";
-
-interface ActivityFormData {
-	name: string;
-	googleSheetId: string;
-	activityDate: string;
-	activityMemo?: string | null;
-}
+import { ControlledTextField } from "~/app/_components/controlled-text-field";
+import { useActivityForm } from "../_hooks/useActivityForm";
+import type { ActivityFormData } from "./activity-form-schema";
 
 interface ActivityFormModalProps {
 	isOpen: boolean;
@@ -18,12 +12,7 @@ interface ActivityFormModalProps {
 	onOpenChange: (open: boolean) => void;
 	onSubmit: (data: ActivityFormData) => void;
 	isPending: boolean;
-	initialData?: {
-		name: string;
-		googleSheetId: string;
-		activityDate: string;
-		activityMemo?: string | null;
-	};
+	initialData?: Partial<ActivityFormData>;
 	title: string;
 	description?: string;
 	submitLabel: string;
@@ -42,44 +31,17 @@ export function ActivityFormModal({
 	submitLabel,
 	mode,
 }: ActivityFormModalProps) {
-	const [spreadsheetInput, setSpreadsheetInput] = useState(
-		initialData?.googleSheetId ?? "",
-	);
-	const [spreadsheetId, setSpreadsheetId] = useState(
-		initialData?.googleSheetId ?? "",
-	);
-
-	// Extract ID when input changes
-	useEffect(() => {
-		const id = extractSpreadsheetId(spreadsheetInput);
-		if (id) {
-			setSpreadsheetId(id);
-		} else if (spreadsheetInput.length > 0) {
-			// If it's not a URL, assume it might be a direct ID
-			setSpreadsheetId(spreadsheetInput);
-		} else {
-			setSpreadsheetId("");
-		}
-	}, [spreadsheetInput]);
-
-	// Reset state when initialData changes or modal opens
-	useEffect(() => {
-		if (isOpen) {
-			setSpreadsheetInput(initialData?.googleSheetId ?? "");
-			setSpreadsheetId(initialData?.googleSheetId ?? "");
-		}
-	}, [initialData, isOpen]);
-
-	const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-		e.preventDefault();
-		const formData = new FormData(e.currentTarget);
-		const name = formData.get("name") as string;
-		const activityDate = formData.get("activityDate") as string;
-		const activityMemo = formData.get("activityMemo") as string;
-		const googleSheetId = spreadsheetId;
-
-		onSubmit({ name, googleSheetId, activityDate, activityMemo });
-	};
+	const {
+		form,
+		spreadsheetInput,
+		setSpreadsheetInput,
+		handleSubmit,
+		isSubmittable,
+	} = useActivityForm({
+		initialData,
+		onSubmit,
+		isOpen,
+	});
 
 	return (
 		<Modal.Backdrop
@@ -88,7 +50,7 @@ export function ActivityFormModal({
 				onOpenChange(open);
 				if (!open && mode === "create") {
 					setSpreadsheetInput("");
-					setSpreadsheetId("");
+					form.reset();
 				}
 			}}
 		>
@@ -114,21 +76,16 @@ export function ActivityFormModal({
 					<Form onSubmit={handleSubmit}>
 						<Modal.Body className="p-6">
 							<div className="flex flex-col gap-4">
-								<TextField
-									defaultValue={initialData?.name ?? ""}
-									isRequired
+								<ControlledTextField
+									control={form.control}
+									label="Activity Name"
 									name="name"
-								>
-									<Label>Activity Name</Label>
-									<Input
-										placeholder={
-											mode === "create" ? "e.g. Dining Registration" : undefined
-										}
-										variant="secondary"
-									/>
-								</TextField>
+									placeholder={
+										mode === "create" ? "e.g. Dining Registration" : undefined
+									}
+								/>
 
-								<TextField isRequired name="googleSheetId">
+								<TextField isRequired name="googleSheetId" variant="secondary">
 									<Label>Google Spreadsheet URL or ID</Label>
 									<Input
 										onChange={(e) => setSpreadsheetInput(e.target.value)}
@@ -136,30 +93,30 @@ export function ActivityFormModal({
 										value={spreadsheetInput}
 										variant="secondary"
 									/>
+									{form.formState.errors.googleSheetId && (
+										<p className="text-danger text-xs">
+											{form.formState.errors.googleSheetId.message}
+										</p>
+									)}
 								</TextField>
 
 								<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-									<TextField
-										defaultValue={initialData?.activityDate ?? ""}
-										isRequired
+									<ControlledTextField
+										control={form.control}
+										label="Activity Date"
 										name="activityDate"
-									>
-										<Label>Activity Date</Label>
-										<Input type="date" variant="secondary" />
-									</TextField>
+										type="date"
+									/>
 
-									<TextField
-										defaultValue={initialData?.activityMemo ?? ""}
+									<ControlledTextField
+										control={form.control}
+										isRequired={false}
+										label="Memo"
 										name="activityMemo"
-									>
-										<Label>Memo</Label>
-										<Input
-											placeholder={
-												mode === "create" ? "e.g. Annual dinner" : undefined
-											}
-											variant="secondary"
-										/>
-									</TextField>
+										placeholder={
+											mode === "create" ? "e.g. Annual dinner" : undefined
+										}
+									/>
 								</div>
 							</div>
 						</Modal.Body>
@@ -168,7 +125,7 @@ export function ActivityFormModal({
 								Cancel
 							</Button>
 							<Button
-								isDisabled={!spreadsheetId}
+								isDisabled={!isSubmittable}
 								isPending={isPending}
 								type="submit"
 							>

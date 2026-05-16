@@ -1,10 +1,9 @@
 "use client";
 
-import { useOverlayState } from "@heroui/react";
 import { useRouter } from "next/navigation";
-import { ConfirmDeleteDialog } from "~/components/confirm-delete-dialog";
-import { api } from "~/trpc/react";
+import { ConfirmDeleteDialog } from "~/app/_components/confirm-delete-dialog";
 import { DashboardItemCard } from "../../_components/dashboard-item-card";
+import { useActivityActions } from "../_hooks/useActivityActions";
 import { ActivityInfoModal } from "./activity-info-modal";
 import { EditActivityModal } from "./edit-activity-modal";
 
@@ -24,17 +23,8 @@ interface ActivityCardProps {
 
 export function ActivityCard({ activity, userRole }: ActivityCardProps) {
 	const router = useRouter();
-	const editState = useOverlayState();
-	const deleteState = useOverlayState();
-	const infoState = useOverlayState();
-	const utils = api.useUtils();
-
-	const deleteActivity = api.activity.delete.useMutation({
-		onSuccess: () => {
-			void utils.activity.getAll.invalidate();
-			deleteState.close();
-		},
-	});
+	const { editState, deleteState, infoState, deleteActivity, updateActivity } =
+		useActivityActions({ activityId: activity.id });
 
 	const normalizedRole = userRole?.toUpperCase();
 	const isAuthorized =
@@ -58,12 +48,14 @@ export function ActivityCard({ activity, userRole }: ActivityCardProps) {
 			<EditActivityModal
 				activity={activity}
 				isOpen={editState.isOpen}
+				isPending={updateActivity.isPending}
 				onClose={editState.close}
 				onOpenChange={editState.setOpen}
+				onSubmit={(data) => updateActivity.mutate({ ...data, id: activity.id })}
 			/>
 
 			<ConfirmDeleteDialog
-				confirmLabel="Delete Activity"
+				confirmLabel="Delete"
 				description={
 					<p>
 						Are you sure you want to delete <strong>{activity.name}</strong>?
@@ -75,7 +67,7 @@ export function ActivityCard({ activity, userRole }: ActivityCardProps) {
 				isPending={deleteActivity.isPending}
 				onConfirm={() => deleteActivity.mutate({ id: activity.id })}
 				onOpenChange={deleteState.setOpen}
-				title="Delete Activity?"
+				title="Delete Activity"
 			/>
 
 			<ActivityInfoModal

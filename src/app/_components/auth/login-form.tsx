@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import type { createAuthClient } from "better-auth/react";
 import { useForm } from "react-hook-form";
 import { type LoginValues, loginSchema } from "./auth-schemas";
-import { ControlledTextField } from "./controlled-text-field";
+import { ControlledTextField } from "../controlled-text-field";
 
 interface LoginFormProps {
 	authClient: ReturnType<typeof createAuthClient>;

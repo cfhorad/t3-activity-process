@@ -36,7 +36,7 @@ export function RowInfoModal({
 										className="flex flex-col gap-1 border-divider border-b pb-2 last:border-0 last:pb-0"
 										key={col.columnName}
 									>
-										<p className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">
+										<p className="font-semibold text-muted-foreground text-xs">
 											{col.columnName}
 										</p>
 										<p className="font-medium">

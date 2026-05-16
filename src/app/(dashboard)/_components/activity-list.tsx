@@ -2,11 +2,11 @@
 
 import { Spinner } from "@heroui/react";
 import { LayoutGrid } from "lucide-react";
-import { api } from "~/trpc/react";
+import { useActivities } from "../_hooks/useActivities";
 import { ActivityCard } from "./activity-card";
 
 export function ActivityList({ userRole }: { userRole: string }) {
-	const { data: activities, isLoading } = api.activity.getAll.useQuery();
+	const { activities, isLoading } = useActivities();
 
 	if (isLoading) {
 		return (

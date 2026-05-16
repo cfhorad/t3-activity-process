@@ -4,7 +4,7 @@ import { Button, Card, Spinner } from "@heroui/react";
 import { useRouter } from "next/navigation";
 import { use } from "react";
 import { PageHeader } from "~/app/_components/page-header";
-import { api } from "~/trpc/react";
+import { useWebData } from "./_hooks/useWebData";
 
 export function WebPageClient({
 	params,
@@ -15,7 +15,7 @@ export function WebPageClient({
 	const id = parseInt(processId, 10);
 	const router = useRouter();
 
-	const { data: process, isLoading } = api.process.getById.useQuery({ id });
+	const { process, isLoading } = useWebData(id);
 
 	if (isLoading) {
 		return (

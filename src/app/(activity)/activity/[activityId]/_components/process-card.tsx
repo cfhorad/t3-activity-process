@@ -1,10 +1,10 @@
 "use client";
 
-import { Chip, useOverlayState } from "@heroui/react";
+import { Chip } from "@heroui/react";
 import { useRouter } from "next/navigation";
+import { ConfirmDeleteDialog } from "~/app/_components/confirm-delete-dialog";
 import { DashboardItemCard } from "~/app/_components/dashboard-item-card";
-import { ConfirmDeleteDialog } from "~/components/confirm-delete-dialog";
-import { api } from "~/trpc/react";
+import { useProcessActions } from "../_hooks/useProcessActions";
 import { EditProcessModal } from "./edit-process-modal";
 import { ProcessInfoModal } from "./process-info-modal";
 
@@ -29,19 +29,11 @@ interface ProcessCardProps {
 
 export function ProcessCard({ process, userRole, activity }: ProcessCardProps) {
 	const router = useRouter();
-	const editState = useOverlayState();
-	const deleteState = useOverlayState();
-	const infoState = useOverlayState();
-	const utils = api.useUtils();
-
-	const deleteProcess = api.process.delete.useMutation({
-		onSuccess: () => {
-			void utils.process.getByActivityId.invalidate({
-				activityId: process.activityId,
-			});
-			deleteState.close();
-		},
-	});
+	const { editState, deleteState, infoState, deleteProcess, updateProcess } =
+		useProcessActions({
+			processId: process.id,
+			activityId: process.activityId,
+		});
 
 	const isAuthorized = userRole === "ADMIN" || userRole === "MANAGER";
 
@@ -108,13 +100,15 @@ export function ProcessCard({ process, userRole, activity }: ProcessCardProps) {
 
 			<EditProcessModal
 				isOpen={editState.isOpen}
+				isPending={updateProcess.isPending}
 				onClose={editState.close}
 				onOpenChange={editState.setOpen}
+				onSubmit={(data) => updateProcess.mutate({ ...data, id: process.id })}
 				process={process}
 			/>
 
 			<ConfirmDeleteDialog
-				confirmLabel="刪除程序"
+				confirmLabel="刪除"
 				description={
 					<p>
 						您確定要刪除 <strong>{process.name}</strong> 嗎？
@@ -125,7 +119,7 @@ export function ProcessCard({ process, userRole, activity }: ProcessCardProps) {
 				isPending={deleteProcess.isPending}
 				onConfirm={() => deleteProcess.mutate({ id: process.id })}
 				onOpenChange={deleteState.setOpen}
-				title="確定要刪除程序嗎？"
+				title="刪除程序"
 			/>
 
 			<ProcessInfoModal

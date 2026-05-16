@@ -28,7 +28,7 @@ export function DetailsModal({ data, title }: DetailsModalProps) {
 							<div className="flex flex-col gap-4">
 								{Object.entries(data).map(([key, value]) => (
 									<div className="flex flex-col gap-1" key={key}>
-										<span className="font-bold text-[10px] text-muted-foreground uppercase tracking-wider">
+										<span className="font-bold text-[10px] text-muted-foreground">
 											{key}
 										</span>
 										<div className="whitespace-pre-wrap font-medium text-sm leading-relaxed">

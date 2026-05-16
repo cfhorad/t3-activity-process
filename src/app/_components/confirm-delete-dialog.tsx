@@ -12,7 +12,7 @@ interface ConfirmDeleteDialogProps {
 	cancelLabel?: string;
 	onConfirm: () => void;
 	isPending?: boolean;
-	variant?: "danger" | "primary" | "secondary";
+	variant?: "danger" | "danger-soft" | "primary" | "secondary";
 }
 
 export function ConfirmDeleteDialog({
@@ -24,7 +24,7 @@ export function ConfirmDeleteDialog({
 	cancelLabel = "Cancel",
 	onConfirm,
 	isPending = false,
-	variant = "danger",
+	variant = "danger-soft",
 }: ConfirmDeleteDialogProps) {
 	return (
 		<AlertDialog.Backdrop isOpen={isOpen} onOpenChange={onOpenChange}>
@@ -33,7 +33,11 @@ export function ConfirmDeleteDialog({
 					<AlertDialog.CloseTrigger />
 					<AlertDialog.Header>
 						<AlertDialog.Icon
-							status={variant === "danger" ? "danger" : undefined}
+							status={
+								variant === "danger" || variant === "danger-soft"
+									? "danger"
+									: undefined
+							}
 						/>
 						<AlertDialog.Heading>{title}</AlertDialog.Heading>
 					</AlertDialog.Header>

@@ -111,7 +111,7 @@ export function AuthCard({
 
 				<div className="my-6 flex items-center gap-4">
 					<Separator className="flex-1" />
-					<span className="text-muted-foreground text-xs uppercase tracking-wider">
+					<span className="text-muted-foreground text-xs">
 						或使用以下方式繼續
 					</span>
 					<Separator className="flex-1" />

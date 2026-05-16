@@ -37,7 +37,7 @@ export function ProcessInfoModal({
 					<Modal.Body className="space-y-4 pb-6">
 						<div className="grid gap-4 rounded-xl bg-content2 p-4 text-sm">
 							<div className="space-y-1">
-								<p className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">
+								<p className="font-semibold text-muted-foreground text-xs">
 									Google 試算表 ID
 								</p>
 								<Link
@@ -51,7 +51,7 @@ export function ProcessInfoModal({
 							</div>
 
 							<div className="space-y-1">
-								<p className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">
+								<p className="font-semibold text-muted-foreground text-xs">
 									試算表分頁名稱 (Sheet Name)
 								</p>
 								<p className="font-medium text-danger">{process.sheetName}</p>
@@ -59,7 +59,7 @@ export function ProcessInfoModal({
 
 							<div className="grid grid-cols-2 gap-4 border-divider border-t pt-2">
 								<div className="space-y-1">
-									<p className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">
+									<p className="font-semibold text-muted-foreground text-xs">
 										建立者
 									</p>
 									<div className="flex items-center gap-1.5">
@@ -68,7 +68,7 @@ export function ProcessInfoModal({
 									</div>
 								</div>
 								<div className="space-y-1">
-									<p className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">
+									<p className="font-semibold text-muted-foreground text-xs">
 										建立日期
 									</p>
 									<div className="flex items-center gap-1.5">

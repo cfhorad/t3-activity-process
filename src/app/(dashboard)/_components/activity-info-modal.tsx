@@ -35,7 +35,7 @@ export function ActivityInfoModal({
 					<Modal.Body className="space-y-4 pb-6">
 						<div className="grid gap-4 rounded-xl bg-content2 p-4 text-sm">
 							<div className="space-y-1">
-								<p className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">
+								<p className="font-semibold text-muted-foreground text-xs">
 									Google 試算表 ID
 								</p>
 								<Link
@@ -50,7 +50,7 @@ export function ActivityInfoModal({
 
 							<div className="grid grid-cols-2 gap-4 border-divider border-t pt-2">
 								<div className="space-y-1">
-									<p className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">
+									<p className="font-semibold text-muted-foreground text-xs">
 										建立者
 									</p>
 									<div className="flex items-center gap-1.5">
@@ -59,7 +59,7 @@ export function ActivityInfoModal({
 									</div>
 								</div>
 								<div className="space-y-1">
-									<p className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">
+									<p className="font-semibold text-muted-foreground text-xs">
 										建立日期
 									</p>
 									<div className="flex items-center gap-1.5">
@@ -73,7 +73,7 @@ export function ActivityInfoModal({
 
 							<div className="border-divider border-t pt-2">
 								<div className="space-y-1">
-									<p className="font-semibold text-muted-foreground text-xs uppercase tracking-wider">
+									<p className="font-semibold text-muted-foreground text-xs">
 										包含工作項目數量
 									</p>
 									<div className="flex items-center gap-1.5">

@@ -1,7 +1,7 @@
 "use client";
 
-import { api } from "~/trpc/react";
 import { ProcessFormModal } from "./process-form-modal";
+import type { ProcessFormData } from "./process-form-schema";
 
 interface Process {
 	id: number;
@@ -19,6 +19,8 @@ interface EditProcessModalProps {
 	isOpen: boolean;
 	onClose: () => void;
 	onOpenChange: (open: boolean) => void;
+	onSubmit: (data: ProcessFormData & { iframeCode?: string }) => void;
+	isPending: boolean;
 }
 
 export function EditProcessModal({
@@ -26,28 +28,19 @@ export function EditProcessModal({
 	isOpen,
 	onClose,
 	onOpenChange,
+	onSubmit,
+	isPending,
 }: EditProcessModalProps) {
-	const utils = api.useUtils();
-
-	const updateProcess = api.process.update.useMutation({
-		onSuccess: () => {
-			void utils.process.getByActivityId.invalidate({
-				activityId: process.activityId,
-			});
-			onClose();
-		},
-	});
-
 	return (
 		<ProcessFormModal
 			activityId={process.activityId}
 			initialData={process}
 			isOpen={isOpen}
-			isPending={updateProcess.isPending}
+			isPending={isPending}
 			mode="edit"
 			onClose={onClose}
 			onOpenChange={onOpenChange}
-			onSubmit={(data) => updateProcess.mutate({ ...data, id: process.id })}
+			onSubmit={onSubmit}
 			submitLabel="儲存變更"
 			title="編輯程序"
 		/>
