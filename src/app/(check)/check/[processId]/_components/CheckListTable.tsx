@@ -63,15 +63,22 @@ export function CheckListTable({
 					onSelectionChange={onVisibleColumnsChange}
 					visibleColumnNames={visibleColumnNames}
 				/>
-				<Button
-					isPending={isSavingVisibleColumns}
-					onPress={onSaveVisibleColumns}
-					size="sm"
-					variant="secondary"
-				>
-					<Save className="size-4 sm:mr-2" />
-					<span className="hidden sm:inline">儲存欄位設定</span>
-				</Button>
+				<Tooltip closeDelay={0} delay={0}>
+					<Tooltip.Trigger>
+						<Button
+							isPending={isSavingVisibleColumns}
+							onPress={onSaveVisibleColumns}
+							size="sm"
+							variant="secondary"
+						>
+							<Save className="size-4 sm:mr-2" />
+							<span className="hidden sm:inline">儲存欄位設定</span>
+						</Button>
+					</Tooltip.Trigger>
+					<Tooltip.Content placement="top">
+						儲存目前的顯示欄位設定，下次進入此頁面時將維持同樣的配置。
+					</Tooltip.Content>
+				</Tooltip>
 			</div>
 
 			<Table variant="secondary">
@@ -85,7 +92,7 @@ export function CheckListTable({
 							) : (
 								visibleColumns.map((col, index) => (
 									<Table.Column
-										className="whitespace-nowrap"
+										className={`whitespace-nowrap ${col.isCheckbox ? "text-center" : ""}`}
 										id={col.columnName}
 										isRowHeader={index === 0}
 										key={col.columnName}

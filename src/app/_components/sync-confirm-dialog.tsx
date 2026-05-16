@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertDialog, Button } from "@heroui/react";
+import { AlertDialog, Button, Tooltip } from "@heroui/react";
 import { RefreshCcw } from "lucide-react";
 
 interface SyncConfirmDialogProps {
@@ -19,7 +19,7 @@ export function SyncConfirmDialog({
 	onSync,
 	title = "確認同步數據",
 	description = "同步將從 Google 試算表獲取最新數據並替換您的本地數據。此操作無法撤銷。",
-	triggerLabel = "同步數據",
+	triggerLabel = "試算表同步",
 	triggerPendingLabel = "同步中...",
 	confirmLabel = "立即同步",
 	cancelLabel = "取消",
@@ -27,18 +27,23 @@ export function SyncConfirmDialog({
 	return (
 		<AlertDialog>
 			<AlertDialog.Trigger>
-				<Button
-					className="font-medium shadow-sm"
-					isPending={isSyncing}
-					variant="primary"
-				>
-					<div className="flex items-center gap-2">
-						<RefreshCcw
-							className={`size-4 ${isSyncing ? "animate-spin" : ""}`}
-						/>
-						{isSyncing ? triggerPendingLabel : triggerLabel}
-					</div>
-				</Button>
+				<Tooltip closeDelay={0} delay={0}>
+					<Tooltip.Trigger>
+						<Button
+							className="font-medium shadow-sm"
+							isPending={isSyncing}
+							variant="primary"
+						>
+							<div className="flex items-center gap-2">
+								<RefreshCcw
+									className={`size-4 ${isSyncing ? "animate-spin" : ""}`}
+								/>
+								{isSyncing ? triggerPendingLabel : triggerLabel}
+							</div>
+						</Button>
+					</Tooltip.Trigger>
+					<Tooltip.Content placement="top">{description}</Tooltip.Content>
+				</Tooltip>
 			</AlertDialog.Trigger>
 			<AlertDialog.Backdrop>
 				<AlertDialog.Container>

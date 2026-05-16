@@ -1,6 +1,14 @@
 "use client";
 
-import { Button, Checkbox, Label, ListBox, Select, Table, Tooltip } from "@heroui/react";
+import {
+	Button,
+	Checkbox,
+	Label,
+	ListBox,
+	Select,
+	Table,
+	Tooltip,
+} from "@heroui/react";
 import { RefreshCcw } from "lucide-react";
 import { useCheckboxStats } from "../_hooks/useCheckboxStats";
 
@@ -89,14 +97,21 @@ export function CheckboxStatsTable({
 				</div>
 
 				<div className="flex items-center gap-6">
-					<Checkbox isSelected={showRowRatio} onChange={setShowRowRatio}>
-						<Checkbox.Control>
-							<Checkbox.Indicator />
-						</Checkbox.Control>
-						<Label className="cursor-pointer font-medium text-sm">
-							顯示比率欄位
-						</Label>
-					</Checkbox>
+					<Tooltip closeDelay={0} delay={0}>
+						<Tooltip.Trigger>
+							<Checkbox isSelected={showRowRatio} onChange={setShowRowRatio}>
+								<Checkbox.Control className="size-5 rounded-full border border-default-400">
+									<Checkbox.Indicator />
+								</Checkbox.Control>
+								<Label className="cursor-pointer font-medium text-sm">
+									顯示比率欄位
+								</Label>
+							</Checkbox>
+						</Tooltip.Trigger>
+						<Tooltip.Content placement="top">
+							在統計表中顯示各分組的核取百分比與詳細比例。
+						</Tooltip.Content>
+					</Tooltip>
 
 					{onRefetch && (
 						<Tooltip closeDelay={0} delay={0}>
@@ -138,7 +153,7 @@ export function CheckboxStatsTable({
 							)}
 							{checkboxColumns.map((col) => (
 								<Table.Column
-									className="whitespace-nowrap"
+									className="whitespace-nowrap text-center"
 									id={col.columnName}
 									key={col.columnName}
 								>
@@ -190,7 +205,7 @@ export function CheckboxStatsTable({
 												<Table.Cell
 													className={`${isSpecialRow ? "font-bold" : ""} ${
 														isTotal ? "text-danger" : ""
-													} ${isRatio ? "text-accent" : ""} whitespace-nowrap`}
+													} ${isRatio ? "text-accent" : ""} whitespace-nowrap text-center`}
 													key={col.columnName}
 												>
 													{row[col.columnName]}

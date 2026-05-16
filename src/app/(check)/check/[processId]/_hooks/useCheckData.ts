@@ -14,12 +14,15 @@ export function useCheckData(processId: number) {
 	const [hasAttemptedAutoSync, setHasAttemptedAutoSync] = useState(false);
 	const [visibleColumnNames, setVisibleColumnNames] = useState<string[]>([]);
 
-	const { data: syncedData, isLoading: isQueryLoading, refetch: refetchData } =
-		api.checkSheet.getAll.useQuery({
-			processId,
-			search: debouncedSearch,
-			filters: selectedFilters,
-		});
+	const {
+		data: syncedData,
+		isLoading: isQueryLoading,
+		refetch: refetchData,
+	} = api.checkSheet.getAll.useQuery({
+		processId,
+		search: debouncedSearch,
+		filters: selectedFilters,
+	});
 
 	const { data: columns } = api.checkSheet.getColumns.useQuery({ processId });
 
