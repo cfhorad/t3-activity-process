@@ -26,7 +26,10 @@ export function useCheckData(processId: number) {
 	// Initialize visible columns when data is loaded
 	useEffect(() => {
 		if (columns && visibleColumnNames.length === 0) {
-			setVisibleColumnNames(columns.map((c) => c.columnName));
+			const initialVisible = columns
+				.filter((c) => (c as { isVisible: boolean }).isVisible)
+				.map((c) => c.columnName);
+			setVisibleColumnNames(initialVisible);
 		}
 	}, [columns, visibleColumnNames.length]);
 
@@ -40,6 +43,17 @@ export function useCheckData(processId: number) {
 			toast.danger(`Sync failed: ${error.message}`);
 		},
 	});
+
+	const saveVisibleColumnsMutation =
+		api.checkSheet.updateVisibleColumns.useMutation({
+			onSuccess: () => {
+				void utils.checkSheet.getColumns.invalidate({ processId });
+				toast.success("已儲存可見欄位設定");
+			},
+			onError: (error) => {
+				toast.danger(`儲存失敗: ${error.message}`);
+			},
+		});
 
 	const updateCheckboxMutation = api.checkSheet.updateCheckbox.useMutation({
 		onMutate: async ({ databaseId, columnName, newValue }) => {
@@ -155,6 +169,13 @@ export function useCheckData(processId: number) {
 	const visibleColumns =
 		columns?.filter((c) => visibleColumnNames.includes(c.columnName)) ?? [];
 
+	const handleSaveVisibleColumns = () => {
+		saveVisibleColumnsMutation.mutate({
+			processId,
+			visibleColumnNames,
+		});
+	};
+
 	return {
 		search,
 		setSearch,
@@ -170,5 +191,7 @@ export function useCheckData(processId: number) {
 		updateCheckbox,
 		visibleColumnNames,
 		setVisibleColumnNames,
+		handleSaveVisibleColumns,
+		isSavingVisibleColumns: saveVisibleColumnsMutation.isPending,
 	};
 }

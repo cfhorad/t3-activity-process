@@ -27,6 +27,7 @@ export const googleSheetConfig = createTable("google_sheet_config", {
 	isFilterable: boolean("is_filterable").default(false).notNull(),
 	isCheckbox: boolean("is_checkbox").default(false).notNull(),
 	displayOrder: integer("display_order").notNull(),
+	isVisible: boolean("is_visible").default(true).notNull(),
 });
 
 export const activities = createTable("activity", (d) => ({

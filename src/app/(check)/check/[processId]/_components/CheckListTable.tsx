@@ -1,6 +1,7 @@
 "use client";
 
-import { Checkbox, Table } from "@heroui/react";
+import { Button, Checkbox, Table } from "@heroui/react";
+import { Save } from "lucide-react";
 import { useMemo } from "react";
 import { ColumnSelect } from "./ColumnSelect";
 
@@ -25,6 +26,8 @@ interface CheckListTableProps {
 	onVisibleColumnsChange: (keys: string[]) => void;
 	data: DataRow[];
 	onCheckboxChange: (id: number, columnName: string, newValue: boolean) => void;
+	onSaveVisibleColumns: () => void;
+	isSavingVisibleColumns: boolean;
 }
 
 export function CheckListTable({
@@ -34,6 +37,8 @@ export function CheckListTable({
 	onVisibleColumnsChange,
 	data,
 	onCheckboxChange,
+	onSaveVisibleColumns,
+	isSavingVisibleColumns,
 }: CheckListTableProps) {
 	const sortedData = useMemo(() => {
 		return [...data].sort((a, b) => a.id - b.id);
@@ -41,12 +46,21 @@ export function CheckListTable({
 
 	return (
 		<div className="flex flex-col gap-4">
-			<div className="flex w-full">
+			<div className="flex w-full items-center justify-between gap-4">
 				<ColumnSelect
 					columns={allColumns}
 					onSelectionChange={onVisibleColumnsChange}
 					visibleColumnNames={visibleColumnNames}
 				/>
+				<Button
+					isPending={isSavingVisibleColumns}
+					onPress={onSaveVisibleColumns}
+					size="sm"
+					variant="secondary"
+				>
+					<Save className="size-4 sm:mr-2" />
+					<span className="hidden sm:inline">儲存欄位設定</span>
+				</Button>
 			</div>
 
 			<Table variant="secondary">

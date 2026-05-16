@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { eq } from "drizzle-orm";
+import { and, eq, inArray, notInArray } from "drizzle-orm";
 import { z } from "zod";
 import {
 	createTRPCRouter,
@@ -112,5 +112,47 @@ export const checkSheetRouter = createTRPCRouter({
 				input.columnName,
 				input.newValue,
 			);
+		}),
+
+	updateVisibleColumns: managerProcedure
+		.input(
+			z.object({
+				processId: z.number(),
+				visibleColumnNames: z.array(z.string()),
+			}),
+		)
+		.mutation(async ({ ctx, input }) => {
+			await ctx.db.transaction(async (tx) => {
+				if (input.visibleColumnNames.length > 0) {
+					await tx
+						.update(googleSheetConfig)
+						.set({ isVisible: true })
+						.where(
+							and(
+								eq(googleSheetConfig.processId, input.processId),
+								inArray(googleSheetConfig.columnName, input.visibleColumnNames),
+							),
+						);
+
+					await tx
+						.update(googleSheetConfig)
+						.set({ isVisible: false })
+						.where(
+							and(
+								eq(googleSheetConfig.processId, input.processId),
+								notInArray(
+									googleSheetConfig.columnName,
+									input.visibleColumnNames,
+								),
+							),
+						);
+				} else {
+					await tx
+						.update(googleSheetConfig)
+						.set({ isVisible: false })
+						.where(eq(googleSheetConfig.processId, input.processId));
+				}
+			});
+			return { success: true };
 		}),
 });

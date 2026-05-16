@@ -32,6 +32,8 @@ export function CheckPageClient({
 		visibleColumns,
 		visibleColumnNames,
 		setVisibleColumnNames,
+		handleSaveVisibleColumns,
+		isSavingVisibleColumns,
 	} = useCheckData(id);
 
 	return (
@@ -83,8 +85,10 @@ export function CheckPageClient({
 								) : syncedData && syncedData.length > 0 ? (
 									<CheckListTable
 										allColumns={columns}
-										data={syncedData}
+										data={syncedData ?? []}
+										isSavingVisibleColumns={isSavingVisibleColumns}
 										onCheckboxChange={updateCheckbox}
+										onSaveVisibleColumns={handleSaveVisibleColumns}
 										onVisibleColumnsChange={setVisibleColumnNames}
 										visibleColumnNames={visibleColumnNames}
 										visibleColumns={visibleColumns}
