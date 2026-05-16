@@ -20,15 +20,9 @@ export function ProcessHeader({
 	return (
 		<PageHeader
 			action={<SyncConfirmDialog isSyncing={isSyncing} onSync={onSync} />}
-			breadcrumbs={[
-				{ label: "活動管理", href: "/" },
-				{
-					label: process?.activity?.name ?? "活動",
-					href: process ? `/activity/${process.activityId}` : undefined,
-				},
-				{ label: process?.name ?? "處理流程" },
-			]}
-			title={process?.name ?? "數據處理"}
+			backHref={process ? `/activity/${process.activityId}` : "/"}
+			backLabel={process?.activity?.name ?? "返回活動"}
+			title={process?.name ?? "處理流程"}
 		/>
 	);
 }

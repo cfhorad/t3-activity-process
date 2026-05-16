@@ -1,6 +1,5 @@
-import { ChevronLeft } from "lucide-react";
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { PageHeader } from "~/app/_components/page-header";
 import { getSession } from "~/server/better-auth/server";
 import { api, HydrateClient } from "~/trpc/server";
 import { CreateProcessButton } from "./_components/create-process-button";
@@ -35,28 +34,19 @@ export default async function ActivityPage({
 		<HydrateClient>
 			<main className="bg-linear-to-b from-background to-content2 p-4 md:p-8">
 				<div className="mx-auto max-w-7xl">
-					<div className="mb-12 grid grid-cols-3 items-center gap-6">
-						<div className="flex items-center">
-							<Link
-								className="group flex items-center gap-1 text-muted-foreground text-sm transition-colors hover:text-foreground"
-								href="/"
-							>
-								<ChevronLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
-								活動管理
-							</Link>
-						</div>
-						<h1 className="text-center font-bold text-3xl tracking-tight md:text-4xl">
-							{activity.name}
-						</h1>
-						<div className="flex justify-end">
-							{session && (
+					<PageHeader
+						action={
+							session && (
 								<CreateProcessButton
 									activityId={activity.id}
 									userRole={session.user.role as string}
 								/>
-							)}
-						</div>
-					</div>
+							)
+						}
+						backHref="/"
+						backLabel="活動管理"
+						title={activity.name}
+					/>
 
 					<div className="space-y-6">
 						<h2 className="font-bold text-2xl">項目清單</h2>
