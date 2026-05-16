@@ -78,18 +78,18 @@ export function ActivityFormModal({
 							<div className="flex flex-col gap-4">
 								<ControlledTextField
 									control={form.control}
-									label="Activity Name"
+									label="活動名稱"
 									name="name"
 									placeholder={
-										mode === "create" ? "e.g. Dining Registration" : undefined
+										mode === "create" ? "例如：用餐報到" : undefined
 									}
 								/>
 
 								<TextField isRequired name="googleSheetId" variant="secondary">
-									<Label>Google Spreadsheet URL or ID</Label>
+									<Label>Google 試算表 URL 或 ID</Label>
 									<Input
 										onChange={(e) => setSpreadsheetInput(e.target.value)}
-										placeholder="Paste spreadsheet URL here"
+										placeholder="在此貼上試算表 URL"
 										value={spreadsheetInput}
 										variant="secondary"
 									/>
@@ -103,7 +103,7 @@ export function ActivityFormModal({
 								<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
 									<ControlledTextField
 										control={form.control}
-										label="Activity Date"
+										label="活動日期"
 										name="activityDate"
 										type="date"
 									/>
@@ -111,10 +111,10 @@ export function ActivityFormModal({
 									<ControlledTextField
 										control={form.control}
 										isRequired={false}
-										label="Memo"
+										label="備註"
 										name="activityMemo"
 										placeholder={
-											mode === "create" ? "e.g. Annual dinner" : undefined
+											mode === "create" ? "例如：年度聚餐" : undefined
 										}
 									/>
 								</div>
@@ -122,7 +122,7 @@ export function ActivityFormModal({
 						</Modal.Body>
 						<Modal.Footer>
 							<Button onPress={onClose} variant="secondary">
-								Cancel
+								取消
 							</Button>
 							<Button
 								isDisabled={!isSubmittable}

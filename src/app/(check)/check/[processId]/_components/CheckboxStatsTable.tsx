@@ -135,9 +135,9 @@ export function CheckboxStatsTable({
 				</div>
 			</div>
 
-			<Table aria-label="核取方塊統計表" variant="secondary">
+			<Table variant="secondary">
 				<Table.ScrollContainer>
-					<Table.Content>
+					<Table.Content aria-label="核取方塊統計表">
 						<Table.Header>
 							<Table.Column
 								className="whitespace-nowrap"

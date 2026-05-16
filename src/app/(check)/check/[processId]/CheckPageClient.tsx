@@ -106,14 +106,12 @@ export function CheckPageClient({
 										</div>
 										<div className="space-y-1">
 											<p className="font-semibold text-xl">
-												{syncMutation.isPending
-													? "同步數據中..."
-													: "尚未同步數據"}
+												{syncMutation.isPending ? "同步數據中..." : "無數據"}
 											</p>
 											<p className="mx-auto max-w-xs text-muted-foreground">
 												{syncMutation.isPending
 													? "請稍候，我們正在首次從 Google 試算表獲取最新數據。"
-													: "您的本地資料庫目前是空的。請從 Google 試算表開始同步。"}
+													: "您的本地資料庫目前是空的。"}
 											</p>
 										</div>
 									</div>
