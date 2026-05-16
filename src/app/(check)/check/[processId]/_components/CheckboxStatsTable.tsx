@@ -1,6 +1,7 @@
 "use client";
 
-import { Checkbox, Label, ListBox, Select, Table } from "@heroui/react";
+import { Button, Checkbox, Label, ListBox, Select, Table, Tooltip } from "@heroui/react";
+import { RefreshCcw } from "lucide-react";
 import { useCheckboxStats } from "../_hooks/useCheckboxStats";
 
 interface Column {
@@ -20,9 +21,16 @@ interface DataRow {
 interface CheckboxStatsTableProps {
 	columns: Column[];
 	data: DataRow[];
+	onRefetch?: () => void;
+	isRefetching?: boolean;
 }
 
-export function CheckboxStatsTable({ columns, data }: CheckboxStatsTableProps) {
+export function CheckboxStatsTable({
+	columns,
+	data,
+	onRefetch,
+	isRefetching,
+}: CheckboxStatsTableProps) {
 	const {
 		checkboxColumns,
 		groupableColumns,
@@ -80,14 +88,36 @@ export function CheckboxStatsTable({ columns, data }: CheckboxStatsTableProps) {
 					</Select>
 				</div>
 
-				<Checkbox isSelected={showRowRatio} onChange={setShowRowRatio}>
-					<Checkbox.Control>
-						<Checkbox.Indicator />
-					</Checkbox.Control>
-					<Label className="cursor-pointer font-medium text-sm">
-						顯示比率欄位
-					</Label>
-				</Checkbox>
+				<div className="flex items-center gap-6">
+					<Checkbox isSelected={showRowRatio} onChange={setShowRowRatio}>
+						<Checkbox.Control>
+							<Checkbox.Indicator />
+						</Checkbox.Control>
+						<Label className="cursor-pointer font-medium text-sm">
+							顯示比率欄位
+						</Label>
+					</Checkbox>
+
+					{onRefetch && (
+						<Tooltip closeDelay={0} delay={0}>
+							<Tooltip.Trigger>
+								<Button
+									className="text-muted-foreground"
+									isIconOnly
+									isPending={isRefetching}
+									onPress={onRefetch}
+									size="sm"
+									variant="tertiary"
+								>
+									{!isRefetching && <RefreshCcw className="size-4" />}
+								</Button>
+							</Tooltip.Trigger>
+							<Tooltip.Content placement="top">
+								手動重新獲取最新統計資料
+							</Tooltip.Content>
+						</Tooltip>
+					)}
+				</div>
 			</div>
 
 			<Table aria-label="核取方塊統計表" variant="secondary">

@@ -35,6 +35,7 @@ export function CheckPageClient({
 		setVisibleColumnNames,
 		handleSaveVisibleColumns,
 		isSavingVisibleColumns,
+		handleManualRefetch,
 	} = useCheckData(id);
 
 	return (
@@ -124,7 +125,12 @@ export function CheckPageClient({
 					<Tabs.Panel id="statistics">
 						<div className="pt-6">
 							<Card className="mx-auto w-full max-w-7xl border-none bg-content1 p-6 shadow-md">
-								<CheckboxStatsTable columns={columns} data={syncedData ?? []} />
+								<CheckboxStatsTable
+									columns={columns}
+									data={syncedData ?? []}
+									isRefetching={isQueryLoading}
+									onRefetch={handleManualRefetch}
+								/>
 							</Card>
 						</div>
 					</Tabs.Panel>

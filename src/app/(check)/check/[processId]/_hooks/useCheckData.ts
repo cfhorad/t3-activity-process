@@ -14,7 +14,7 @@ export function useCheckData(processId: number) {
 	const [hasAttemptedAutoSync, setHasAttemptedAutoSync] = useState(false);
 	const [visibleColumnNames, setVisibleColumnNames] = useState<string[]>([]);
 
-	const { data: syncedData, isLoading: isQueryLoading } =
+	const { data: syncedData, isLoading: isQueryLoading, refetch: refetchData } =
 		api.checkSheet.getAll.useQuery({
 			processId,
 			search: debouncedSearch,
@@ -180,6 +180,15 @@ export function useCheckData(processId: number) {
 		});
 	};
 
+	const handleManualRefetch = async () => {
+		try {
+			await refetchData();
+			toast.success("統計數據已更新至最新");
+		} catch {
+			toast.danger("更新數據失敗，請稍後再試");
+		}
+	};
+
 	return {
 		search,
 		setSearch,
@@ -198,5 +207,6 @@ export function useCheckData(processId: number) {
 		setVisibleColumnNames,
 		handleSaveVisibleColumns,
 		isSavingVisibleColumns: saveVisibleColumnsMutation.isPending,
+		handleManualRefetch,
 	};
 }
