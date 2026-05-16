@@ -1,7 +1,7 @@
 "use client";
 
 import { Card, Label, SearchField, Spinner, Tabs } from "@heroui/react";
-import { Search } from "lucide-react";
+import { BarChart3, List, Search } from "lucide-react";
 import { use } from "react";
 import { FilterSelect } from "~/app/_components/filter-select";
 import { CheckboxStatsTable } from "./_components/CheckboxStatsTable";
@@ -46,7 +46,7 @@ export function CheckPageClient({
 				<div className="mx-auto flex w-full max-w-5xl flex-col items-end gap-4 sm:flex-row">
 					<SearchField
 						aria-label="搜尋..."
-						className="w-full sm:flex-1"
+						className={`w-full ${filterableColumns.length === 1 ? "sm:w-1/2" : "sm:w-1/3"}`}
 						onChange={setSearch}
 						value={search}
 						variant="secondary"
@@ -60,30 +60,48 @@ export function CheckPageClient({
 							<SearchField.ClearButton />
 						</SearchField.Group>
 					</SearchField>
-					{filterableColumns.map((col: { columnName: string }) => (
-						<FilterSelect
-							className="w-full sm:flex-1"
-							columnName={col.columnName}
-							key={col.columnName}
-							onSelectionChange={(values: string[]) =>
-								updateFilter(col.columnName, values)
-							}
-							processId={id}
-							selectedKeys={selectedFilters[col.columnName] ?? []}
-							type="check"
-						/>
-					))}
+					<div
+						className={`grid w-full gap-4 ${
+							filterableColumns.length === 1 ? "sm:w-1/2" : "sm:w-2/3"
+						} ${
+							filterableColumns.length >= 3
+								? "grid-cols-3"
+								: filterableColumns.length === 2
+									? "grid-cols-2"
+									: "grid-cols-1"
+						}`}
+					>
+						{filterableColumns.map((col: { columnName: string }) => (
+							<FilterSelect
+								className="w-full"
+								columnName={col.columnName}
+								key={col.columnName}
+								onSelectionChange={(values: string[]) =>
+									updateFilter(col.columnName, values)
+								}
+								processId={id}
+								selectedKeys={selectedFilters[col.columnName] ?? []}
+								type="check"
+							/>
+						))}
+					</div>
 				</div>
 
 				<Tabs variant="secondary">
 					<Tabs.ListContainer>
 						<Tabs.List aria-label="核取選項">
 							<Tabs.Tab id="data-list">
-								數據清單
+								<div className="flex items-center gap-2">
+									<List className="size-4 text-blue-500" />
+									<span>數據清單</span>
+								</div>
 								<Tabs.Indicator />
 							</Tabs.Tab>
 							<Tabs.Tab id="statistics">
-								統計數據
+								<div className="flex items-center gap-2">
+									<BarChart3 className="size-4 text-orange-500" />
+									<span>統計數據</span>
+								</div>
 								<Tabs.Indicator />
 							</Tabs.Tab>
 						</Tabs.List>

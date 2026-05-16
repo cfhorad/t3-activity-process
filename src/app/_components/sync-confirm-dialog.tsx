@@ -6,11 +6,23 @@ import { RefreshCcw } from "lucide-react";
 interface SyncConfirmDialogProps {
 	isSyncing: boolean;
 	onSync: () => void;
+	title?: string;
+	description?: string;
+	triggerLabel?: string;
+	triggerPendingLabel?: string;
+	confirmLabel?: string;
+	cancelLabel?: string;
 }
 
 export function SyncConfirmDialog({
 	isSyncing,
 	onSync,
+	title = "確認同步數據",
+	description = "同步將從 Google 試算表獲取最新數據並替換您的本地數據。此操作無法撤銷。",
+	triggerLabel = "同步數據",
+	triggerPendingLabel = "同步中...",
+	confirmLabel = "立即同步",
+	cancelLabel = "取消",
 }: SyncConfirmDialogProps) {
 	return (
 		<AlertDialog>
@@ -24,7 +36,7 @@ export function SyncConfirmDialog({
 						<RefreshCcw
 							className={`size-4 ${isSyncing ? "animate-spin" : ""}`}
 						/>
-						{isSyncing ? "同步中..." : "從 Google 試算表同步"}
+						{isSyncing ? triggerPendingLabel : triggerLabel}
 					</div>
 				</Button>
 			</AlertDialog.Trigger>
@@ -35,21 +47,18 @@ export function SyncConfirmDialog({
 						<AlertDialog.Header>
 							<AlertDialog.Icon status="warning" />
 							<AlertDialog.Heading id="sync-confirm-heading">
-								確認同步數據
+								{title}
 							</AlertDialog.Heading>
 						</AlertDialog.Header>
 						<AlertDialog.Body>
-							<p>
-								同步將從 Google 試算表獲取最新數據並替換您的本地報到狀態。
-								此操作無法撤銷。
-							</p>
+							<p>{description}</p>
 						</AlertDialog.Body>
 						<AlertDialog.Footer>
 							<Button slot="close" variant="tertiary">
-								取消
+								{cancelLabel}
 							</Button>
 							<Button onPress={onSync} slot="close" variant="primary">
-								立即同步
+								{confirmLabel}
 							</Button>
 						</AlertDialog.Footer>
 					</AlertDialog.Dialog>
