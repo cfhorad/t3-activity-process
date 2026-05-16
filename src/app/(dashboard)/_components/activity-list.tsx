@@ -14,7 +14,7 @@ export function ActivityList({ userRole }: { userRole: string }) {
 				<div className="flex flex-col items-center gap-2">
 					<Spinner size="lg" />
 					<span className="text-muted-foreground text-small">
-						Loading activities...
+						載入活動中...
 					</span>
 				</div>
 			</div>
@@ -25,9 +25,9 @@ export function ActivityList({ userRole }: { userRole: string }) {
 		return (
 			<div className="flex h-64 flex-col items-center justify-center rounded-2xl border-2 border-divider border-dashed bg-content1/50 p-12 text-center">
 				<LayoutGrid className="mb-4 h-12 w-12 text-muted-foreground" />
-				<h3 className="font-bold text-xl">No activities found</h3>
+				<h3 className="font-bold text-xl">尚未建立任何活動</h3>
 				<p className="text-muted-foreground">
-					Create your first activity to get started.
+					建立您的第一個活動以開始使用。
 				</p>
 			</div>
 		);
