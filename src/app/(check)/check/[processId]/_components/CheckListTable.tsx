@@ -1,10 +1,12 @@
 "use client";
 
-import { Button, Checkbox, Table } from "@heroui/react";
+import { Button, Checkbox, Table, useOverlayState } from "@heroui/react";
 import { Save } from "lucide-react";
+import { useState } from "react";
 import { ColumnSelect } from "./ColumnSelect";
+import { RowInfoModal } from "./RowInfoModal";
 
-interface Column {
+export interface Column {
 	id: number;
 	columnName: string;
 	isCheckbox: boolean;
@@ -12,7 +14,7 @@ interface Column {
 	displayOrder: number;
 }
 
-interface DataRow {
+export interface DataRow {
 	id: number;
 	processId: number;
 	data: unknown;
@@ -39,6 +41,14 @@ export function CheckListTable({
 	onSaveVisibleColumns,
 	isSavingVisibleColumns,
 }: CheckListTableProps) {
+	const infoState = useOverlayState();
+	const [selectedRow, setSelectedRow] = useState<DataRow | null>(null);
+
+	const handleRowPress = (row: DataRow) => {
+		setSelectedRow(row);
+		infoState.open();
+	};
+
 	return (
 		<div className="flex flex-col gap-4">
 			<div className="flex w-full items-center justify-between gap-4">
@@ -91,7 +101,12 @@ export function CheckListTable({
 								</Table.Row>
 							) : (
 								data.map((row) => (
-									<Table.Row id={row.id.toString()} key={row.id}>
+									<Table.Row
+										className="cursor-pointer transition-colors hover:bg-content2/50"
+										id={row.id.toString()}
+										key={row.id}
+										onAction={() => handleRowPress(row)}
+									>
 										{visibleColumns.map((col) => {
 											const value = (row.data as Record<string, unknown>)[
 												col.columnName
@@ -105,6 +120,7 @@ export function CheckListTable({
 														<div className="flex justify-center">
 															<Checkbox
 																aria-label={`為第 ${row.id} 列核取 ${col.columnName}`}
+																className="**:data-[slot='checkbox-default-indicator--checkmark']:size-4"
 																isSelected={!!value}
 																onChange={(isSelected) => {
 																	onCheckboxChange(
@@ -113,8 +129,9 @@ export function CheckListTable({
 																		isSelected,
 																	);
 																}}
+																onClick={(e) => e.stopPropagation()}
 															>
-																<Checkbox.Control>
+																<Checkbox.Control className="size-6 rounded-full before:rounded-full">
 																	<Checkbox.Indicator />
 																</Checkbox.Control>
 															</Checkbox>
@@ -134,6 +151,13 @@ export function CheckListTable({
 					</Table.Content>
 				</Table.ScrollContainer>
 			</Table>
+
+			<RowInfoModal
+				allColumns={allColumns}
+				isOpen={infoState.isOpen}
+				onOpenChange={infoState.setOpen}
+				row={selectedRow}
+			/>
 		</div>
 	);
 }
