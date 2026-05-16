@@ -1,9 +1,9 @@
 "use client";
 
-import { Card, Label, SearchField, Spinner, Tabs } from "@heroui/react";
-import { BarChart3, List, Search } from "lucide-react";
+import { Card, Spinner, Tabs } from "@heroui/react";
+import { BarChart3, List } from "lucide-react";
 import { use } from "react";
-import { FilterSelect } from "~/app/_components/filter-select";
+import { DataFilterToolbar } from "~/app/_components/data-filter-toolbar";
 import { CheckboxStatsTable } from "./_components/CheckboxStatsTable";
 import { CheckHeader } from "./_components/CheckHeader";
 import { CheckListTable } from "./_components/CheckListTable";
@@ -43,49 +43,15 @@ export function CheckPageClient({
 					processId={id}
 				/>
 
-				<div className="mx-auto flex w-full max-w-5xl flex-col items-end gap-4 sm:flex-row">
-					<SearchField
-						aria-label="搜尋..."
-						className={`w-full ${filterableColumns.length === 1 ? "sm:w-1/2" : "sm:w-1/3"}`}
-						onChange={setSearch}
-						value={search}
-						variant="secondary"
-					>
-						<Label>搜尋</Label>
-						<SearchField.Group>
-							<SearchField.SearchIcon>
-								<Search className="size-4 text-muted-foreground" />
-							</SearchField.SearchIcon>
-							<SearchField.Input placeholder="搜尋..." />
-							<SearchField.ClearButton />
-						</SearchField.Group>
-					</SearchField>
-					<div
-						className={`grid w-full gap-4 ${
-							filterableColumns.length === 1 ? "sm:w-1/2" : "sm:w-2/3"
-						} ${
-							filterableColumns.length >= 3
-								? "grid-cols-3"
-								: filterableColumns.length === 2
-									? "grid-cols-2"
-									: "grid-cols-1"
-						}`}
-					>
-						{filterableColumns.map((col: { columnName: string }) => (
-							<FilterSelect
-								className="w-full"
-								columnName={col.columnName}
-								key={col.columnName}
-								onSelectionChange={(values: string[]) =>
-									updateFilter(col.columnName, values)
-								}
-								processId={id}
-								selectedKeys={selectedFilters[col.columnName] ?? []}
-								type="check"
-							/>
-						))}
-					</div>
-				</div>
+				<DataFilterToolbar
+					filterableColumns={filterableColumns}
+					filterType="check"
+					onFilterChange={updateFilter}
+					onSearchChange={setSearch}
+					processId={id}
+					search={search}
+					selectedFilters={selectedFilters}
+				/>
 
 				<Tabs variant="secondary">
 					<Tabs.ListContainer>

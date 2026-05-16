@@ -1,9 +1,8 @@
 "use client";
 
-import { Button, Card, SearchField, Spinner } from "@heroui/react";
-import { Search } from "lucide-react";
+import { Button, Card, Spinner } from "@heroui/react";
 import { use } from "react";
-import { FilterSelect } from "~/app/_components/filter-select";
+import { DataFilterToolbar } from "~/app/_components/data-filter-toolbar";
 import { ProcessCard } from "./_components/ProcessCard";
 import { ProcessHeader } from "./_components/ProcessHeader";
 import { SkeletonGrid } from "./_components/SkeletonGrid";
@@ -38,38 +37,14 @@ export function ProcessPageClient({
 					processId={id}
 				/>
 
-				<div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
-					<SearchField
-						aria-label="Search all data"
-						className="w-full"
-						onChange={setSearch}
-						value={search}
-						variant="secondary"
-					>
-						<SearchField.Group>
-							<SearchField.SearchIcon>
-								<Search className="size-4 text-muted-foreground" />
-							</SearchField.SearchIcon>
-							<SearchField.Input placeholder="Search all data..." />
-							<SearchField.ClearButton />
-						</SearchField.Group>
-					</SearchField>
-
-					<div className="flex flex-col flex-wrap gap-4 sm:flex-row">
-						{filterableColumns.map((col) => (
-							<FilterSelect
-								columnName={col.columnName}
-								key={col.columnName}
-								onSelectionChange={(values) =>
-									updateFilter(col.columnName, values)
-								}
-								processId={id}
-								selectedKeys={selectedFilters[col.columnName] ?? []}
-								type="google"
-							/>
-						))}
-					</div>
-				</div>
+				<DataFilterToolbar
+					filterableColumns={filterableColumns}
+					onFilterChange={updateFilter}
+					onSearchChange={setSearch}
+					processId={id}
+					search={search}
+					selectedFilters={selectedFilters}
+				/>
 
 				<Card className="mx-auto w-full max-w-2xl border-none bg-content1 shadow-md">
 					{isQueryLoading ? (
