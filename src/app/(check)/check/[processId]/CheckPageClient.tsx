@@ -1,13 +1,12 @@
 "use client";
 
-import { Card, SearchField, Spinner, Tabs } from "@heroui/react";
+import { Card, Label, SearchField, Spinner, Tabs } from "@heroui/react";
 import { Search } from "lucide-react";
 import { use } from "react";
 import { FilterSelect } from "~/app/_components/filter-select";
 import { CheckboxStatsTable } from "./_components/CheckboxStatsTable";
 import { CheckHeader } from "./_components/CheckHeader";
 import { CheckListTable } from "./_components/CheckListTable";
-import { ColumnSelect } from "./_components/ColumnSelect";
 import { useCheckData } from "./_hooks/useCheckData";
 
 export function CheckPageClient({
@@ -44,6 +43,38 @@ export function CheckPageClient({
 					processId={id}
 				/>
 
+				<div className="mx-auto flex w-full max-w-5xl flex-col items-end gap-4 sm:flex-row">
+					<SearchField
+						aria-label="搜尋..."
+						className="w-full sm:flex-1"
+						onChange={setSearch}
+						value={search}
+						variant="secondary"
+					>
+						<Label>搜尋</Label>
+						<SearchField.Group>
+							<SearchField.SearchIcon>
+								<Search className="size-4 text-muted-foreground" />
+							</SearchField.SearchIcon>
+							<SearchField.Input placeholder="搜尋..." />
+							<SearchField.ClearButton />
+						</SearchField.Group>
+					</SearchField>
+					{filterableColumns.map((col: { columnName: string }) => (
+						<FilterSelect
+							className="w-full sm:flex-1"
+							columnName={col.columnName}
+							key={col.columnName}
+							onSelectionChange={(values: string[]) =>
+								updateFilter(col.columnName, values)
+							}
+							processId={id}
+							selectedKeys={selectedFilters[col.columnName] ?? []}
+							type="check"
+						/>
+					))}
+				</div>
+
 				<Tabs variant="secondary">
 					<Tabs.ListContainer>
 						<Tabs.List aria-label="核取選項">
@@ -60,54 +91,19 @@ export function CheckPageClient({
 
 					<Tabs.Panel id="data-list">
 						<div className="flex flex-col gap-6 pt-6">
-							<div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
-								<SearchField
-									aria-label="搜尋參與者"
-									className="w-full"
-									onChange={setSearch}
-									value={search}
-									variant="secondary"
-								>
-									<SearchField.Group>
-										<SearchField.SearchIcon>
-											<Search className="size-4 text-muted-foreground" />
-										</SearchField.SearchIcon>
-										<SearchField.Input placeholder="搜尋參與者..." />
-										<SearchField.ClearButton />
-									</SearchField.Group>
-								</SearchField>
-
-								<div className="flex flex-col flex-wrap gap-4 sm:flex-row">
-									<ColumnSelect
-										columns={columns}
-										onSelectionChange={setVisibleColumnNames}
-										visibleColumnNames={visibleColumnNames}
-									/>
-									{filterableColumns.map((col: { columnName: string }) => (
-										<FilterSelect
-											columnName={col.columnName}
-											key={col.columnName}
-											onSelectionChange={(values: string[]) =>
-												updateFilter(col.columnName, values)
-											}
-											processId={id}
-											selectedKeys={selectedFilters[col.columnName] ?? []}
-											type="check"
-										/>
-									))}
-								</div>
-							</div>
-
-							<Card className="mx-auto w-full max-w-7xl overflow-hidden border-none bg-content1 shadow-md">
+							<Card className="mx-auto w-full max-w-7xl overflow-hidden border-none bg-content1 p-6 shadow-md">
 								{isQueryLoading ? (
 									<div className="flex h-64 items-center justify-center">
 										<Spinner size="lg" />
 									</div>
 								) : syncedData && syncedData.length > 0 ? (
 									<CheckListTable
-										columns={visibleColumns}
+										allColumns={columns}
 										data={syncedData}
 										onCheckboxChange={updateCheckbox}
+										onVisibleColumnsChange={setVisibleColumnNames}
+										visibleColumnNames={visibleColumnNames}
+										visibleColumns={visibleColumns}
 									/>
 								) : (
 									<div className="flex flex-col items-center justify-center gap-4 p-20 text-center">

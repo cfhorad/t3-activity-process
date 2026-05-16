@@ -9,6 +9,7 @@ interface FilterSelectProps {
 	columnName: string;
 	selectedKeys: string[];
 	onSelectionChange: (keys: string[]) => void;
+	className?: string;
 }
 
 const ALL_KEY = "__ALL__";
@@ -19,6 +20,7 @@ export function FilterSelect({
 	columnName,
 	selectedKeys,
 	onSelectionChange,
+	className,
 }: FilterSelectProps) {
 	const googleQuery = api.googleSheet.getUniqueValues.useQuery(
 		{ processId, columnName },
@@ -39,7 +41,7 @@ export function FilterSelect({
 
 	return (
 		<Select
-			className="w-full sm:max-w-[200px]"
+			className={className}
 			onChange={(val) => {
 				if (val === ALL_KEY || val === null) {
 					onSelectionChange([]);

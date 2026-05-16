@@ -2,6 +2,7 @@
 
 import { Checkbox, Table } from "@heroui/react";
 import { useMemo } from "react";
+import { ColumnSelect } from "./ColumnSelect";
 
 interface Column {
 	id: number;
@@ -18,13 +19,19 @@ interface DataRow {
 }
 
 interface CheckListTableProps {
-	columns: Column[];
+	allColumns: Column[];
+	visibleColumns: Column[];
+	visibleColumnNames: string[];
+	onVisibleColumnsChange: (keys: string[]) => void;
 	data: DataRow[];
 	onCheckboxChange: (id: number, columnName: string, newValue: boolean) => void;
 }
 
 export function CheckListTable({
-	columns,
+	allColumns,
+	visibleColumns,
+	visibleColumnNames,
+	onVisibleColumnsChange,
 	data,
 	onCheckboxChange,
 }: CheckListTableProps) {
@@ -32,71 +39,89 @@ export function CheckListTable({
 		return [...data].sort((a, b) => a.id - b.id);
 	}, [data]);
 
-	if (columns.length === 0) {
-		return (
-			<div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
-				<p className="font-medium">未選擇欄位</p>
-				<p className="text-sm">請至少選擇一個欄位進行顯示。</p>
-			</div>
-		);
-	}
-
 	return (
-		<Table variant="secondary">
-			<Table.ScrollContainer>
-				<Table.Content aria-label="報到清單數據表">
-					<Table.Header>
-						{columns.map((col, index) => (
-							<Table.Column
-								id={col.columnName}
-								isRowHeader={index === 0}
-								key={col.columnName}
-							>
-								{col.columnName}
-							</Table.Column>
-						))}
-					</Table.Header>
-					<Table.Body>
-						{sortedData.map((row) => (
-							<Table.Row id={row.id.toString()} key={row.id}>
-								{columns.map((col) => {
-									const value = (row.data as Record<string, unknown>)[
-										col.columnName
-									];
+		<div className="flex flex-col gap-4">
+			<div className="flex w-full">
+				<ColumnSelect
+					columns={allColumns}
+					onSelectionChange={onVisibleColumnsChange}
+					visibleColumnNames={visibleColumnNames}
+				/>
+			</div>
 
-									return (
-										<Table.Cell key={`${row.id}-${col.columnName}`}>
-											{col.isCheckbox ? (
-												<div className="flex justify-center">
-													<Checkbox
-														aria-label={`為第 ${row.id} 列核取 ${col.columnName}`}
-														isSelected={!!value}
-														onChange={(isSelected) => {
-															onCheckboxChange(
-																row.id,
-																col.columnName,
-																isSelected,
-															);
-														}}
-													>
-														<Checkbox.Control>
-															<Checkbox.Indicator />
-														</Checkbox.Control>
-													</Checkbox>
-												</div>
-											) : (
-												<span className="whitespace-pre-wrap text-sm">
-													{value?.toString() ?? ""}
-												</span>
-											)}
-										</Table.Cell>
-									);
-								})}
-							</Table.Row>
-						))}
-					</Table.Body>
-				</Table.Content>
-			</Table.ScrollContainer>
-		</Table>
+			<Table variant="secondary">
+				<Table.ScrollContainer>
+					<Table.Content aria-label="報到清單數據表">
+						<Table.Header>
+							{visibleColumns.length === 0 ? (
+								<Table.Column id="placeholder" isRowHeader>
+									未選擇欄位
+								</Table.Column>
+							) : (
+								visibleColumns.map((col, index) => (
+									<Table.Column
+										id={col.columnName}
+										isRowHeader={index === 0}
+										key={col.columnName}
+									>
+										{col.columnName}
+									</Table.Column>
+								))
+							)}
+						</Table.Header>
+						<Table.Body>
+							{visibleColumns.length === 0 ? (
+								<Table.Row id="no-columns">
+									<Table.Cell>
+										<div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+											<p className="font-medium">未選擇欄位</p>
+											<p className="text-sm">請至少選擇一個欄位進行顯示。</p>
+										</div>
+									</Table.Cell>
+								</Table.Row>
+							) : (
+								sortedData.map((row) => (
+									<Table.Row id={row.id.toString()} key={row.id}>
+										{visibleColumns.map((col) => {
+											const value = (row.data as Record<string, unknown>)[
+												col.columnName
+											];
+
+											return (
+												<Table.Cell key={`${row.id}-${col.columnName}`}>
+													{col.isCheckbox ? (
+														<div className="flex justify-center">
+															<Checkbox
+																aria-label={`為第 ${row.id} 列核取 ${col.columnName}`}
+																isSelected={!!value}
+																onChange={(isSelected) => {
+																	onCheckboxChange(
+																		row.id,
+																		col.columnName,
+																		isSelected,
+																	);
+																}}
+															>
+																<Checkbox.Control>
+																	<Checkbox.Indicator />
+																</Checkbox.Control>
+															</Checkbox>
+														</div>
+													) : (
+														<span className="whitespace-pre-wrap text-sm">
+															{value?.toString() ?? ""}
+														</span>
+													)}
+												</Table.Cell>
+											);
+										})}
+									</Table.Row>
+								))
+							)}
+						</Table.Body>
+					</Table.Content>
+				</Table.ScrollContainer>
+			</Table>
+		</div>
 	);
 }
