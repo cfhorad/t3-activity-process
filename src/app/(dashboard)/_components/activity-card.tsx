@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { ConfirmDeleteDialog } from "~/components/confirm-delete-dialog";
 import { api } from "~/trpc/react";
 import { DashboardItemCard } from "../../_components/dashboard-item-card";
+import { ActivityInfoModal } from "./activity-info-modal";
 import { EditActivityModal } from "./edit-activity-modal";
 
 interface ActivityCardProps {
@@ -14,6 +15,8 @@ interface ActivityCardProps {
 		googleSheetId: string;
 		activityDate: string;
 		activityMemo?: string | null;
+		createdAt: Date;
+		creator?: { name: string | null } | null;
 		processes?: { id: number }[];
 	};
 	userRole: string;
@@ -23,6 +26,7 @@ export function ActivityCard({ activity, userRole }: ActivityCardProps) {
 	const router = useRouter();
 	const editState = useOverlayState();
 	const deleteState = useOverlayState();
+	const infoState = useOverlayState();
 	const utils = api.useUtils();
 
 	const deleteActivity = api.activity.delete.useMutation({
@@ -47,6 +51,7 @@ export function ActivityCard({ activity, userRole }: ActivityCardProps) {
 				onClick={() => router.push(linkHref)}
 				onDelete={isAuthorized ? () => deleteState.open() : undefined}
 				onEdit={isAuthorized ? () => editState.open() : undefined}
+				onInfo={() => infoState.open()}
 				title={activity.name}
 			/>
 
@@ -71,6 +76,12 @@ export function ActivityCard({ activity, userRole }: ActivityCardProps) {
 				onConfirm={() => deleteActivity.mutate({ id: activity.id })}
 				onOpenChange={deleteState.setOpen}
 				title="Delete Activity?"
+			/>
+
+			<ActivityInfoModal
+				activity={activity}
+				isOpen={infoState.isOpen}
+				onOpenChange={infoState.setOpen}
 			/>
 		</>
 	);
