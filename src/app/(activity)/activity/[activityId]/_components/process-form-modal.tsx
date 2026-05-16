@@ -19,7 +19,7 @@ interface ProcessFormData {
 	name: string;
 	sheetName: string;
 	type: "PROCESS" | "CHECK" | "WEB";
-	processDate: string;
+	processDate?: string | null;
 	processMemo?: string | null;
 	iframeSrc?: string | null;
 }
@@ -35,7 +35,7 @@ interface ProcessFormModalProps {
 		name: string;
 		sheetName: string;
 		type: "PROCESS" | "CHECK" | "WEB";
-		processDate: string;
+		processDate?: string | null;
 		processMemo?: string | null;
 		iframeSrc?: string | null;
 	};
@@ -150,11 +150,9 @@ export function ProcessFormModal({
 									isRequired
 									name="name"
 								>
-									<Label>Process Name</Label>
+									<Label>流程名稱</Label>
 									<Input
-										placeholder={
-											mode === "create" ? "e.g. Master List" : undefined
-										}
+										placeholder={mode === "create" ? "例如：總表" : undefined}
 										variant="secondary"
 									/>
 								</TextField>
@@ -165,12 +163,12 @@ export function ProcessFormModal({
 										setSelectedSheet(val as string);
 									}}
 									placeholder={
-										isLoadingSheets ? "Loading sheets..." : "Select a sheet"
+										isLoadingSheets ? "載入工作表中..." : "選擇工作表"
 									}
 									value={selectedSheet}
 									variant="secondary"
 								>
-									<Label>Google Sheet Tab Name</Label>
+									<Label>Google 試算表分頁名稱</Label>
 									<Select.Trigger>
 										<Select.Value />
 										<Select.Indicator />
@@ -196,7 +194,7 @@ export function ProcessFormModal({
 									value={selectedType}
 									variant="secondary"
 								>
-									<Label>Process Type</Label>
+									<Label>流程類型</Label>
 									<Select.Trigger>
 										<Select.Value />
 										<Select.Indicator />
@@ -222,9 +220,9 @@ export function ProcessFormModal({
 										isRequired
 										name="iframeCode"
 									>
-										<Label>Iframe Embed Code</Label>
+										<Label>Iframe 嵌入程式碼</Label>
 										<TextArea
-											placeholder='e.g. <iframe src="..."></iframe>'
+											placeholder='例如：<iframe src="..."></iframe>'
 											variant="secondary"
 										/>
 									</TextField>
@@ -233,10 +231,9 @@ export function ProcessFormModal({
 								<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
 									<TextField
 										defaultValue={initialData?.processDate ?? ""}
-										isRequired
 										name="processDate"
 									>
-										<Label>Process Date</Label>
+										<Label>執行日期</Label>
 										<Input type="date" variant="secondary" />
 									</TextField>
 								</div>
@@ -244,11 +241,9 @@ export function ProcessFormModal({
 									defaultValue={initialData?.processMemo ?? ""}
 									name="processMemo"
 								>
-									<Label>Memo (Optional)</Label>
+									<Label>備註 (選填)</Label>
 									<Input
-										placeholder={
-											mode === "create" ? "Add a memo..." : undefined
-										}
+										placeholder={mode === "create" ? "新增備註..." : undefined}
 										variant="secondary"
 									/>
 								</TextField>
@@ -256,7 +251,7 @@ export function ProcessFormModal({
 						</Modal.Body>
 						<Modal.Footer>
 							<Button onPress={onClose} variant="secondary">
-								Cancel
+								取消
 							</Button>
 							<Button
 								isDisabled={!selectedSheet}

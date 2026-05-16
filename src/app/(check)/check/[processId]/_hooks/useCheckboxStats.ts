@@ -84,24 +84,26 @@ export function useCheckboxStats(columns: Column[], data: DataRow[]) {
 		}
 
 		// Convert object map to array for the table
-		const rows = Object.entries(groups).map(([groupName, info]) => {
-			const rowTotalChecked = Object.values(info.counts).reduce(
-				(a, b) => a + b,
-				0,
-			);
-			const possibleChecked = info.total * checkboxColumns.length;
-			const rowRatio =
-				possibleChecked > 0
-					? `${((rowTotalChecked / possibleChecked) * 100).toFixed(0)}%`
-					: "0%";
+		const rows = Object.entries(groups)
+			.map(([groupName, info]) => {
+				const rowTotalChecked = Object.values(info.counts).reduce(
+					(a, b) => a + b,
+					0,
+				);
+				const possibleChecked = info.total * checkboxColumns.length;
+				const rowRatio =
+					possibleChecked > 0
+						? `${((rowTotalChecked / possibleChecked) * 100).toFixed(0)}%`
+						: "0%";
 
-			return {
-				id: groupName,
-				groupName,
-				rowRatio,
-				...info.counts,
-			};
-		}).sort((a, b) => a.groupName.localeCompare(b.groupName, "zh-Hant"));
+				return {
+					id: groupName,
+					groupName,
+					rowRatio,
+					...info.counts,
+				};
+			})
+			.sort((a, b) => a.groupName.localeCompare(b.groupName, "zh-Hant"));
 
 		// Calculate Grand Totals
 		const totals: Record<string, number> = {};

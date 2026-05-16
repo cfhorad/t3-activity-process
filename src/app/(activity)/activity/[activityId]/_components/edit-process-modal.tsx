@@ -9,7 +9,7 @@ interface Process {
 	sheetName: string;
 	type: "PROCESS" | "CHECK" | "WEB";
 	activityId: number;
-	processDate: string;
+	processDate?: string | null;
 	processMemo?: string | null;
 	iframeSrc?: string | null;
 }
@@ -48,8 +48,8 @@ export function EditProcessModal({
 			onClose={onClose}
 			onOpenChange={onOpenChange}
 			onSubmit={(data) => updateProcess.mutate({ ...data, id: process.id })}
-			submitLabel="Save Changes"
-			title="Edit Process"
+			submitLabel="儲存變更"
+			title="編輯程序"
 		/>
 	);
 }

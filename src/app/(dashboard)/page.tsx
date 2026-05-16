@@ -19,7 +19,9 @@ export default async function DashboardPage() {
 			<main className="bg-linear-to-b from-background to-content2 p-4 md:p-8">
 				<div className="mx-auto max-w-7xl">
 					<PageHeader
-						action={<CreateActivityButton userRole={session.user.role as string} />}
+						action={
+							<CreateActivityButton userRole={session.user.role as string} />
+						}
 						title="活動管理"
 					/>
 

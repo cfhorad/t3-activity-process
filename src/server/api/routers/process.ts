@@ -13,7 +13,16 @@ export const processRouter = createTRPCRouter({
 		.query(async ({ ctx, input }) => {
 			return await ctx.db.query.processes.findMany({
 				where: eq(processes.activityId, input.activityId),
-				orderBy: (processes, { desc }) => [desc(processes.createdAt)],
+				orderBy: (processes, { sql }) => [
+					sql`CASE WHEN ${processes.processDate} IS NULL OR ${processes.processDate} = '' THEN 0 ELSE 1 END`,
+					sql`${processes.processDate} ASC`,
+					sql`CASE 
+						WHEN ${processes.type} = 'WEB' THEN 1 
+						WHEN ${processes.type} = 'CHECK' THEN 2 
+						WHEN ${processes.type} = 'PROCESS' THEN 3 
+						ELSE 4 
+					END`,
+				],
 			});
 		}),
 
@@ -36,7 +45,7 @@ export const processRouter = createTRPCRouter({
 				activityId: z.number(),
 				sheetName: z.string().min(1),
 				type: z.enum(["PROCESS", "CHECK", "WEB"]).default("PROCESS"),
-				processDate: z.string().min(1),
+				processDate: z.string().optional().nullable(),
 				processMemo: z.string().optional().nullable(),
 				iframeSrc: z.string().optional().nullable(),
 			}),
@@ -64,7 +73,7 @@ export const processRouter = createTRPCRouter({
 				name: z.string().min(1),
 				sheetName: z.string().min(1),
 				type: z.enum(["PROCESS", "CHECK", "WEB"]).default("PROCESS"),
-				processDate: z.string().min(1),
+				processDate: z.string().optional().nullable(),
 				processMemo: z.string().optional().nullable(),
 				iframeSrc: z.string().optional().nullable(),
 			}),

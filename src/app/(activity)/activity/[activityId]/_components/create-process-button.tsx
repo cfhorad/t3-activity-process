@@ -55,7 +55,7 @@ export function CreateProcessButton({
 
 			<ProcessFormModal
 				activityId={activityId}
-				description="從試算表中新增分頁（Sheet）以進行追蹤管理。"
+				description="從試算表中新增分頁（Sheet）以進行管理。"
 				isOpen={state.isOpen}
 				isPending={createProcess.isPending}
 				mode="create"

@@ -1,11 +1,10 @@
 "use client";
 
-import { Button, Chip, useOverlayState } from "@heroui/react";
-import { Info } from "lucide-react";
+import { Chip, useOverlayState } from "@heroui/react";
 import { useRouter } from "next/navigation";
+import { DashboardItemCard } from "~/app/_components/dashboard-item-card";
 import { ConfirmDeleteDialog } from "~/components/confirm-delete-dialog";
 import { api } from "~/trpc/react";
-import { DashboardItemCard } from "../../../../_components/dashboard-item-card";
 import { EditProcessModal } from "./edit-process-modal";
 import { ProcessInfoModal } from "./process-info-modal";
 
@@ -16,7 +15,7 @@ interface ProcessCardProps {
 		sheetName: string;
 		type: "PROCESS" | "CHECK" | "WEB";
 		activityId: number;
-		processDate: string;
+		processDate?: string | null;
 		processMemo?: string | null;
 		iframeSrc?: string | null;
 	};
@@ -89,19 +88,6 @@ export function ProcessCard({ process, userRole, activity }: ProcessCardProps) {
 						{getTypeLabel()}
 					</Chip>
 				}
-				customActions={
-					<Button
-						className="h-8 w-full text-xs"
-						onPress={(e) => {
-							e.continuePropagation();
-							infoState.open();
-						}}
-						variant="ghost"
-					>
-						<Info className="mr-1 h-3.5 w-3.5" />
-						詳情資訊
-					</Button>
-				}
 				date={process.processDate}
 				description={process.processMemo}
 				icon={getIcon()}
@@ -114,9 +100,9 @@ export function ProcessCard({ process, userRole, activity }: ProcessCardProps) {
 								: `/process/${process.id}`,
 					)
 				}
-				onDelete={() => deleteState.open()}
-				onEdit={() => editState.open()}
-				showEditDelete={isAuthorized}
+				onDelete={isAuthorized ? () => deleteState.open() : undefined}
+				onEdit={isAuthorized ? () => editState.open() : undefined}
+				onInfo={() => infoState.open()}
 				title={process.name}
 			/>
 

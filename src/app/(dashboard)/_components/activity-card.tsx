@@ -45,9 +45,8 @@ export function ActivityCard({ activity, userRole }: ActivityCardProps) {
 				description={activity.activityMemo}
 				icon="meteocons:wind-offshore"
 				onClick={() => router.push(linkHref)}
-				onDelete={() => deleteState.open()}
-				onEdit={() => editState.open()}
-				showEditDelete={isAuthorized}
+				onDelete={isAuthorized ? () => deleteState.open() : undefined}
+				onEdit={isAuthorized ? () => editState.open() : undefined}
 				title={activity.name}
 			/>
 

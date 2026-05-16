@@ -58,7 +58,7 @@ export const processes = createTable("process", (d) => ({
 		.default("PROCESS")
 		.notNull(),
 	iframeSrc: text("iframe_src"),
-	processDate: d.text("process_date").notNull().default("2024-01-01"),
+	processDate: d.text("process_date"),
 	processMemo: d.text("process_memo"),
 	createdAt: d
 		.timestamp({ withTimezone: true })
