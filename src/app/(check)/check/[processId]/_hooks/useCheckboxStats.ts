@@ -101,7 +101,7 @@ export function useCheckboxStats(columns: Column[], data: DataRow[]) {
 				rowRatio,
 				...info.counts,
 			};
-		});
+		}).sort((a, b) => a.groupName.localeCompare(b.groupName, "zh-Hant"));
 
 		// Calculate Grand Totals
 		const totals: Record<string, number> = {};

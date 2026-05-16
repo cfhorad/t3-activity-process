@@ -152,11 +152,7 @@ export function CheckboxStatsTable({ columns, data }: CheckboxStatsTableProps) {
 												{row.groupName}
 											</Table.Cell>
 											{showRowRatio && (
-												<Table.Cell
-													className={`${
-														isSpecialRow ? "font-bold" : ""
-													} whitespace-nowrap text-accent`}
-												>
+												<Table.Cell className="whitespace-nowrap font-bold text-accent">
 													{row.rowRatio}
 												</Table.Cell>
 											)}
