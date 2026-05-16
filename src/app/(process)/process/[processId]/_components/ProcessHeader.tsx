@@ -21,7 +21,7 @@ export function ProcessHeader({
 		<PageHeader
 			action={<SyncConfirmDialog isSyncing={isSyncing} onSync={onSync} />}
 			breadcrumbs={[
-				{ label: "儀表板", href: "/" },
+				{ label: "活動管理", href: "/" },
 				{
 					label: process?.activity?.name ?? "活動",
 					href: process ? `/activity/${process.activityId}` : undefined,

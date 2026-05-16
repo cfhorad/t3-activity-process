@@ -42,7 +42,7 @@ export default async function ActivityPage({
 								href="/"
 							>
 								<ChevronLeft className="h-4 w-4 transition-transform group-hover:-translate-x-0.5" />
-								返回儀表板
+								活動管理
 							</Link>
 						</div>
 						<h1 className="text-center font-bold text-3xl tracking-tight md:text-4xl">
