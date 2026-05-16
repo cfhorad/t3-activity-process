@@ -1,7 +1,7 @@
 "use client";
 
-import { Modal, Surface } from "@heroui/react";
-import { Info } from "lucide-react";
+import { Modal, Surface, Tooltip } from "@heroui/react";
+import { Info, Phone } from "lucide-react";
 
 interface DetailsModalProps {
 	data: Record<string, string>;
@@ -32,7 +32,26 @@ export function DetailsModal({ data, title }: DetailsModalProps) {
 											{key}
 										</span>
 										<div className="whitespace-pre-wrap font-medium text-sm leading-relaxed">
-											{value || "-"}
+											{(key === "電話" || key === "手機") && value ? (
+												<Tooltip closeDelay={0} delay={0}>
+													<Tooltip.Trigger>
+														<a
+															className="flex w-fit items-center gap-2 rounded-lg bg-success-soft px-3 py-1.5 text-success transition-colors hover:bg-success-soft-hover"
+															href={`tel:${value.replace(/\s/g, "")}`}
+														>
+															<Phone className="size-4" />
+															<span className="font-semibold text-xs">
+																撥打電話
+															</span>
+														</a>
+													</Tooltip.Trigger>
+													<Tooltip.Content placement="top">
+														撥打 {value}
+													</Tooltip.Content>
+												</Tooltip>
+											) : (
+												value || "-"
+											)}
 										</div>
 									</div>
 								))}

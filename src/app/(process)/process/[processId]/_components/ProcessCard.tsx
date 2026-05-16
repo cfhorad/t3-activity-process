@@ -1,7 +1,7 @@
 "use client";
 
-import { Button, Card, Chip, Modal } from "@heroui/react";
-import { Bell, Clock, Info, Layers, Users } from "lucide-react";
+import { Button, Card, Chip, Modal, Tooltip } from "@heroui/react";
+import { Bell, Clock, Info, Layers, Phone, Users } from "lucide-react";
 import { calculateDuration, formatTimeDisplay } from "~/lib/time";
 import { DetailsModal } from "./DetailsModal";
 
@@ -15,7 +15,7 @@ interface ProcessCardProps {
 export function ProcessCard({ row }: ProcessCardProps) {
 	const data = (row.data as Record<string, string>) ?? {};
 	const title = data.主題 ?? "Untitled";
-	const footerField = "負責人";
+	const footerField: string = "負責人";
 	const duration = calculateDuration(data.StartAt, data.EndAt);
 
 	return (
@@ -84,7 +84,24 @@ export function ProcessCard({ row }: ProcessCardProps) {
 					</div>
 					<div className="flex flex-col">
 						<span className="font-bold text-sm">
-							{data[footerField] ?? "-"}
+							{(footerField === "電話" || footerField === "手機") &&
+							data[footerField] ? (
+								<Tooltip closeDelay={0} delay={0}>
+									<Tooltip.Trigger>
+										<a
+											className="flex size-8 items-center justify-center rounded-full bg-success-soft text-success transition-colors hover:bg-success-soft-hover"
+											href={`tel:${data[footerField].replace(/\s/g, "")}`}
+										>
+											<Phone className="size-4" />
+										</a>
+									</Tooltip.Trigger>
+									<Tooltip.Content placement="top">
+										撥打 {data[footerField]}
+									</Tooltip.Content>
+								</Tooltip>
+							) : (
+								(data[footerField] ?? "-")
+							)}
 						</span>
 					</div>
 				</div>

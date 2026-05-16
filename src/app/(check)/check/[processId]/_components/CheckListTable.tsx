@@ -1,7 +1,13 @@
 "use client";
 
-import { Button, Checkbox, Table, useOverlayState } from "@heroui/react";
-import { Save } from "lucide-react";
+import {
+	Button,
+	Checkbox,
+	Table,
+	Tooltip,
+	useOverlayState,
+} from "@heroui/react";
+import { Phone, Save } from "lucide-react";
 import { useState } from "react";
 import { ColumnSelect } from "./ColumnSelect";
 import { RowInfoModal } from "./RowInfoModal";
@@ -137,9 +143,30 @@ export function CheckListTable({
 															</Checkbox>
 														</div>
 													) : (
-														<span className="whitespace-nowrap text-sm">
-															{value?.toString() ?? ""}
-														</span>
+														<div className="flex items-center text-sm">
+															{(col.columnName === "電話" ||
+																col.columnName === "手機") &&
+															value ? (
+																<Tooltip closeDelay={0} delay={0}>
+																	<Tooltip.Trigger>
+																		<a
+																			className="flex size-8 items-center justify-center rounded-full bg-success-soft text-success transition-colors hover:bg-success-soft-hover"
+																			href={`tel:${value.toString().replace(/\s/g, "")}`}
+																			onClick={(e) => e.stopPropagation()}
+																		>
+																			<Phone className="size-4" />
+																		</a>
+																	</Tooltip.Trigger>
+																	<Tooltip.Content placement="top">
+																		撥打 {value.toString()}
+																	</Tooltip.Content>
+																</Tooltip>
+															) : (
+																<span className="whitespace-nowrap">
+																	{value?.toString() ?? ""}
+																</span>
+															)}
+														</div>
 													)}
 												</Table.Cell>
 											);
