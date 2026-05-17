@@ -1,4 +1,5 @@
 import { TRPCError } from "@trpc/server";
+import { and, eq, notInArray } from "drizzle-orm";
 import { z } from "zod";
 import {
 	createTRPCRouter,
@@ -23,16 +24,39 @@ export const userRouter = createTRPCRouter({
 			const session = await auth.api.getSession({ headers: ctx.headers });
 			if (!session?.user) throw new TRPCError({ code: "UNAUTHORIZED" });
 
-			await ctx.db
-				.insert(userAreas)
-				.values(
-					input.areaIds.map((areaId) => ({
-						userId: session.user.id,
-						areaId,
-						status: "pending" as const,
-					})),
-				)
-				.onConflictDoNothing();
+			const userId = session.user.id;
+			const targetAreaIds = input.areaIds;
+
+			await ctx.db.transaction(async (tx) => {
+				// 1. Delete applications that are NOT in targetAreaIds
+				await tx
+					.delete(userAreas)
+					.where(
+						and(
+							eq(userAreas.userId, userId),
+							notInArray(userAreas.areaId, targetAreaIds),
+						),
+					);
+
+				// 2. Insert new applications that don't exist yet
+				const existing = await tx
+					.select()
+					.from(userAreas)
+					.where(eq(userAreas.userId, userId));
+
+				const existingSet = new Set(existing.map((e) => e.areaId));
+				const toInsert = targetAreaIds.filter((id) => !existingSet.has(id));
+
+				if (toInsert.length > 0) {
+					await tx.insert(userAreas).values(
+						toInsert.map((areaId) => ({
+							userId,
+							areaId,
+							status: "pending" as const,
+						})),
+					);
+				}
+			});
 		}),
 
 	// For logged-in users to apply for additional areas

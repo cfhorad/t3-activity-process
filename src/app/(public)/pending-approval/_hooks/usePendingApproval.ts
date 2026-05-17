@@ -1,5 +1,5 @@
 import { toast } from "@heroui/react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Area, UserArea } from "~/server/db/schema";
 import { api } from "~/trpc/react";
 
@@ -28,7 +28,6 @@ export function usePendingApproval({ userId }: UsePendingApprovalProps) {
 		onSuccess: () => {
 			toast.success("申請已成功送出，請靜候管理員審核！");
 			setIsApplyingMore(false);
-			setSelectedAreaIds([]);
 			void utils.user.getMyAreaStatuses.invalidate();
 		},
 		onError: (err) => {
@@ -39,18 +38,16 @@ export function usePendingApproval({ userId }: UsePendingApprovalProps) {
 	const [selectedAreaIds, setSelectedAreaIds] = useState<string[]>([]);
 	const [isApplyingMore, setIsApplyingMore] = useState(false);
 
-	// Filter out already applied areas for the "Apply More" screen
-	const appliedAreaIds = useMemo(() => {
-		if (!myApplications) return new Set<string>();
-		return new Set(
-			(myApplications as AreaStatusItem[]).map((app) => app.areaId),
-		);
+	// Sync applied areas to selectedAreaIds on load
+	useEffect(() => {
+		if (myApplications) {
+			setSelectedAreaIds(myApplications.map((app) => app.areaId));
+		}
 	}, [myApplications]);
 
 	const availableToApply = useMemo(() => {
-		if (!publicAreas) return [];
-		return publicAreas.filter((area) => !appliedAreaIds.has(area.id));
-	}, [publicAreas, appliedAreaIds]);
+		return publicAreas ?? [];
+	}, [publicAreas]);
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();

@@ -20,6 +20,7 @@ import {
 	XCircle,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+
 import { authClient } from "~/server/better-auth/client";
 import type { User } from "~/server/better-auth/config";
 import type { AreaStatusItem } from "../_hooks/usePendingApproval";
@@ -132,21 +133,9 @@ function OnboardingApplyForm({
 											if (state.selectedItems.length === 0) {
 												return "選擇所屬分會";
 											}
-											return (
-												<div className="flex flex-wrap gap-1.5 py-0.5">
-													{state.selectedItems.map((item) => (
-														<Chip
-															className="font-semibold"
-															color="accent"
-															key={item.key}
-															size="sm"
-															variant="soft"
-														>
-															{item.textValue}
-														</Chip>
-													))}
-												</div>
-											);
+											return state.selectedItems
+												.map((item) => item.textValue)
+												.join("、");
 										}}
 									</Select.Value>
 									<Select.Indicator />
@@ -159,11 +148,7 @@ function OnboardingApplyForm({
 												key={area.id}
 												textValue={area.name}
 											>
-												<div className="flex w-full items-center justify-between">
-													<span className="font-medium text-sm">
-														{area.name}
-													</span>
-												</div>
+												<span className="font-medium text-sm">{area.name}</span>
 												<ListBox.ItemIndicator />
 											</ListBox.Item>
 										))}
@@ -377,7 +362,9 @@ export function PendingApprovalClient({ user }: PendingApprovalClientProps) {
 				/>
 			) : (
 				<ApplicationStatusCard
-					availableToApplyCount={availableToApply.length}
+					availableToApplyCount={
+						availableToApply.length - (myApplications?.length ?? 0)
+					}
 					myApplications={myApplications}
 					onApplyMore={() => setIsApplyingMore(true)}
 					onRefresh={() => router.refresh()}
