@@ -121,31 +121,66 @@ export const publicProcedure = t.procedure.use(timingMiddleware);
  */
 export const protectedProcedure = t.procedure
 	.use(timingMiddleware)
-	.use(({ ctx, next }) => {
+	.use(async ({ ctx, next }) => {
 		if (!ctx.session?.user) {
 			throw new TRPCError({ code: "UNAUTHORIZED" });
 		}
 
 		const user = ctx.session.user;
 
-		// Rule 1: role and areaId must not be empty
-		if (!user.role || !user.areaId) {
+		// Gate 1: account suspended
+		if (user.status === "suspended") {
 			throw new TRPCError({
 				code: "FORBIDDEN",
-				message: "您的帳號尚未被賦予角色或地區權限，請聯絡管理員。",
+				message: "ACCOUNT_SUSPENDED",
+			});
+		}
+
+		// Load ONLY approved areas (pending/rejected areas are invisible to queries)
+		const userAreaRows = await ctx.db.query.userAreas.findMany({
+			where: (ua, { and, eq }) =>
+				and(eq(ua.userId, user.id), eq(ua.status, "approved")),
+			columns: { areaId: true },
+		});
+		const areaIds = userAreaRows.map((r) => r.areaId);
+
+		// Gate 2: no approved areas yet → pending approval
+		if (areaIds.length === 0) {
+			throw new TRPCError({
+				code: "FORBIDDEN",
+				message: "PENDING_APPROVAL",
 			});
 		}
 
 		return next({
 			ctx: {
-				// infers the `session` as non-nullable
 				session: {
 					...ctx.session,
-					user: user as typeof user & { role: string; areaId: string },
+					user: {
+						...user,
+						areaIds,
+						role: user.role as "ADMIN" | "MANAGER" | "VIEWER",
+					},
 				},
 			},
 		});
 	});
+
+// Helper function to assert a manager or admin can manage a target area
+export function assertCanManageArea(
+	approverAreaIds: string[],
+	targetAreaId: string,
+) {
+	if (
+		!approverAreaIds.includes("ALL") &&
+		!approverAreaIds.includes(targetAreaId)
+	) {
+		throw new TRPCError({
+			code: "FORBIDDEN",
+			message: "您沒有管理此地區的權限",
+		});
+	}
+}
 
 /**
  * Manager procedure (ADMIN or MANAGER)

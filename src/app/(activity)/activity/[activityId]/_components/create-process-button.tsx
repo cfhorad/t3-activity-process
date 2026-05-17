@@ -15,7 +15,7 @@ export function CreateProcessButton({
 	className,
 }: {
 	activity: Pick<Activity, "id" | "createdById" | "areaId">;
-	user: User;
+	user: User & { areaIds?: string[] };
 	variant?:
 		| "primary"
 		| "secondary"
@@ -40,12 +40,14 @@ export function CreateProcessButton({
 
 	const role = user?.role?.toUpperCase();
 	const userId = user?.id;
-	const userAreaId = user?.areaId;
+	const areaIds = user?.areaIds ?? [];
 
 	const isCreator = activity.createdById === userId;
 	const isAreaAdmin =
-		role === "ADMIN" &&
-		(userAreaId === "ALL" || activity.areaId === userAreaId);
+		role === "ADMIN" ||
+		(role === "MANAGER" &&
+			activity.areaId !== null &&
+			areaIds.includes(activity.areaId));
 
 	if (!isCreator && !isAreaAdmin) {
 		return null;
@@ -53,17 +55,19 @@ export function CreateProcessButton({
 
 	return (
 		<>
-			<Tooltip delay={0}>
-				<Button
-					aria-label="新增程序"
-					className={`${className} rounded-full`}
-					isIconOnly
-					onPress={state.open}
-					size={size}
-					variant={variant}
-				>
-					<Plus className="h-5 w-5" />
-				</Button>
+			<Tooltip closeDelay={0} delay={0}>
+				<Tooltip.Trigger>
+					<Button
+						aria-label="新增程序"
+						className={`${className} rounded-full`}
+						isIconOnly
+						onPress={state.open}
+						size={size}
+						variant={variant}
+					>
+						<Plus className="h-5 w-5" />
+					</Button>
+				</Tooltip.Trigger>
 				<Tooltip.Content placement="bottom">新增程序</Tooltip.Content>
 			</Tooltip>
 

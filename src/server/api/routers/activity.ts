@@ -1,7 +1,8 @@
 import { TRPCError } from "@trpc/server";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 import {
+	assertCanManageArea,
 	createTRPCRouter,
 	managerProcedure,
 	protectedProcedure,
@@ -10,8 +11,10 @@ import { activities, processes } from "~/server/db/schema";
 
 export const activityRouter = createTRPCRouter({
 	getAll: protectedProcedure.query(async ({ ctx }) => {
-		const { areaId } = ctx.session.user;
-		const where = areaId === "ALL" ? undefined : eq(activities.areaId, areaId);
+		const { areaIds } = ctx.session.user;
+		const where = areaIds.includes("ALL")
+			? undefined
+			: inArray(activities.areaId, areaIds);
 
 		return await ctx.db.query.activities.findMany({
 			where,
@@ -26,13 +29,16 @@ export const activityRouter = createTRPCRouter({
 	getById: protectedProcedure
 		.input(z.object({ id: z.number() }))
 		.query(async ({ ctx, input }) => {
-			const { areaId } = ctx.session.user;
+			const { areaIds } = ctx.session.user;
 
 			const activity = await ctx.db.query.activities.findFirst({
-				where: (activities, { and, eq }) =>
-					areaId === "ALL"
+				where: (activities, { and, eq, inArray }) =>
+					areaIds.includes("ALL")
 						? eq(activities.id, input.id)
-						: and(eq(activities.id, input.id), eq(activities.areaId, areaId)),
+						: and(
+								eq(activities.id, input.id),
+								inArray(activities.areaId, areaIds),
+							),
 				with: {
 					processes: true,
 					creator: true,
@@ -49,16 +55,18 @@ export const activityRouter = createTRPCRouter({
 				activityDate: z.string().min(1),
 				activityMemo: z.string().optional().nullable(),
 				sheetName: z.string().optional(),
+				areaId: z.string().min(1),
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {
+			assertCanManageArea(ctx.session.user.areaIds, input.areaId);
+
 			const { sheetName, ...activityData } = input;
 			const [activity] = await ctx.db
 				.insert(activities)
 				.values({
 					...activityData,
 					createdById: ctx.session.user.id,
-					areaId: ctx.session.user.areaId,
 				})
 				.returning();
 
@@ -85,7 +93,7 @@ export const activityRouter = createTRPCRouter({
 		)
 		.mutation(async ({ ctx, input }) => {
 			const { id, ...data } = input;
-			const { id: userId, role, areaId } = ctx.session.user;
+			const { id: userId, role, areaIds } = ctx.session.user;
 
 			// Fetch activity to check ownership/area
 			const existing = await ctx.db.query.activities.findFirst({
@@ -96,7 +104,9 @@ export const activityRouter = createTRPCRouter({
 
 			const isCreator = existing.createdById === userId;
 			const isAreaAdmin =
-				role === "ADMIN" && (areaId === "ALL" || existing.areaId === areaId);
+				role === "ADMIN" &&
+				(areaIds.includes("ALL") ||
+					(existing.areaId !== null && areaIds.includes(existing.areaId)));
 
 			if (!isCreator && !isAreaAdmin) {
 				throw new TRPCError({
@@ -116,7 +126,7 @@ export const activityRouter = createTRPCRouter({
 	delete: managerProcedure
 		.input(z.object({ id: z.number() }))
 		.mutation(async ({ ctx, input }) => {
-			const { id: userId, role, areaId } = ctx.session.user;
+			const { id: userId, role, areaIds } = ctx.session.user;
 
 			const existing = await ctx.db.query.activities.findFirst({
 				where: eq(activities.id, input.id),
@@ -126,7 +136,9 @@ export const activityRouter = createTRPCRouter({
 
 			const isCreator = existing.createdById === userId;
 			const isAreaAdmin =
-				role === "ADMIN" && (areaId === "ALL" || existing.areaId === areaId);
+				role === "ADMIN" &&
+				(areaIds.includes("ALL") ||
+					(existing.areaId !== null && areaIds.includes(existing.areaId)));
 
 			if (!isCreator && !isAreaAdmin) {
 				throw new TRPCError({

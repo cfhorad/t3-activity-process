@@ -4,11 +4,58 @@ import { Card, Spinner, Tabs } from "@heroui/react";
 import { BarChart3, List } from "lucide-react";
 import { use } from "react";
 import { DataFilterToolbar } from "~/app/_components/data-filter-toolbar";
+import { PageHeader } from "~/app/_components/page-header";
+import { SyncConfirmDialog } from "~/app/_components/sync-confirm-dialog";
 import type { User } from "~/server/better-auth/config";
+import { api } from "~/trpc/react";
 import { CheckboxStatsTable } from "./_components/CheckboxStatsTable";
-import { CheckHeader } from "./_components/CheckHeader";
 import { CheckListTable } from "./_components/CheckListTable";
 import { useCheckData } from "./_hooks/useCheckData";
+
+// ─── SUB-COMPONENTS ───────────────────────────────────────────
+
+/**
+ * 1. Check Header Component
+ */
+interface CheckHeaderProps {
+	processId: number;
+	isSyncing: boolean;
+	onSync: () => void;
+	user: User & { areaIds?: string[] };
+}
+
+function CheckHeader({ processId, isSyncing, onSync, user }: CheckHeaderProps) {
+	const { data: process } = api.process.getById.useQuery({ id: processId });
+
+	const role = user?.role?.toUpperCase();
+	const userId = user?.id;
+	const areaIds = user?.areaIds ?? [];
+
+	const isCreator = process?.activity?.createdById === userId;
+	const isAreaAdmin =
+		role === "ADMIN" ||
+		(role === "MANAGER" &&
+			process?.activity?.areaId !== null &&
+			process?.activity?.areaId !== undefined &&
+			areaIds.includes(process.activity.areaId));
+
+	const isAuthorized = isCreator || isAreaAdmin;
+
+	return (
+		<PageHeader
+			action={
+				isAuthorized ? (
+					<SyncConfirmDialog isSyncing={isSyncing} onSync={onSync} />
+				) : undefined
+			}
+			backHref={process ? `/activity/${process.activityId}` : "/"}
+			backLabel={process?.activity?.name ?? "返回活動"}
+			title={process?.name ?? "報到清單"}
+		/>
+	);
+}
+
+// ─── MAIN PRESENTATIONAL COMPONENT ───────────────────────────
 
 export function CheckPageClient({
 	params,
@@ -42,7 +89,7 @@ export function CheckPageClient({
 	} = useCheckData(id);
 
 	return (
-		<main className="bg-linear-to-b from-background to-content2 p-4 md:p-8">
+		<main className="bg-linear-to-b from-background to-surface-secondary p-4 md:p-8">
 			<div className="mx-auto flex max-w-7xl flex-col gap-6">
 				<CheckHeader
 					isSyncing={syncMutation.isPending}
@@ -83,7 +130,7 @@ export function CheckPageClient({
 
 					<Tabs.Panel id="data-list">
 						<div className="flex flex-col gap-6 pt-6">
-							<Card className="mx-auto w-full max-w-7xl overflow-hidden border-none bg-content1 p-6 shadow-md">
+							<Card className="mx-auto w-full max-w-7xl overflow-hidden border-none bg-surface p-6 shadow-md">
 								{isQueryLoading ? (
 									<div className="flex h-64 items-center justify-center">
 										<Spinner size="lg" />
@@ -114,7 +161,7 @@ export function CheckPageClient({
 											<p className="font-semibold text-xl">
 												{syncMutation.isPending ? "同步數據中..." : "無數據"}
 											</p>
-											<p className="mx-auto max-w-xs text-muted-foreground">
+											<p className="mx-auto max-w-xs text-muted">
 												{syncMutation.isPending
 													? "請稍候，我們正在首次從 Google 試算表獲取最新數據。"
 													: "您的本地資料庫目前是空的。"}
@@ -128,7 +175,7 @@ export function CheckPageClient({
 
 					<Tabs.Panel id="statistics">
 						<div className="pt-6">
-							<Card className="mx-auto w-full max-w-7xl border-none bg-content1 p-6 shadow-md">
+							<Card className="mx-auto w-full max-w-7xl border-none bg-surface p-6 shadow-md">
 								<CheckboxStatsTable
 									columns={columns}
 									data={syncedData ?? []}

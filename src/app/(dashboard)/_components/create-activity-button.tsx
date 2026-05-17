@@ -7,7 +7,11 @@ import type { User } from "~/server/better-auth/config";
 import { api } from "~/trpc/react";
 import { ActivityFormModal } from "./activity-form-modal";
 
-export function CreateActivityButton({ user }: { user: User }) {
+export function CreateActivityButton({
+	user,
+}: {
+	user: User & { areaIds?: string[] };
+}) {
 	const state = useOverlayState();
 	const router = useRouter();
 	const utils = api.useUtils();
@@ -28,16 +32,18 @@ export function CreateActivityButton({ user }: { user: User }) {
 
 	return (
 		<>
-			<Tooltip delay={0}>
-				<Button
-					aria-label="建立新活動"
-					className="rounded-full"
-					isIconOnly
-					onPress={state.open}
-					variant="primary"
-				>
-					<Plus className="h-5 w-5" />
-				</Button>
+			<Tooltip closeDelay={0} delay={0}>
+				<Tooltip.Trigger>
+					<Button
+						aria-label="建立新活動"
+						className="rounded-full"
+						isIconOnly
+						onPress={state.open}
+						variant="primary"
+					>
+						<Plus className="h-5 w-5" />
+					</Button>
+				</Tooltip.Trigger>
 				<Tooltip.Content placement="bottom">建立新活動</Tooltip.Content>
 			</Tooltip>
 
@@ -51,6 +57,7 @@ export function CreateActivityButton({ user }: { user: User }) {
 				onSubmit={(data) => createActivity.mutate(data)}
 				submitLabel="建立活動"
 				title="建立活動"
+				user={user}
 			/>
 		</>
 	);

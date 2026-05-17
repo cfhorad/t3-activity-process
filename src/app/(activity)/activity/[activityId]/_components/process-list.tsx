@@ -1,11 +1,239 @@
 "use client";
 
-import { Spinner } from "@heroui/react";
-import { TableProperties } from "lucide-react";
+import { Chip, Modal, Spinner } from "@heroui/react";
+import {
+	Calendar,
+	ExternalLink,
+	Info,
+	TableProperties,
+	User as UserIcon,
+} from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { ConfirmDeleteDialog } from "~/app/_components/confirm-delete-dialog";
+import { DashboardItemCard } from "~/app/_components/dashboard-item-card";
 import type { User } from "~/server/better-auth/config";
-import type { Activity } from "~/server/db/schema";
+import type { Activity, Process } from "~/server/db/schema";
+import { useProcessActions } from "../_hooks/useProcessActions";
 import { useProcessList } from "../_hooks/useProcessList";
-import { ProcessCard } from "./process-card";
+import { ProcessFormModal } from "./process-form-modal";
+
+// ─── TYPES ───────────────────────────────────────────────────
+
+interface ExtendedActivity extends Activity {
+	creator?: { name: string | null } | null;
+}
+
+// ─── SUB-COMPONENTS ───────────────────────────────────────────
+
+/**
+ * 1. Process Info Details Modal Component
+ */
+interface ProcessInfoModalProps {
+	isOpen: boolean;
+	onOpenChange: (open: boolean) => void;
+	process: Pick<Process, "sheetName">;
+	activity: ExtendedActivity;
+}
+
+function ProcessInfoModal({
+	isOpen,
+	onOpenChange,
+	process,
+	activity,
+}: ProcessInfoModalProps) {
+	return (
+		<Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange}>
+			<Modal.Container>
+				<Modal.Dialog className="sm:max-w-md">
+					<Modal.CloseTrigger />
+					<Modal.Header>
+						<Modal.Icon className="bg-accent-soft text-accent-soft-foreground">
+							<Info className="size-5" />
+						</Modal.Icon>
+						<Modal.Heading>詳情資訊</Modal.Heading>
+					</Modal.Header>
+					<Modal.Body className="space-y-4 pb-6">
+						<div className="grid gap-4 rounded-xl bg-surface-secondary p-4 text-sm">
+							<div className="space-y-1">
+								<p className="font-semibold text-muted text-xs">
+									Google 試算表 ID
+								</p>
+								<Link
+									className="flex items-center gap-1.5 break-all font-mono text-accent hover:underline"
+									href={`https://docs.google.com/spreadsheets/d/${activity.googleSheetId}`}
+									target="_blank"
+								>
+									<ExternalLink className="h-3.5 w-3.5 shrink-0" />
+									{activity.googleSheetId}
+								</Link>
+							</div>
+
+							<div className="space-y-1">
+								<p className="font-semibold text-muted text-xs">
+									試算表分頁名稱 (Sheet Name)
+								</p>
+								<p className="font-medium text-danger">{process.sheetName}</p>
+							</div>
+
+							<div className="grid grid-cols-2 gap-4 border-separator border-t pt-2">
+								<div className="space-y-1">
+									<p className="font-semibold text-muted text-xs">建立者</p>
+									<div className="flex items-center gap-1.5">
+										<UserIcon className="h-3.5 w-3.5 text-muted" />
+										<span>{activity.creator?.name ?? "未知"}</span>
+									</div>
+								</div>
+								<div className="space-y-1">
+									<p className="font-semibold text-muted text-xs">建立日期</p>
+									<div className="flex items-center gap-1.5">
+										<Calendar className="h-3.5 w-3.5 text-muted" />
+										<span>
+											{new Date(activity.createdAt).toLocaleDateString()}
+										</span>
+									</div>
+								</div>
+							</div>
+						</div>
+					</Modal.Body>
+				</Modal.Dialog>
+			</Modal.Container>
+		</Modal.Backdrop>
+	);
+}
+
+/**
+ * 2. Individual Process Card Component
+ */
+interface ProcessCardProps {
+	process: Process;
+	user: User & { areaIds?: string[] };
+	activity: ExtendedActivity;
+}
+
+function ProcessCard({ process, user, activity }: ProcessCardProps) {
+	const router = useRouter();
+	const { editState, deleteState, infoState, deleteProcess, updateProcess } =
+		useProcessActions({
+			activityId: process.activityId,
+		});
+
+	const role = user?.role?.toUpperCase();
+	const userId = user?.id;
+	const areaIds = user?.areaIds ?? [];
+
+	const isCreator = activity.createdById === userId;
+	const isAreaAdmin =
+		role === "ADMIN" ||
+		(role === "MANAGER" &&
+			activity.areaId !== null &&
+			areaIds.includes(activity.areaId));
+
+	const isAuthorized = isCreator || isAreaAdmin;
+
+	const getIcon = () => {
+		switch (process.type) {
+			case "PROCESS":
+				return "meteocons:rainbow-clear-fill";
+			case "CHECK":
+				return "meteocons:pollen-flower-fill";
+			case "WEB":
+				return "meteocons:starry-night-fill";
+			default:
+				return "meteocons:wind-offshore";
+		}
+	};
+
+	const getTypeLabel = () => {
+		switch (process.type) {
+			case "CHECK":
+				return "報到清單";
+			case "WEB":
+				return "網頁嵌入";
+			case "PROCESS":
+				return "流程處理";
+		}
+	};
+
+	const getTypeColor = () => {
+		switch (process.type) {
+			case "CHECK":
+				return "success";
+			case "WEB":
+				return "warning";
+			case "PROCESS":
+				return "accent";
+		}
+	};
+
+	return (
+		<>
+			<DashboardItemCard
+				chip={
+					<Chip color={getTypeColor()} size="sm" variant="soft">
+						{getTypeLabel()}
+					</Chip>
+				}
+				date={process.processDate}
+				description={process.processMemo}
+				icon={getIcon()}
+				onClick={() =>
+					router.push(
+						process.type === "CHECK"
+							? `/check/${process.id}`
+							: process.type === "WEB"
+								? `/web/${process.id}`
+								: `/process/${process.id}`,
+					)
+				}
+				onDelete={isAuthorized ? () => deleteState.open() : undefined}
+				onEdit={isAuthorized ? () => editState.open() : undefined}
+				onInfo={() => infoState.open()}
+				title={process.name}
+			/>
+
+			{/* Edit Process Modal - directly uses ProcessFormModal */}
+			<ProcessFormModal
+				activityId={process.activityId}
+				initialData={process}
+				isOpen={editState.isOpen}
+				isPending={updateProcess.isPending}
+				mode="edit"
+				onClose={editState.close}
+				onOpenChange={editState.setOpen}
+				onSubmit={(data) => updateProcess.mutate({ ...data, id: process.id })}
+				submitLabel="儲存變更"
+				title="編輯程序"
+			/>
+
+			{/* Confirm Delete Dialog */}
+			<ConfirmDeleteDialog
+				confirmLabel="刪除"
+				description={
+					<p>
+						您確定要刪除 <strong>{process.name}</strong> 嗎？
+						此操作也將刪除該程序的所有同步數據。
+					</p>
+				}
+				isOpen={deleteState.isOpen}
+				isPending={deleteProcess.isPending}
+				onConfirm={() => deleteProcess.mutate({ id: process.id })}
+				onOpenChange={deleteState.setOpen}
+				title="刪除程序"
+			/>
+
+			{/* Process Info Modal */}
+			<ProcessInfoModal
+				activity={activity}
+				isOpen={infoState.isOpen}
+				onOpenChange={infoState.setOpen}
+				process={process}
+			/>
+		</>
+	);
+}
+
+// ─── MAIN PRESENTATIONAL COMPONENT ───────────────────────────
 
 export function ProcessList({
 	activityId,
@@ -14,9 +242,7 @@ export function ProcessList({
 }: {
 	activityId: number;
 	user: User;
-	activity: Activity & {
-		creator?: { name: string | null } | null;
-	};
+	activity: ExtendedActivity;
 }) {
 	const { processes, isLoading } = useProcessList({ activityId });
 
@@ -25,9 +251,7 @@ export function ProcessList({
 			<div className="flex h-48 items-center justify-center">
 				<div className="flex flex-col items-center gap-2">
 					<Spinner />
-					<span className="text-muted-foreground text-small">
-						正在載入項目...
-					</span>
+					<span className="text-muted text-small">正在載入項目...</span>
 				</div>
 			</div>
 		);
@@ -35,10 +259,10 @@ export function ProcessList({
 
 	if (!processes || processes.length === 0) {
 		return (
-			<div className="flex h-48 flex-col items-center justify-center rounded-2xl border-2 border-divider border-dashed bg-content1/50 p-8 text-center">
-				<TableProperties className="mb-4 h-10 w-10 text-muted-foreground" />
+			<div className="flex h-48 flex-col items-center justify-center rounded-2xl border-2 border-separator border-dashed bg-surface/50 p-8 text-center">
+				<TableProperties className="mb-4 h-10 w-10 text-muted" />
 				<h3 className="font-bold text-xl">尚未建立任何項目</h3>
-				<p className="text-muted-foreground text-small">
+				<p className="text-muted text-small">
 					新增一個項目以開始從試算表同步數據。
 				</p>
 			</div>

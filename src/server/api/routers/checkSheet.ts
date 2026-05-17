@@ -17,7 +17,7 @@ export const checkSheetRouter = createTRPCRouter({
 	sync: managerProcedure
 		.input(z.object({ processId: z.number() }))
 		.mutation(async ({ ctx, input }) => {
-			const { id: userId, role, areaId } = ctx.session.user;
+			const { id: userId, role, areaIds } = ctx.session.user;
 
 			const process = await ctx.db.query.processes.findFirst({
 				where: eq(processes.id, input.processId),
@@ -31,7 +31,9 @@ export const checkSheetRouter = createTRPCRouter({
 			const isCreator = process.activity.createdById === userId;
 			const isAreaAdmin =
 				role === "ADMIN" &&
-				(areaId === "ALL" || process.activity.areaId === areaId);
+				(areaIds.includes("ALL") ||
+					(process.activity.areaId !== null &&
+						areaIds.includes(process.activity.areaId)));
 
 			if (!isCreator && !isAreaAdmin) {
 				throw new TRPCError({
@@ -68,7 +70,7 @@ export const checkSheetRouter = createTRPCRouter({
 			}),
 		)
 		.query(async ({ ctx, input }) => {
-			const { areaId } = ctx.session.user;
+			const { areaIds } = ctx.session.user;
 
 			const process = await ctx.db.query.processes.findFirst({
 				where: eq(processes.id, input.processId),
@@ -77,7 +79,13 @@ export const checkSheetRouter = createTRPCRouter({
 
 			if (!process) throw new TRPCError({ code: "NOT_FOUND" });
 
-			if (areaId !== "ALL" && process.activity.areaId !== areaId) {
+			if (
+				!areaIds.includes("ALL") &&
+				!(
+					process.activity.areaId !== null &&
+					areaIds.includes(process.activity.areaId)
+				)
+			) {
 				throw new TRPCError({ code: "FORBIDDEN" });
 			}
 
@@ -98,7 +106,7 @@ export const checkSheetRouter = createTRPCRouter({
 	getColumns: protectedProcedure
 		.input(z.object({ processId: z.number() }))
 		.query(async ({ ctx, input }) => {
-			const { areaId } = ctx.session.user;
+			const { areaIds } = ctx.session.user;
 
 			const process = await ctx.db.query.processes.findFirst({
 				where: eq(processes.id, input.processId),
@@ -107,7 +115,13 @@ export const checkSheetRouter = createTRPCRouter({
 
 			if (!process) throw new TRPCError({ code: "NOT_FOUND" });
 
-			if (areaId !== "ALL" && process.activity.areaId !== areaId) {
+			if (
+				!areaIds.includes("ALL") &&
+				!(
+					process.activity.areaId !== null &&
+					areaIds.includes(process.activity.areaId)
+				)
+			) {
 				throw new TRPCError({ code: "FORBIDDEN" });
 			}
 
@@ -122,7 +136,7 @@ export const checkSheetRouter = createTRPCRouter({
 	getUniqueValues: protectedProcedure
 		.input(z.object({ processId: z.number(), columnName: z.string() }))
 		.query(async ({ ctx, input }) => {
-			const { areaId } = ctx.session.user;
+			const { areaIds } = ctx.session.user;
 
 			const process = await ctx.db.query.processes.findFirst({
 				where: eq(processes.id, input.processId),
@@ -131,7 +145,13 @@ export const checkSheetRouter = createTRPCRouter({
 
 			if (!process) throw new TRPCError({ code: "NOT_FOUND" });
 
-			if (areaId !== "ALL" && process.activity.areaId !== areaId) {
+			if (
+				!areaIds.includes("ALL") &&
+				!(
+					process.activity.areaId !== null &&
+					areaIds.includes(process.activity.areaId)
+				)
+			) {
 				throw new TRPCError({ code: "FORBIDDEN" });
 			}
 
@@ -151,7 +171,7 @@ export const checkSheetRouter = createTRPCRouter({
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {
-			const { id: userId, role, areaId } = ctx.session.user;
+			const { id: userId, role, areaIds } = ctx.session.user;
 
 			// Need to find the activity associated with this data point
 			const data = await ctx.db.query.googleSheetData.findFirst({
@@ -168,7 +188,9 @@ export const checkSheetRouter = createTRPCRouter({
 			const activity = data.process.activity;
 			const isCreator = activity.createdById === userId;
 			const isAreaAdmin =
-				role === "ADMIN" && (areaId === "ALL" || activity.areaId === areaId);
+				role === "ADMIN" &&
+				(areaIds.includes("ALL") ||
+					(activity.areaId !== null && areaIds.includes(activity.areaId)));
 			const isLeader = activity.leaders.some(
 				(l: { userId: string }) => l.userId === userId,
 			);
@@ -196,7 +218,7 @@ export const checkSheetRouter = createTRPCRouter({
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {
-			const { id: userId, role, areaId } = ctx.session.user;
+			const { id: userId, role, areaIds } = ctx.session.user;
 
 			const process = await ctx.db.query.processes.findFirst({
 				where: eq(processes.id, input.processId),
@@ -208,7 +230,9 @@ export const checkSheetRouter = createTRPCRouter({
 			const isCreator = process.activity.createdById === userId;
 			const isAreaAdmin =
 				role === "ADMIN" &&
-				(areaId === "ALL" || process.activity.areaId === areaId);
+				(areaIds.includes("ALL") ||
+					(process.activity.areaId !== null &&
+						areaIds.includes(process.activity.areaId)));
 
 			if (!isCreator && !isAreaAdmin) {
 				throw new TRPCError({

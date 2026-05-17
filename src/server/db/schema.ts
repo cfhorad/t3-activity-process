@@ -98,7 +98,9 @@ export const user = createTable("user", {
 		.notNull(),
 	image: text("image"),
 	role: text("role", { enum: ["ADMIN", "MANAGER", "VIEWER"] }),
-	areaId: text("area_id").references(() => area.id),
+	status: text("status", { enum: ["pending", "active", "suspended"] })
+		.default("pending")
+		.notNull(),
 	createdAt: timestamp("created_at")
 		.$defaultFn(() => /* @__PURE__ */ new Date())
 		.notNull(),
@@ -106,6 +108,27 @@ export const user = createTable("user", {
 		.$defaultFn(() => /* @__PURE__ */ new Date())
 		.notNull(),
 });
+
+export const userAreas = createTable(
+	"user_area",
+	{
+		userId: text("user_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		areaId: text("area_id")
+			.notNull()
+			.references(() => area.id, { onDelete: "cascade" }),
+		status: text("status", { enum: ["pending", "approved", "rejected"] })
+			.default("pending")
+			.notNull(),
+		approvedById: text("approved_by_id").references(() => user.id),
+		approvedAt: timestamp("approved_at"),
+		rejectedReason: text("rejected_reason"),
+	},
+	(t) => ({
+		pk: primaryKey({ columns: [t.userId, t.areaId] }),
+	}),
+);
 
 export const session = createTable("session", {
 	id: text("id").primaryKey(),
@@ -151,17 +174,28 @@ export const verification = createTable("verification", {
 	),
 });
 
-export const userRelations = relations(user, ({ many, one }) => ({
+export const userRelations = relations(user, ({ many }) => ({
 	account: many(account),
 	session: many(session),
-	area: one(area, { fields: [user.areaId], references: [area.id] }),
+	areas: many(userAreas),
+	approvals: many(userAreas, { relationName: "approver" }),
 	ledActivities: many(activityLeaders),
 	activities: many(activities),
 }));
 
 export const areaRelations = relations(area, ({ many }) => ({
-	users: many(user),
+	users: many(userAreas),
 	activities: many(activities),
+}));
+
+export const userAreasRelations = relations(userAreas, ({ one }) => ({
+	user: one(user, { fields: [userAreas.userId], references: [user.id] }),
+	area: one(area, { fields: [userAreas.areaId], references: [area.id] }),
+	approvedBy: one(user, {
+		fields: [userAreas.approvedById],
+		references: [user.id],
+		relationName: "approver",
+	}),
 }));
 
 export const accountRelations = relations(account, ({ one }) => ({
@@ -238,3 +272,8 @@ export type NewProcess = typeof processes.$inferInsert;
 
 export type Area = typeof area.$inferSelect;
 export type ActivityLeader = typeof activityLeaders.$inferSelect;
+
+export type DbUser = typeof user.$inferSelect;
+
+export type UserArea = typeof userAreas.$inferSelect;
+export type NewUserArea = typeof userAreas.$inferInsert;

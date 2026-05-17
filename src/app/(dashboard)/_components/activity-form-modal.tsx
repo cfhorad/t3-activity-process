@@ -1,8 +1,21 @@
-"use client";
-
-import { Button, Form, Input, Label, Modal, TextField } from "@heroui/react";
+import {
+	Button,
+	Form,
+	Input,
+	Label,
+	ListBox,
+	Modal,
+	Select,
+	TextField,
+} from "@heroui/react";
 import { Pencil, Plus } from "lucide-react";
+import { useMemo } from "react";
+import { Controller } from "react-hook-form";
+
 import { ControlledTextField } from "~/app/_components/controlled-text-field";
+import type { User } from "~/server/better-auth/config";
+import { api } from "~/trpc/react";
+
 import { useActivityForm } from "../_hooks/useActivityForm";
 import type { ActivityFormData } from "./activity-form-schema";
 
@@ -17,6 +30,7 @@ interface ActivityFormModalProps {
 	description?: string;
 	submitLabel: string;
 	mode: "create" | "edit";
+	user: User & { areaIds?: string[] };
 }
 
 export function ActivityFormModal({
@@ -30,6 +44,7 @@ export function ActivityFormModal({
 	description,
 	submitLabel,
 	mode,
+	user,
 }: ActivityFormModalProps) {
 	const {
 		form,
@@ -42,6 +57,21 @@ export function ActivityFormModal({
 		onSubmit,
 		isOpen,
 	});
+
+	const { data: areasList } = api.admin.getAreas.useQuery(undefined, {
+		enabled: isOpen,
+	});
+
+	const role = user?.role?.toUpperCase();
+	const userAreaIds = user?.areaIds ?? [];
+	const isSuperAdmin = role === "ADMIN";
+
+	// Filter available areas for this user
+	const availableAreas = useMemo(() => {
+		if (!areasList) return [];
+		if (isSuperAdmin) return areasList;
+		return areasList.filter((area) => userAreaIds.includes(area.id));
+	}, [areasList, isSuperAdmin, userAreaIds]);
 
 	return (
 		<Modal.Backdrop
@@ -97,6 +127,45 @@ export function ActivityFormModal({
 										</p>
 									)}
 								</TextField>
+
+								<Controller
+									control={form.control}
+									name="areaId"
+									render={({ field }) => (
+										<Select
+											className="w-full"
+											isRequired
+											onSelectionChange={(key) => field.onChange(key as string)}
+											placeholder="選擇所屬營運地區"
+											selectedKey={field.value}
+										>
+											<Label>活動營運地區</Label>
+											<Select.Trigger>
+												<Select.Value />
+												<Select.Indicator />
+											</Select.Trigger>
+											<Select.Popover>
+												<ListBox>
+													{availableAreas.map((area) => (
+														<ListBox.Item
+															id={area.id}
+															key={area.id}
+															textValue={area.name}
+														>
+															{area.name} ({area.id})
+															<ListBox.ItemIndicator />
+														</ListBox.Item>
+													))}
+												</ListBox>
+											</Select.Popover>
+											{form.formState.errors.areaId && (
+												<p className="mt-1 text-danger text-xs">
+													{form.formState.errors.areaId.message}
+												</p>
+											)}
+										</Select>
+									)}
+								/>
 
 								<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
 									<ControlledTextField

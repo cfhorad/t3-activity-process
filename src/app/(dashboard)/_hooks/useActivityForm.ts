@@ -28,6 +28,7 @@ export function useActivityForm({
 			name: initialData?.name ?? "",
 			googleSheetId: initialData?.googleSheetId ?? "",
 			activityDate: initialData?.activityDate ?? "",
+			areaId: initialData?.areaId ?? "",
 			activityMemo: initialData?.activityMemo ?? "",
 		},
 	});
@@ -52,6 +53,7 @@ export function useActivityForm({
 				name: initialData?.name ?? "",
 				googleSheetId: initialData?.googleSheetId ?? "",
 				activityDate: initialData?.activityDate ?? "",
+				areaId: initialData?.areaId ?? "",
 				activityMemo: initialData?.activityMemo ?? "",
 			});
 		}

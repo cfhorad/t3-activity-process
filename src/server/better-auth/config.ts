@@ -24,7 +24,7 @@ export const auth = betterAuth({
 				type: "string",
 				required: false,
 			},
-			areaId: {
+			status: {
 				type: "string",
 				required: false,
 			},

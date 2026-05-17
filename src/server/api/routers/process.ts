@@ -12,16 +12,16 @@ export const processRouter = createTRPCRouter({
 	getByActivityId: protectedProcedure
 		.input(z.object({ activityId: z.number() }))
 		.query(async ({ ctx, input }) => {
-			const { areaId } = ctx.session.user;
+			const { areaIds } = ctx.session.user;
 
 			// Check activity access first
 			const activity = await ctx.db.query.activities.findFirst({
-				where: (activities, { and, eq }) =>
-					areaId === "ALL"
+				where: (activities, { and, eq, inArray }) =>
+					areaIds.includes("ALL")
 						? eq(activities.id, input.activityId)
 						: and(
 								eq(activities.id, input.activityId),
-								eq(activities.areaId, areaId),
+								inArray(activities.areaId, areaIds),
 							),
 			});
 
@@ -45,7 +45,7 @@ export const processRouter = createTRPCRouter({
 	getById: protectedProcedure
 		.input(z.object({ id: z.number() }))
 		.query(async ({ ctx, input }) => {
-			const { areaId } = ctx.session.user;
+			const { areaIds } = ctx.session.user;
 
 			const process = await ctx.db.query.processes.findFirst({
 				where: eq(processes.id, input.id),
@@ -57,7 +57,13 @@ export const processRouter = createTRPCRouter({
 			if (!process) throw new TRPCError({ code: "NOT_FOUND" });
 
 			// Check area access
-			if (areaId !== "ALL" && process.activity.areaId !== areaId) {
+			if (
+				!areaIds.includes("ALL") &&
+				!(
+					process.activity.areaId !== null &&
+					areaIds.includes(process.activity.areaId)
+				)
+			) {
 				throw new TRPCError({ code: "FORBIDDEN" });
 			}
 
@@ -77,7 +83,7 @@ export const processRouter = createTRPCRouter({
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {
-			const { id: userId, role, areaId } = ctx.session.user;
+			const { id: userId, role, areaIds } = ctx.session.user;
 
 			const activity = await ctx.db.query.activities.findFirst({
 				where: eq(activities.id, input.activityId),
@@ -87,7 +93,9 @@ export const processRouter = createTRPCRouter({
 
 			const isCreator = activity.createdById === userId;
 			const isAreaAdmin =
-				role === "ADMIN" && (areaId === "ALL" || activity.areaId === areaId);
+				role === "ADMIN" &&
+				(areaIds.includes("ALL") ||
+					(activity.areaId !== null && areaIds.includes(activity.areaId)));
 
 			if (!isCreator && !isAreaAdmin) {
 				throw new TRPCError({
@@ -126,7 +134,7 @@ export const processRouter = createTRPCRouter({
 		)
 		.mutation(async ({ ctx, input }) => {
 			const { id, ...data } = input;
-			const { id: userId, role, areaId } = ctx.session.user;
+			const { id: userId, role, areaIds } = ctx.session.user;
 
 			const process = await ctx.db.query.processes.findFirst({
 				where: eq(processes.id, id),
@@ -138,7 +146,9 @@ export const processRouter = createTRPCRouter({
 			const isCreator = process.activity.createdById === userId;
 			const isAreaAdmin =
 				role === "ADMIN" &&
-				(areaId === "ALL" || process.activity.areaId === areaId);
+				(areaIds.includes("ALL") ||
+					(process.activity.areaId !== null &&
+						areaIds.includes(process.activity.areaId)));
 
 			if (!isCreator && !isAreaAdmin) {
 				throw new TRPCError({
@@ -158,7 +168,7 @@ export const processRouter = createTRPCRouter({
 	delete: managerProcedure
 		.input(z.object({ id: z.number() }))
 		.mutation(async ({ ctx, input }) => {
-			const { id: userId, role, areaId } = ctx.session.user;
+			const { id: userId, role, areaIds } = ctx.session.user;
 
 			const process = await ctx.db.query.processes.findFirst({
 				where: eq(processes.id, input.id),
@@ -170,7 +180,9 @@ export const processRouter = createTRPCRouter({
 			const isCreator = process.activity.createdById === userId;
 			const isAreaAdmin =
 				role === "ADMIN" &&
-				(areaId === "ALL" || process.activity.areaId === areaId);
+				(areaIds.includes("ALL") ||
+					(process.activity.areaId !== null &&
+						areaIds.includes(process.activity.areaId)));
 
 			if (!isCreator && !isAreaAdmin) {
 				throw new TRPCError({

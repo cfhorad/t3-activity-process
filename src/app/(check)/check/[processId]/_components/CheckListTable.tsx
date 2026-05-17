@@ -3,16 +3,21 @@
 import {
 	Button,
 	Checkbox,
+	Chip,
+	Label,
+	ListBox,
+	Modal,
+	Select,
 	Table,
 	Tooltip,
 	useOverlayState,
 } from "@heroui/react";
-import { Phone, Save } from "lucide-react";
+import { Phone, Save, Settings2 } from "lucide-react";
 import { useState } from "react";
 import type { User } from "~/server/better-auth/config";
 import { api } from "~/trpc/react";
-import { ColumnSelect } from "./ColumnSelect";
-import { RowInfoModal } from "./RowInfoModal";
+
+// ─── TYPES ───────────────────────────────────────────────────
 
 export interface Column {
 	id: number;
@@ -37,9 +42,148 @@ interface CheckListTableProps {
 	onCheckboxChange: (id: number, columnName: string, newValue: boolean) => void;
 	onSaveVisibleColumns: () => void;
 	isSavingVisibleColumns: boolean;
-	user: User;
+	user: User & { areaIds?: string[] };
 	processId: number;
 }
+
+// ─── SUB-COMPONENTS ───────────────────────────────────────────
+
+/**
+ * 1. Column Selection Dropdown Component
+ */
+interface ColumnSelectProps {
+	columns: Column[];
+	visibleColumnNames: string[];
+	onSelectionChange: (keys: string[]) => void;
+}
+
+function ColumnSelect({
+	columns,
+	visibleColumnNames,
+	onSelectionChange,
+}: ColumnSelectProps) {
+	if (!columns || columns.length === 0) return null;
+
+	return (
+		<Select
+			aria-label="選擇可見欄位"
+			className="w-full sm:max-w-[240px]"
+			onChange={(val) => {
+				if (Array.isArray(val)) {
+					onSelectionChange(val.map((v) => String(v)));
+				}
+			}}
+			placeholder="顯示/隱藏欄位"
+			selectionMode="multiple"
+			value={visibleColumnNames}
+			variant="primary"
+		>
+			<Label className="flex items-center gap-2">
+				<Settings2 className="size-4" />
+				可見欄位
+			</Label>
+			<Select.Trigger>
+				<Select.Value>
+					{({ isPlaceholder, state }) => {
+						if (isPlaceholder || state.selectedItems.length === 0) {
+							return "顯示/隱藏欄位";
+						}
+
+						return (
+							<div className="flex flex-wrap gap-1">
+								{state.selectedItems.length === columns.length ? (
+									<Chip className="font-medium" size="sm" variant="soft">
+										全部欄位
+									</Chip>
+								) : (
+									<Chip className="font-medium" size="sm" variant="soft">
+										{state.selectedItems.length} 個欄位
+									</Chip>
+								)}
+							</div>
+						);
+					}}
+				</Select.Value>
+				<Select.Indicator />
+			</Select.Trigger>
+			<Select.Popover>
+				<ListBox selectionMode="multiple">
+					{columns.map((col) => (
+						<ListBox.Item
+							id={col.columnName}
+							key={col.columnName}
+							textValue={col.columnName}
+						>
+							<div className="whitespace-pre-wrap">{col.columnName}</div>
+							<ListBox.ItemIndicator />
+						</ListBox.Item>
+					))}
+				</ListBox>
+			</Select.Popover>
+		</Select>
+	);
+}
+
+/**
+ * 2. Detailed Data Row Info Modal Component
+ */
+interface RowInfoModalProps {
+	isOpen: boolean;
+	onOpenChange: (open: boolean) => void;
+	row: DataRow | null;
+	allColumns: Column[];
+}
+
+function RowInfoModal({
+	isOpen,
+	onOpenChange,
+	row,
+	allColumns,
+}: RowInfoModalProps) {
+	if (!row) return null;
+	const rowData = row.data as Record<string, unknown>;
+
+	return (
+		<Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange}>
+			<Modal.Container>
+				<Modal.Dialog className="sm:max-w-xl">
+					<Modal.CloseTrigger />
+					<Modal.Header>
+						<Modal.Heading>詳細數據資訊</Modal.Heading>
+					</Modal.Header>
+					<Modal.Body className="space-y-4 pb-6">
+						<div className="grid grid-cols-1 gap-3 rounded-xl bg-surface-secondary p-4 text-sm sm:grid-cols-2">
+							{allColumns.map((col) => {
+								const val = rowData[col.columnName];
+								return (
+									<div
+										className="flex flex-col gap-1 border-separator border-b pb-2 last:border-0 last:pb-0"
+										key={col.columnName}
+									>
+										<p className="font-semibold text-muted text-xs">
+											{col.columnName}
+										</p>
+										<p className="font-medium">
+											{col.isCheckbox ? (
+												<span className={val ? "text-success" : "text-danger"}>
+													{val ? "✅ 已核取" : "❌ 未核取"}
+												</span>
+											) : (
+												val?.toString() || "—"
+											)}
+										</p>
+									</div>
+								);
+							})}
+						</div>
+					</Modal.Body>
+				</Modal.Dialog>
+			</Modal.Container>
+		</Modal.Backdrop>
+	);
+}
+
+// ─── MAIN PRESENTATIONAL COMPONENT ───────────────────────────
 
 export function CheckListTable({
 	allColumns,
@@ -64,7 +208,7 @@ export function CheckListTable({
 
 	const role = user?.role?.toUpperCase();
 	const userId = user?.id;
-	const userAreaId = user?.areaId;
+	const areaIds = user?.areaIds ?? [];
 
 	const activity = process?.activity as {
 		createdById: string;
@@ -73,8 +217,11 @@ export function CheckListTable({
 	} | null;
 	const isCreator = activity?.createdById === userId;
 	const isAreaAdmin =
-		role === "ADMIN" &&
-		(userAreaId === "ALL" || activity?.areaId === userAreaId);
+		role === "ADMIN" ||
+		(role === "MANAGER" &&
+			activity?.areaId !== null &&
+			activity?.areaId !== undefined &&
+			areaIds.includes(activity.areaId));
 	const isLeader = activity?.leaders?.some(
 		(l: { userId: string }) => l.userId === userId,
 	);
@@ -132,7 +279,7 @@ export function CheckListTable({
 							{visibleColumns.length === 0 ? (
 								<Table.Row id="no-columns">
 									<Table.Cell>
-										<div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+										<div className="flex flex-col items-center justify-center py-20 text-muted">
 											<p className="font-medium">未選擇欄位</p>
 											<p className="text-sm">請至少選擇一個欄位進行顯示。</p>
 										</div>
@@ -141,7 +288,7 @@ export function CheckListTable({
 							) : (
 								data.map((row) => (
 									<Table.Row
-										className="cursor-pointer transition-colors hover:bg-content2/50"
+										className="cursor-pointer transition-colors hover:bg-surface-secondary/50"
 										id={row.id.toString()}
 										key={row.id}
 										onAction={() => handleRowPress(row)}

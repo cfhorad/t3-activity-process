@@ -165,6 +165,16 @@ export function NavbarComponent({
 									<Label>偏好設定</Label>
 								</Dropdown.Item>
 								<Separator />
+								<Dropdown.Item
+									id="apply-areas"
+									onAction={() => {
+										window.location.href = "/pending-approval";
+									}}
+									textValue="申請加入地區"
+								>
+									<Plus className="size-4 text-muted" />
+									<Label>申請加入地區</Label>
+								</Dropdown.Item>
 								<Dropdown.Item id="security" textValue="安全與隱私">
 									<ShieldCheck className="size-4 text-muted" />
 									<Label>安全與隱私</Label>

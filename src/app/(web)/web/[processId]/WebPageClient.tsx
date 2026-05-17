@@ -6,6 +6,48 @@ import { use } from "react";
 import { PageHeader } from "~/app/_components/page-header";
 import { useWebData } from "./_hooks/useWebData";
 
+// ─── SUB-COMPONENTS ───────────────────────────────────────────
+
+/**
+ * 1. Active Iframe View Component
+ */
+interface IframeViewProps {
+	src: string;
+	title: string;
+}
+
+function IframeView({ src, title }: IframeViewProps) {
+	return (
+		<Card className="h-full w-full overflow-hidden">
+			<iframe
+				className="h-full w-full border-none bg-background"
+				src={src}
+				title={title}
+			/>
+		</Card>
+	);
+}
+
+/**
+ * 2. Warning Card for Missing Iframe Src Component
+ */
+function NoIframeWarning() {
+	return (
+		<div className="flex h-full flex-col items-center justify-center gap-4 p-8 text-center">
+			<Card className="max-w-md p-8">
+				<p className="font-medium text-muted">
+					No iframe source URL found for this process.
+				</p>
+				<p className="mt-2 text-muted text-sm">
+					Please edit the process to add an iframe embed code.
+				</p>
+			</Card>
+		</div>
+	);
+}
+
+// ─── MAIN PRESENTATIONAL COMPONENT ───────────────────────────
+
 export function WebPageClient({
 	params,
 }: {
@@ -28,7 +70,7 @@ export function WebPageClient({
 	if (!process) {
 		return (
 			<div className="flex h-full flex-col items-center justify-center gap-4">
-				<p className="text-muted-foreground text-xl">Process not found</p>
+				<p className="text-muted text-xl">Process not found</p>
 				<Button onPress={() => router.back()} variant="secondary">
 					Go Back
 				</Button>
@@ -37,7 +79,7 @@ export function WebPageClient({
 	}
 
 	return (
-		<main className="h-full bg-linear-to-b from-background to-content2 p-4 md:p-8">
+		<main className="h-full bg-linear-to-b from-background to-surface-secondary p-4 md:p-8">
 			<div className="mx-auto flex h-full max-w-7xl flex-col">
 				<PageHeader
 					backHref={process ? `/activity/${process.activityId}` : "/"}
@@ -45,27 +87,11 @@ export function WebPageClient({
 					title={process.name}
 				/>
 
-				{/* MEMO: 調整WebPage外觀. */}
-				<div className="relative flex-1 bg-content2 p-0">
+				<div className="relative flex-1 bg-surface-secondary p-0">
 					{process.iframeSrc ? (
-						<Card className="h-full w-full overflow-hidden shadow-sm">
-							<iframe
-								className="h-full w-full border-none bg-background"
-								src={process.iframeSrc}
-								title={process.name}
-							/>
-						</Card>
+						<IframeView src={process.iframeSrc} title={process.name} />
 					) : (
-						<div className="flex h-full flex-col items-center justify-center gap-4 p-8 text-center">
-							<Card className="max-w-md p-8">
-								<p className="font-medium text-muted-foreground">
-									No iframe source URL found for this process.
-								</p>
-								<p className="mt-2 text-muted-foreground text-sm">
-									Please edit the process to add an iframe embed code.
-								</p>
-							</Card>
-						</div>
+						<NoIframeWarning />
 					)}
 				</div>
 			</div>

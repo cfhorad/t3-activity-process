@@ -55,7 +55,7 @@ export function CheckboxStatsTable({
 
 	if (checkboxColumns.length === 0) {
 		return (
-			<div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+			<div className="flex flex-col items-center justify-center py-20 text-muted">
 				<p className="font-medium">未找到核取方塊欄位</p>
 				<p className="text-sm">
 					統計需要您的 Google 試算表中至少有一個核取方塊欄位。
@@ -117,7 +117,7 @@ export function CheckboxStatsTable({
 						<Tooltip closeDelay={0} delay={0}>
 							<Tooltip.Trigger>
 								<Button
-									className="text-muted-foreground"
+									className="text-muted"
 									isIconOnly
 									isPending={isRefetching}
 									onPress={onRefetch}

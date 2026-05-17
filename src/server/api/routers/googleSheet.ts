@@ -17,6 +17,7 @@ export const googleSheetRouter = createTRPCRouter({
 	sync: managerProcedure
 		.input(z.object({ processId: z.number() }))
 		.mutation(async ({ ctx, input }) => {
+			const { id: userId, role, areaIds } = ctx.session.user;
 			const process = await ctx.db.query.processes.findFirst({
 				where: eq(processes.id, input.processId),
 				with: {
@@ -28,6 +29,20 @@ export const googleSheetRouter = createTRPCRouter({
 				throw new TRPCError({
 					code: "NOT_FOUND",
 					message: "Process not found",
+				});
+			}
+
+			const isCreator = process.activity.createdById === userId;
+			const isAreaAdmin =
+				role === "ADMIN" &&
+				(areaIds.includes("ALL") ||
+					(process.activity.areaId !== null &&
+						areaIds.includes(process.activity.areaId)));
+
+			if (!isCreator && !isAreaAdmin) {
+				throw new TRPCError({
+					code: "FORBIDDEN",
+					message: "您沒有權限同步此數據（僅限活動建立者或該區管理員）。",
 				});
 			}
 

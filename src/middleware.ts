@@ -9,10 +9,26 @@ export default async function middleware(request: NextRequest) {
 	if (!session) {
 		return NextResponse.redirect(new URL("/auth", request.url));
 	}
+
+	const { status } = session.user as { status?: string };
+
+	// If pending-approval page itself, let them pass if they are actually pending
+	if (request.nextUrl.pathname === "/pending-approval") {
+		if (status === "active") {
+			return NextResponse.redirect(new URL("/", request.url));
+		}
+		return NextResponse.next();
+	}
+
+	// Redirect to pending-approval page if they are not active
+	if (status === "pending" || status === "suspended") {
+		return NextResponse.redirect(new URL("/pending-approval", request.url));
+	}
+
 	return NextResponse.next();
 }
 
 export const config = {
 	runtime: "nodejs",
-	matcher: ["/", "/activity/:path*", "/process/:path*"],
+	matcher: ["/", "/activity/:path*", "/process/:path*", "/pending-approval"],
 };
