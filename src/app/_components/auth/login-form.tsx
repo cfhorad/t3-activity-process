@@ -4,8 +4,8 @@ import { Button, Form } from "@heroui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { createAuthClient } from "better-auth/react";
 import { useForm } from "react-hook-form";
-import { type LoginValues, loginSchema } from "./auth-schemas";
 import { ControlledTextField } from "../controlled-text-field";
+import { type LoginValues, loginSchema } from "./auth-schemas";
 
 interface LoginFormProps {
 	authClient: ReturnType<typeof createAuthClient>;

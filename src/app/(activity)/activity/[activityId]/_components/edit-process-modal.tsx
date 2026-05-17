@@ -19,7 +19,7 @@ interface EditProcessModalProps {
 	isOpen: boolean;
 	onClose: () => void;
 	onOpenChange: (open: boolean) => void;
-	onSubmit: (data: ProcessFormData & { iframeCode?: string }) => void;
+	onSubmit: (data: ProcessFormData & { iframeSrc: string | null }) => void;
 	isPending: boolean;
 }
 

@@ -3,11 +3,7 @@
 import { useOverlayState } from "@heroui/react";
 import { api } from "~/trpc/react";
 
-export function useActivityActions({
-	activityId,
-}: {
-	activityId: number;
-}) {
+export function useActivityActions() {
 	const editState = useOverlayState();
 	const deleteState = useOverlayState();
 	const infoState = useOverlayState();

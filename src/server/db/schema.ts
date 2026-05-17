@@ -4,11 +4,17 @@ import {
 	integer,
 	jsonb,
 	pgTableCreator,
+	primaryKey,
 	text,
 	timestamp,
 } from "drizzle-orm/pg-core";
 
 export const createTable = pgTableCreator((name) => `pg-drizzle_${name}`);
+
+export const area = createTable("area", {
+	id: text("id").primaryKey(),
+	name: text("name").notNull(),
+});
 
 export const googleSheetData = createTable("google_sheet_data", {
 	id: integer().primaryKey().generatedByDefaultAsIdentity(),
@@ -39,6 +45,7 @@ export const activities = createTable("activity", (d) => ({
 	createdById: text("created_by_id")
 		.notNull()
 		.references(() => user.id),
+	areaId: text("area_id").references(() => area.id),
 	createdAt: d
 		.timestamp({ withTimezone: true })
 		.$defaultFn(() => new Date())
@@ -67,6 +74,21 @@ export const processes = createTable("process", (d) => ({
 	updatedAt: d.timestamp({ withTimezone: true }).$onUpdate(() => new Date()),
 }));
 
+export const activityLeaders = createTable(
+	"activity_leader",
+	{
+		activityId: integer("activity_id")
+			.notNull()
+			.references(() => activities.id, { onDelete: "cascade" }),
+		userId: text("user_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+	},
+	(t) => ({
+		pk: primaryKey({ columns: [t.activityId, t.userId] }),
+	}),
+);
+
 export const user = createTable("user", {
 	id: text("id").primaryKey(),
 	name: text("name").notNull(),
@@ -75,10 +97,8 @@ export const user = createTable("user", {
 		.$defaultFn(() => false)
 		.notNull(),
 	image: text("image"),
-	role: text("role", { enum: ["ADMIN", "MANAGER", "VIEWER"] })
-		.default("VIEWER")
-		.notNull(),
-	area: text("area"),
+	role: text("role", { enum: ["ADMIN", "MANAGER", "VIEWER"] }),
+	areaId: text("area_id").references(() => area.id),
 	createdAt: timestamp("created_at")
 		.$defaultFn(() => /* @__PURE__ */ new Date())
 		.notNull(),
@@ -131,9 +151,17 @@ export const verification = createTable("verification", {
 	),
 });
 
-export const userRelations = relations(user, ({ many }) => ({
+export const userRelations = relations(user, ({ many, one }) => ({
 	account: many(account),
 	session: many(session),
+	area: one(area, { fields: [user.areaId], references: [area.id] }),
+	ledActivities: many(activityLeaders),
+	activities: many(activities),
+}));
+
+export const areaRelations = relations(area, ({ many }) => ({
+	users: many(user),
+	activities: many(activities),
 }));
 
 export const accountRelations = relations(account, ({ one }) => ({
@@ -150,11 +178,49 @@ export const activityRelations = relations(activities, ({ many, one }) => ({
 		fields: [activities.createdById],
 		references: [user.id],
 	}),
+	area: one(area, { fields: [activities.areaId], references: [area.id] }),
+	leaders: many(activityLeaders),
 }));
 
-export const processRelations = relations(processes, ({ one }) => ({
+export const activityLeadersRelations = relations(
+	activityLeaders,
+	({ one }) => ({
+		activity: one(activities, {
+			fields: [activityLeaders.activityId],
+			references: [activities.id],
+		}),
+		user: one(user, {
+			fields: [activityLeaders.userId],
+			references: [user.id],
+		}),
+	}),
+);
+
+export const googleSheetDataRelations = relations(
+	googleSheetData,
+	({ one }) => ({
+		process: one(processes, {
+			fields: [googleSheetData.processId],
+			references: [processes.id],
+		}),
+	}),
+);
+
+export const googleSheetConfigRelations = relations(
+	googleSheetConfig,
+	({ one }) => ({
+		process: one(processes, {
+			fields: [googleSheetConfig.processId],
+			references: [processes.id],
+		}),
+	}),
+);
+
+export const processRelations = relations(processes, ({ one, many }) => ({
 	activity: one(activities, {
 		fields: [processes.activityId],
 		references: [activities.id],
 	}),
+	googleSheetData: many(googleSheetData),
+	googleSheetConfig: many(googleSheetConfig),
 }));

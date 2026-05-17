@@ -4,6 +4,7 @@ import { Card, Spinner, Tabs } from "@heroui/react";
 import { BarChart3, List } from "lucide-react";
 import { use } from "react";
 import { DataFilterToolbar } from "~/app/_components/data-filter-toolbar";
+import type { User } from "~/server/better-auth/config";
 import { CheckboxStatsTable } from "./_components/CheckboxStatsTable";
 import { CheckHeader } from "./_components/CheckHeader";
 import { CheckListTable } from "./_components/CheckListTable";
@@ -11,8 +12,10 @@ import { useCheckData } from "./_hooks/useCheckData";
 
 export function CheckPageClient({
 	params,
+	user,
 }: {
 	params: Promise<{ processId: string }>;
+	user: User;
 }) {
 	const { processId } = use(params);
 	const id = parseInt(processId, 10);
@@ -45,6 +48,7 @@ export function CheckPageClient({
 					isSyncing={syncMutation.isPending}
 					onSync={handleSync}
 					processId={id}
+					user={user}
 				/>
 
 				<DataFilterToolbar
@@ -92,6 +96,8 @@ export function CheckPageClient({
 										onCheckboxChange={updateCheckbox}
 										onSaveVisibleColumns={handleSaveVisibleColumns}
 										onVisibleColumnsChange={setVisibleColumnNames}
+										processId={id}
+										user={user}
 										visibleColumnNames={visibleColumnNames}
 										visibleColumns={visibleColumns}
 									/>

@@ -21,7 +21,7 @@ interface ProcessFormModalProps {
 	isOpen: boolean;
 	onClose: () => void;
 	onOpenChange: (open: boolean) => void;
-	onSubmit: (data: ProcessFormData & { iframeCode?: string }) => void;
+	onSubmit: (data: ProcessFormData & { iframeSrc: string | null }) => void;
 	isPending: boolean;
 	activityId: number;
 	initialData?: Partial<ProcessFormData & { iframeSrc?: string | null }>;
@@ -50,7 +50,6 @@ export function ProcessFormModal({
 			onSubmit,
 			isOpen,
 			activityId,
-			mode,
 		});
 
 	return (

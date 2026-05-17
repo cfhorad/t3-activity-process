@@ -3,13 +3,7 @@
 import { useOverlayState } from "@heroui/react";
 import { api } from "~/trpc/react";
 
-export function useProcessActions({
-	processId,
-	activityId,
-}: {
-	processId: number;
-	activityId: number;
-}) {
+export function useProcessActions({ activityId }: { activityId: number }) {
 	const editState = useOverlayState();
 	const deleteState = useOverlayState();
 	const infoState = useOverlayState();

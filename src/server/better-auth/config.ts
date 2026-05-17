@@ -22,10 +22,9 @@ export const auth = betterAuth({
 		additionalFields: {
 			role: {
 				type: "string",
-				required: true,
-				defaultValue: "VIEWER",
+				required: false,
 			},
-			area: {
+			areaId: {
 				type: "string",
 				required: false,
 			},
@@ -34,3 +33,4 @@ export const auth = betterAuth({
 });
 
 export type Session = typeof auth.$Infer.Session;
+export type User = Session["user"];

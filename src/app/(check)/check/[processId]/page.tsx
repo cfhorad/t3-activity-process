@@ -13,5 +13,5 @@ export default async function CheckPage({
 		redirect("/auth");
 	}
 
-	return <CheckPageClient params={params} />;
+	return <CheckPageClient params={params} user={session.user} />;
 }

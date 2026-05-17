@@ -4,6 +4,7 @@ import { Chip } from "@heroui/react";
 import { useRouter } from "next/navigation";
 import { ConfirmDeleteDialog } from "~/app/_components/confirm-delete-dialog";
 import { DashboardItemCard } from "~/app/_components/dashboard-item-card";
+import type { User } from "~/server/better-auth/config";
 import { useProcessActions } from "../_hooks/useProcessActions";
 import { EditProcessModal } from "./edit-process-modal";
 import { ProcessInfoModal } from "./process-info-modal";
@@ -19,23 +20,33 @@ interface ProcessCardProps {
 		processMemo?: string | null;
 		iframeSrc?: string | null;
 	};
-	userRole: string;
+	user: User;
 	activity: {
 		googleSheetId: string;
+		createdById: string;
+		areaId: string | null;
 		creator?: { name: string | null } | null;
 		createdAt: Date;
 	};
 }
 
-export function ProcessCard({ process, userRole, activity }: ProcessCardProps) {
+export function ProcessCard({ process, user, activity }: ProcessCardProps) {
 	const router = useRouter();
 	const { editState, deleteState, infoState, deleteProcess, updateProcess } =
 		useProcessActions({
-			processId: process.id,
 			activityId: process.activityId,
 		});
 
-	const isAuthorized = userRole === "ADMIN" || userRole === "MANAGER";
+	const role = user?.role?.toUpperCase();
+	const userId = user?.id;
+	const userAreaId = user?.areaId;
+
+	const isCreator = activity.createdById === userId;
+	const isAreaAdmin =
+		role === "ADMIN" &&
+		(userAreaId === "ALL" || activity.areaId === userAreaId);
+
+	const isAuthorized = isCreator || isAreaAdmin;
 
 	const getIcon = () => {
 		switch (process.type) {

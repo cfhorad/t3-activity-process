@@ -1,15 +1,20 @@
+import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 import {
 	createTRPCRouter,
 	managerProcedure,
-	publicProcedure,
+	protectedProcedure,
 } from "~/server/api/trpc";
 import { activities, processes } from "~/server/db/schema";
 
 export const activityRouter = createTRPCRouter({
-	getAll: publicProcedure.query(async ({ ctx }) => {
+	getAll: protectedProcedure.query(async ({ ctx }) => {
+		const { areaId } = ctx.session.user;
+		const where = areaId === "ALL" ? undefined : eq(activities.areaId, areaId);
+
 		return await ctx.db.query.activities.findMany({
+			where,
 			with: {
 				creator: true,
 				processes: true,
@@ -18,11 +23,16 @@ export const activityRouter = createTRPCRouter({
 		});
 	}),
 
-	getById: publicProcedure
+	getById: protectedProcedure
 		.input(z.object({ id: z.number() }))
 		.query(async ({ ctx, input }) => {
+			const { areaId } = ctx.session.user;
+
 			const activity = await ctx.db.query.activities.findFirst({
-				where: eq(activities.id, input.id),
+				where: (activities, { and, eq }) =>
+					areaId === "ALL"
+						? eq(activities.id, input.id)
+						: and(eq(activities.id, input.id), eq(activities.areaId, areaId)),
 				with: {
 					processes: true,
 					creator: true,
@@ -48,6 +58,7 @@ export const activityRouter = createTRPCRouter({
 				.values({
 					...activityData,
 					createdById: ctx.session.user.id,
+					areaId: ctx.session.user.areaId,
 				})
 				.returning();
 
@@ -74,6 +85,26 @@ export const activityRouter = createTRPCRouter({
 		)
 		.mutation(async ({ ctx, input }) => {
 			const { id, ...data } = input;
+			const { id: userId, role, areaId } = ctx.session.user;
+
+			// Fetch activity to check ownership/area
+			const existing = await ctx.db.query.activities.findFirst({
+				where: eq(activities.id, id),
+			});
+
+			if (!existing) throw new TRPCError({ code: "NOT_FOUND" });
+
+			const isCreator = existing.createdById === userId;
+			const isAreaAdmin =
+				role === "ADMIN" && (areaId === "ALL" || existing.areaId === areaId);
+
+			if (!isCreator && !isAreaAdmin) {
+				throw new TRPCError({
+					code: "FORBIDDEN",
+					message: "您沒有權限編輯此活動（僅限建立者或該區管理員）。",
+				});
+			}
+
 			const [activity] = await ctx.db
 				.update(activities)
 				.set(data)
@@ -85,6 +116,25 @@ export const activityRouter = createTRPCRouter({
 	delete: managerProcedure
 		.input(z.object({ id: z.number() }))
 		.mutation(async ({ ctx, input }) => {
+			const { id: userId, role, areaId } = ctx.session.user;
+
+			const existing = await ctx.db.query.activities.findFirst({
+				where: eq(activities.id, input.id),
+			});
+
+			if (!existing) throw new TRPCError({ code: "NOT_FOUND" });
+
+			const isCreator = existing.createdById === userId;
+			const isAreaAdmin =
+				role === "ADMIN" && (areaId === "ALL" || existing.areaId === areaId);
+
+			if (!isCreator && !isAreaAdmin) {
+				throw new TRPCError({
+					code: "FORBIDDEN",
+					message: "您沒有權限刪除此活動（僅限建立者或該區管理員）。",
+				});
+			}
+
 			await ctx.db.delete(activities).where(eq(activities.id, input.id));
 			return { success: true };
 		}),

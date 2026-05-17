@@ -9,6 +9,8 @@ import {
 } from "@heroui/react";
 import { Phone, Save } from "lucide-react";
 import { useState } from "react";
+import type { User } from "~/server/better-auth/config";
+import { api } from "~/trpc/react";
 import { ColumnSelect } from "./ColumnSelect";
 import { RowInfoModal } from "./RowInfoModal";
 
@@ -35,6 +37,8 @@ interface CheckListTableProps {
 	onCheckboxChange: (id: number, columnName: string, newValue: boolean) => void;
 	onSaveVisibleColumns: () => void;
 	isSavingVisibleColumns: boolean;
+	user: User;
+	processId: number;
 }
 
 export function CheckListTable({
@@ -46,7 +50,10 @@ export function CheckListTable({
 	onCheckboxChange,
 	onSaveVisibleColumns,
 	isSavingVisibleColumns,
+	user,
+	processId,
 }: CheckListTableProps) {
+	const { data: process } = api.process.getById.useQuery({ id: processId });
 	const infoState = useOverlayState();
 	const [selectedRow, setSelectedRow] = useState<DataRow | null>(null);
 
@@ -54,6 +61,25 @@ export function CheckListTable({
 		setSelectedRow(row);
 		infoState.open();
 	};
+
+	const role = user?.role?.toUpperCase();
+	const userId = user?.id;
+	const userAreaId = user?.areaId;
+
+	const activity = process?.activity as {
+		createdById: string;
+		areaId: string | null;
+		leaders: { userId: string }[];
+	} | null;
+	const isCreator = activity?.createdById === userId;
+	const isAreaAdmin =
+		role === "ADMIN" &&
+		(userAreaId === "ALL" || activity?.areaId === userAreaId);
+	const isLeader = activity?.leaders?.some(
+		(l: { userId: string }) => l.userId === userId,
+	);
+
+	const isEditable = isCreator || isAreaAdmin || isLeader;
 
 	return (
 		<div className="flex flex-col gap-4">
@@ -134,6 +160,7 @@ export function CheckListTable({
 															<Checkbox
 																aria-label={`為第 ${row.id} 列核取 ${col.columnName}`}
 																className="**:data-[slot='checkbox-default-indicator--checkmark']:size-4"
+																isDisabled={!isEditable}
 																isSelected={!!value}
 																onChange={(isSelected) => {
 																	onCheckboxChange(

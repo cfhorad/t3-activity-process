@@ -3,10 +3,11 @@
 import { Button, Tooltip, useOverlayState } from "@heroui/react";
 import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
+import type { User } from "~/server/better-auth/config";
 import { api } from "~/trpc/react";
 import { ActivityFormModal } from "./activity-form-modal";
 
-export function CreateActivityButton({ userRole }: { userRole: string }) {
+export function CreateActivityButton({ user }: { user: User }) {
 	const state = useOverlayState();
 	const router = useRouter();
 	const utils = api.useUtils();
@@ -20,7 +21,7 @@ export function CreateActivityButton({ userRole }: { userRole: string }) {
 		},
 	});
 
-	const normalizedRole = userRole?.toUpperCase();
+	const normalizedRole = user?.role?.toUpperCase();
 	if (normalizedRole !== "ADMIN" && normalizedRole !== "MANAGER") {
 		return null;
 	}

@@ -80,9 +80,7 @@ export function ActivityFormModal({
 									control={form.control}
 									label="活動名稱"
 									name="name"
-									placeholder={
-										mode === "create" ? "例如：用餐報到" : undefined
-									}
+									placeholder={mode === "create" ? "例如：用餐報到" : undefined}
 								/>
 
 								<TextField isRequired name="googleSheetId" variant="secondary">

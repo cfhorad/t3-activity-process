@@ -14,13 +14,11 @@ export function useProcessForm({
 	onSubmit,
 	isOpen,
 	activityId,
-	mode,
 }: {
 	initialData?: Partial<ProcessFormData & { iframeSrc?: string | null }>;
-	onSubmit: (data: any) => void;
+	onSubmit: (data: ProcessFormData & { iframeSrc: string | null }) => void;
 	isOpen: boolean;
 	activityId: number;
-	mode: "create" | "edit";
 }) {
 	const form = useForm<ProcessFormData>({
 		resolver: zodResolver(processFormSchema),

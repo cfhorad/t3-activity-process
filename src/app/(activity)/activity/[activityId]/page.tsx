@@ -37,10 +37,7 @@ export default async function ActivityPage({
 					<PageHeader
 						action={
 							session && (
-								<CreateProcessButton
-									activityId={activity.id}
-									userRole={session.user.role as string}
-								/>
+								<CreateProcessButton activity={activity} user={session.user} />
 							)
 						}
 						backHref="/"
@@ -53,7 +50,7 @@ export default async function ActivityPage({
 						<ProcessList
 							activity={activity}
 							activityId={activity.id}
-							userRole={session?.user.role as string}
+							user={session?.user}
 						/>
 					</div>
 				</div>

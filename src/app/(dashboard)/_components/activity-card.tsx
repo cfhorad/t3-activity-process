@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { ConfirmDeleteDialog } from "~/app/_components/confirm-delete-dialog";
+import type { User } from "~/server/better-auth/config";
 import { DashboardItemCard } from "../../_components/dashboard-item-card";
 import { useActivityActions } from "../_hooks/useActivityActions";
 import { ActivityInfoModal } from "./activity-info-modal";
@@ -16,19 +17,28 @@ interface ActivityCardProps {
 		activityMemo?: string | null;
 		createdAt: Date;
 		creator?: { name: string | null } | null;
+		createdById: string;
+		areaId: string | null;
 		processes?: { id: number }[];
 	};
-	userRole: string;
+	user: User;
 }
 
-export function ActivityCard({ activity, userRole }: ActivityCardProps) {
+export function ActivityCard({ activity, user }: ActivityCardProps) {
 	const router = useRouter();
 	const { editState, deleteState, infoState, deleteActivity, updateActivity } =
-		useActivityActions({ activityId: activity.id });
+		useActivityActions();
 
-	const normalizedRole = userRole?.toUpperCase();
-	const isAuthorized =
-		normalizedRole === "ADMIN" || normalizedRole === "MANAGER";
+	const role = user?.role?.toUpperCase();
+	const userId = user?.id;
+	const userAreaId = user?.areaId;
+
+	const isCreator = activity.createdById === userId;
+	const isAreaAdmin =
+		role === "ADMIN" &&
+		(userAreaId === "ALL" || activity.areaId === userAreaId);
+
+	const isAuthorized = isCreator || isAreaAdmin;
 
 	const linkHref = `/activity/${activity.id}`;
 
