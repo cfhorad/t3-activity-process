@@ -7,6 +7,7 @@ export const loginSchema = z.object({
 
 export const registerSchema = loginSchema.extend({
 	name: z.string().min(1, "姓名為必填欄位"),
+	areaIds: z.array(z.string()).min(1, "請至少選擇一個分會"),
 });
 
 export type LoginValues = z.infer<typeof loginSchema>;

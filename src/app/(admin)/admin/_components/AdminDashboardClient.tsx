@@ -54,7 +54,7 @@ function StatsCards({
 			<Card className="border border-border/40 bg-linear-to-br from-primary/10 via-background to-background p-5 shadow-sm">
 				<div className="flex items-center justify-between">
 					<div>
-						<p className="font-semibold text-muted text-xs">待審核地區申請</p>
+						<p className="font-semibold text-muted text-xs">待審核分會申請</p>
 						<h3 className="mt-2 font-black text-3xl text-primary">
 							{loadingApprovals ? (
 								<RefreshCw className="size-6 animate-spin" />
@@ -90,7 +90,7 @@ function StatsCards({
 			<Card className="border border-border/40 bg-linear-to-br from-secondary/10 via-background to-background p-5 shadow-sm">
 				<div className="flex items-center justify-between">
 					<div>
-						<p className="font-semibold text-muted text-xs">營運地區總數</p>
+						<p className="font-semibold text-muted text-xs">營運分會總數</p>
 						<h3 className="mt-2 font-black text-3xl text-secondary">
 							{loadingAreas ? (
 								<RefreshCw className="size-6 animate-spin" />
@@ -139,7 +139,7 @@ function RejectApplicationModal({
 						<Modal.Icon className="bg-danger/10 text-danger">
 							<AlertTriangle className="size-5" />
 						</Modal.Icon>
-						<Modal.Heading>拒絕地區申請</Modal.Heading>
+						<Modal.Heading>拒絕分會申請</Modal.Heading>
 					</Modal.Header>
 
 					<Modal.Body className="space-y-4 py-4">
@@ -151,7 +151,7 @@ function RejectApplicationModal({
 									{rejectingApplication.user?.email})
 								</p>
 								<p>
-									<strong>申請地區：</strong>
+									<strong>申請分會：</strong>
 									{rejectingApplication.area?.name} (
 									{rejectingApplication.areaId})
 								</p>
@@ -286,7 +286,7 @@ export function AdminDashboardClient({
 							</Tabs.Tab>
 							<Tabs.Tab className="flex items-center gap-2" id="areas">
 								<Building className="size-4" />
-								地區管理
+								分會管理
 								<Tabs.Indicator />
 							</Tabs.Tab>
 						</Tabs.List>

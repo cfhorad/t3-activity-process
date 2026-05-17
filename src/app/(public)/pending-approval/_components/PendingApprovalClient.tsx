@@ -7,6 +7,7 @@ import {
 	Form,
 	Label,
 	ListBox,
+	Select,
 	Spinner,
 } from "@heroui/react";
 import {
@@ -44,7 +45,7 @@ function PendingHeaderCard({ user, onLogout }: PendingHeaderCardProps) {
 					</div>
 					<div>
 						<h1 className="font-bold text-foreground text-xl">
-							地區審核與權限開通
+							分會審核與權限開通
 						</h1>
 						<p className="text-muted text-xs">
 							歡迎 {user.name} ({user.email})
@@ -93,47 +94,82 @@ function OnboardingApplyForm({
 			<div className="space-y-4">
 				<div>
 					<h2 className="font-bold text-foreground text-lg">
-						{isApplyingMore ? "申請加入其他地區" : "選擇您所屬的營運地區"}
+						{isApplyingMore ? "申請加入其他分會" : "選擇您所屬的分會"}
 					</h2>
 					<p className="mt-1 text-muted text-sm">
-						本系統採地區權限管理，請選擇您需要存取、報到或管理的地區。
+						本系統採分會權限管理，請選擇您需要存取、報到或管理的分會。
 					</p>
 				</div>
 
 				{availableToApply.length === 0 ? (
 					<div className="rounded-xl bg-surface-secondary p-8 text-center text-muted text-sm">
-						目前沒有可申請的其他地區。
+						目前沒有可申請的其他分會。
 					</div>
 				) : (
 					<Form className="space-y-6" onSubmit={onSubmit}>
 						<div className="space-y-2">
-							<Label className="font-medium text-foreground text-sm">
-								可申請的營運地區 (可複選)
-							</Label>
-							<ListBox
-								aria-label="選擇營運地區"
-								className="max-h-60 overflow-y-auto rounded-xl border border-border/40 bg-background/50 p-2"
-								onSelectionChange={(keys) =>
-									onSelectionChange(Array.from(keys) as string[])
-								}
+							<Select
+								aria-label="選擇所屬分會"
+								onChange={(keys) => {
+									const keysArray = Array.isArray(keys)
+										? keys
+										: keys
+											? [keys]
+											: [];
+									onSelectionChange(keysArray.map(String));
+								}}
+								placeholder="請選擇分會"
 								selectionMode="multiple"
+								value={selectedAreaIds}
+								variant="secondary"
 							>
-								{availableToApply.map((area) => (
-									<ListBox.Item
-										id={area.id}
-										key={area.id}
-										textValue={area.name}
-									>
-										<div className="flex items-center justify-between">
-											<span className="font-medium text-sm">{area.name}</span>
-											<span className="font-mono text-muted text-xs">
-												{area.id}
-											</span>
-										</div>
-										<ListBox.ItemIndicator />
-									</ListBox.Item>
-								))}
-							</ListBox>
+								<Label className="font-medium text-foreground text-sm">
+									可申請的分會 (可複選)
+								</Label>
+								<Select.Trigger>
+									<Select.Value>
+										{({ state }) => {
+											if (state.selectedItems.length === 0) {
+												return "選擇所屬分會";
+											}
+											return (
+												<div className="flex flex-wrap gap-1.5 py-0.5">
+													{state.selectedItems.map((item) => (
+														<Chip
+															className="font-semibold"
+															color="accent"
+															key={item.key}
+															size="sm"
+															variant="soft"
+														>
+															{item.textValue}
+														</Chip>
+													))}
+												</div>
+											);
+										}}
+									</Select.Value>
+									<Select.Indicator />
+								</Select.Trigger>
+								<Select.Popover>
+									<ListBox selectionMode="multiple">
+										{availableToApply.map((area) => (
+											<ListBox.Item
+												id={area.id}
+												key={area.id}
+												textValue={area.name}
+											>
+												<div className="flex w-full items-center justify-between">
+													<span className="font-medium text-sm">
+														{area.name}
+													</span>
+												</div>
+												<ListBox.ItemIndicator />
+											</ListBox.Item>
+										))}
+									</ListBox>
+								</Select.Popover>
+							</Select>
 						</div>
 
 						<div className="flex gap-3">
@@ -153,7 +189,7 @@ function OnboardingApplyForm({
 								type="submit"
 								variant="primary"
 							>
-								送出地區審核申請
+								送出分會審核申請
 							</Button>
 						</div>
 					</Form>
@@ -185,10 +221,10 @@ function ApplicationStatusCard({
 				<div className="flex items-center justify-between">
 					<div>
 						<h2 className="font-bold text-foreground text-lg">
-							您目前的地區審核狀態
+							您目前的分會審核狀態
 						</h2>
 						<p className="mt-1 text-muted text-sm">
-							管理員正在審核您的申請，完成後您將自動獲得該地區的活動存取權限。
+							管理員正在審核您的申請，完成後您將自動獲得該分會的活動存取權限。
 						</p>
 					</div>
 					{availableToApplyCount > 0 && (
@@ -198,7 +234,7 @@ function ApplicationStatusCard({
 							variant="secondary"
 						>
 							<Plus className="size-3.5" />
-							加簽其他地區
+							加入其他分會
 						</Button>
 					)}
 				</div>
@@ -261,7 +297,7 @@ function ApplicationStatusCard({
 				<div className="flex items-center justify-between rounded-xl bg-surface-secondary p-4 text-muted text-xs">
 					<span className="flex items-center gap-2 font-medium">
 						<Info className="size-4 shrink-0" />
-						當您至少有一個地區審核通過 (已開通) 後，您即可進入儀表板查看活動！
+						當您至少有一個分會審核通過 (已開通) 後，您即可進入儀表板查看活動！
 					</span>
 					<Button
 						className="font-semibold text-xs"

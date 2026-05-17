@@ -51,20 +51,20 @@ export function AreaManagementPanel({
 				<Card className="border-default-200 bg-default-50 p-4 shadow-sm">
 					<h4 className="mb-3 flex items-center gap-1.5 font-bold text-foreground text-sm">
 						<Plus className="size-4 text-primary" />
-						新增系統營運地區
+						新增系統營運分會
 					</h4>
 					{!isSuperAdmin ? (
 						<div className="flex items-start gap-2 rounded-xl border border-warning-soft/20 bg-warning-soft/10 p-3 text-warning text-xs">
 							<AlertTriangle className="mt-0.5 size-4 shrink-0" />
 							<span>
 								僅「超級管理員
-								(ADMIN)」可以新增、編輯或刪除地區。您目前的權限等級不足。
+								(ADMIN)」可以新增、編輯或刪除分會。您目前的權限等級不足。
 							</span>
 						</div>
 					) : (
 						<form className="space-y-4" onSubmit={handleCreateArea}>
 							<TextField isRequired name="newAreaId">
-								<Label>地區代碼 ID</Label>
+								<Label>分會代碼 ID</Label>
 								<Input
 									onChange={(e) => setNewAreaId(e.target.value)}
 									placeholder="例如: CENTRAL 或 EAST"
@@ -73,10 +73,10 @@ export function AreaManagementPanel({
 								<Description>英文大寫字串，不可與其他代碼重複</Description>
 							</TextField>
 							<TextField isRequired name="newAreaName">
-								<Label>地區顯示名稱</Label>
+								<Label>分會顯示名稱</Label>
 								<Input
 									onChange={(e) => setNewAreaName(e.target.value)}
-									placeholder="例如: 中區 或 東部地區"
+									placeholder="例如: 中區 或 東部分會"
 									value={newAreaName}
 								/>
 								<Description>顯示於下拉選單與儀表板上的中文名稱</Description>
@@ -94,7 +94,7 @@ export function AreaManagementPanel({
 										) : (
 											<Plus className="size-4" />
 										)}
-										建立新地區
+										建立新分會
 									</>
 								)}
 							</Button>
@@ -107,7 +107,7 @@ export function AreaManagementPanel({
 			<div className="space-y-4 lg:col-span-2">
 				<div className="mb-1 flex items-center justify-between">
 					<h4 className="font-bold text-foreground text-sm">
-						當前系統營運地區清單
+						當前系統營運分會清單
 					</h4>
 					<Tooltip closeDelay={0} delay={0}>
 						<Tooltip.Trigger>
@@ -132,25 +132,25 @@ export function AreaManagementPanel({
 				{loadingAreas ? (
 					<div className="flex flex-col items-center justify-center p-12 text-muted">
 						<RefreshCw className="mb-2 size-8 animate-spin" />
-						<span>載入地區中...</span>
+						<span>載入分會中...</span>
 					</div>
 				) : !areas || areas.length === 0 ? (
 					<div className="flex flex-col items-center justify-center rounded-2xl border border-default-200 border-dashed bg-default-50 p-12 text-muted">
 						<Globe className="mb-2 size-12 text-default-300" />
 						<span className="font-medium text-sm">
-							系統目前沒有地區，請新增！
+							系統目前沒有分會，請新增！
 						</span>
 					</div>
 				) : (
 					<div className="overflow-hidden rounded-2xl border border-default-200 shadow-sm">
 						<Table>
 							<Table.ScrollContainer>
-								<Table.Content aria-label="營運地區" className="w-full">
+								<Table.Content aria-label="營運分會" className="w-full">
 									<Table.Header>
 										<Table.Column id="areaId" isRowHeader>
-											地區 ID / 代碼
+											分會 ID / 代碼
 										</Table.Column>
-										<Table.Column id="areaName">地區顯示名稱</Table.Column>
+										<Table.Column id="areaName">分會顯示名稱</Table.Column>
 										<Table.Column className="text-end" id="actions">
 											管理操作
 										</Table.Column>
@@ -194,7 +194,7 @@ export function AreaManagementPanel({
 																	</Button>
 																</Tooltip.Trigger>
 																<Tooltip.Content placement="top">
-																	{isSuperAdmin ? "刪除此地區" : "權限不足"}
+																	{isSuperAdmin ? "刪除此分會" : "權限不足"}
 																</Tooltip.Content>
 															</Tooltip>
 														)}

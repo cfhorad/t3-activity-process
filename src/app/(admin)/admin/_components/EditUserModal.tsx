@@ -111,9 +111,9 @@ export function EditUserModal({
 										)}
 										<ListBox.Item
 											id="MANAGER"
-											textValue="地區審核管理員 (MANAGER)"
+											textValue="分會審核管理員 (MANAGER)"
 										>
-											地區審核管理員 (MANAGER)
+											分會審核管理員 (MANAGER)
 											<ListBox.ItemIndicator />
 										</ListBox.Item>
 										<ListBox.Item
@@ -127,8 +127,8 @@ export function EditUserModal({
 								</Select.Popover>
 							</Select>
 							<p className="text-[10px] text-muted">
-								* 超級管理員擁有所有地區之全域讀寫與刪除權限；MANAGER
-								可以審核並管理核准地區之數據與成員。
+								* 超級管理員擁有所有分會之全域讀寫與刪除權限；MANAGER
+								可以審核並管理核准分會之數據與成員。
 							</p>
 						</div>
 
@@ -172,16 +172,16 @@ export function EditUserModal({
 						{/* Multi-Select Areas */}
 						<div className="space-y-2">
 							<span className="font-bold text-default-600 text-xs">
-								核准之管轄/所屬地區（可複選）
+								核准之管轄/所屬分會（可複選）
 							</span>
 							<p className="-mt-1 text-[10px] text-muted">
-								勾選即代表**核准**該地區。若全部勾選清除，該使用者將因無核准地區而在登入時重新被引體至審核等待頁面。
+								勾選即代表**核准**該分會。若全部勾選清除，該使用者將因無核准分會而在登入時重新被引體至審核等待頁面。
 							</p>
 
 							{loadingAreas ? (
 								<div className="flex items-center gap-2 p-2 text-muted text-xs">
 									<RefreshCw className="size-4 animate-spin" />{" "}
-									讀取營運地區中...
+									讀取營運分會中...
 								</div>
 							) : (
 								<div className="grid grid-cols-2 gap-2 rounded-2xl border border-default-200 bg-default-50 p-3">

@@ -26,9 +26,9 @@ export function SyncConfirmDialog({
 }: SyncConfirmDialogProps) {
 	return (
 		<AlertDialog>
-			<AlertDialog.Trigger>
-				<Tooltip closeDelay={0} delay={0}>
-					<Tooltip.Trigger>
+			<Tooltip closeDelay={0} delay={0}>
+				<Tooltip.Trigger>
+					<AlertDialog.Trigger>
 						<Button
 							className="font-medium shadow-sm"
 							isPending={isSyncing}
@@ -41,10 +41,10 @@ export function SyncConfirmDialog({
 								{isSyncing ? triggerPendingLabel : triggerLabel}
 							</div>
 						</Button>
-					</Tooltip.Trigger>
-					<Tooltip.Content placement="top">{description}</Tooltip.Content>
-				</Tooltip>
-			</AlertDialog.Trigger>
+					</AlertDialog.Trigger>
+				</Tooltip.Trigger>
+				<Tooltip.Content placement="top">{description}</Tooltip.Content>
+			</Tooltip>
 			<AlertDialog.Backdrop>
 				<AlertDialog.Container>
 					<AlertDialog.Dialog aria-labelledby="sync-confirm-heading">

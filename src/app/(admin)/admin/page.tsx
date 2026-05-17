@@ -34,7 +34,7 @@ export default async function AdminPage() {
 	return (
 		<main className="min-h-screen bg-linear-to-b from-background to-surface-secondary p-4 md:p-8">
 			<div className="mx-auto max-w-7xl space-y-6">
-				<PageHeader title="後台權限與地區審核管理系統" />
+				<PageHeader title="後台權限與分會審核管理系統" />
 				<AdminDashboardClient currentUser={currentUser} />
 			</div>
 		</main>

@@ -6,7 +6,7 @@ async function seed() {
 	await db
 		.insert(area)
 		.values([
-			{ id: "ALL", name: "全區（所有地區）" },
+			{ id: "ALL", name: "全區（所有分會）" },
 			{ id: "NORTH", name: "北區" },
 			{ id: "CENTRAL", name: "中區" },
 			{ id: "SOUTH", name: "南區" },

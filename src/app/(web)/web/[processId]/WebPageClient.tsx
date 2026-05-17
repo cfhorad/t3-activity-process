@@ -2,7 +2,7 @@
 
 import { Button, Card, Spinner } from "@heroui/react";
 import { useRouter } from "next/navigation";
-import { use } from "react";
+import { use, useState } from "react";
 import { PageHeader } from "~/app/_components/page-header";
 import { useWebData } from "./_hooks/useWebData";
 
@@ -17,10 +17,21 @@ interface IframeViewProps {
 }
 
 function IframeView({ src, title }: IframeViewProps) {
+	const [isIframeLoading, setIsIframeLoading] = useState(true);
+
 	return (
-		<Card className="h-full w-full overflow-hidden">
+		<Card className="relative h-full w-full overflow-hidden">
+			{isIframeLoading && (
+				<div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-background/80 backdrop-blur-xs">
+					<Spinner size="lg" />
+					<p className="animate-pulse font-medium text-muted text-sm">
+						載入嵌入頁面中...
+					</p>
+				</div>
+			)}
 			<iframe
 				className="h-full w-full border-none bg-background"
+				onLoad={() => setIsIframeLoading(false)}
 				src={src}
 				title={title}
 			/>

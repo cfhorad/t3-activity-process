@@ -55,7 +55,7 @@ export function usePendingApproval({ userId }: UsePendingApprovalProps) {
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 		if (selectedAreaIds.length === 0) {
-			toast.danger("請至少選擇一個營運地區！");
+			toast.danger("請至少選擇一個營運分會！");
 			return;
 		}
 		applyMutation.mutate({

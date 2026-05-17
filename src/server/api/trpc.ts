@@ -177,7 +177,7 @@ export function assertCanManageArea(
 	) {
 		throw new TRPCError({
 			code: "FORBIDDEN",
-			message: "您沒有管理此地區的權限",
+			message: "您沒有管理此分會的權限",
 		});
 	}
 }

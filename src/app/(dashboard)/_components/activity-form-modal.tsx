@@ -136,10 +136,10 @@ export function ActivityFormModal({
 											className="w-full"
 											isRequired
 											onSelectionChange={(key) => field.onChange(key as string)}
-											placeholder="選擇所屬營運地區"
+											placeholder="選擇所屬營運分會"
 											selectedKey={field.value}
 										>
-											<Label>活動營運地區</Label>
+											<Label>活動營運分會</Label>
 											<Select.Trigger>
 												<Select.Value />
 												<Select.Indicator />

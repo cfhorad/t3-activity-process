@@ -46,7 +46,7 @@ export function useAdminDashboard({ currentUser }: UseAdminDashboardProps) {
 
 	const approveMutation = api.admin.approveAreaApplication.useMutation({
 		onSuccess: async () => {
-			toast.success("地區申請已核准！");
+			toast.success("分會申請已核准！");
 			await utils.admin.getPendingApprovals.invalidate();
 			await utils.admin.getUsers.invalidate();
 		},
@@ -57,7 +57,7 @@ export function useAdminDashboard({ currentUser }: UseAdminDashboardProps) {
 
 	const rejectMutation = api.admin.rejectAreaApplication.useMutation({
 		onSuccess: async () => {
-			toast.success("已拒絕該地區申請。");
+			toast.success("已拒絕該分會申請。");
 			setRejectModalOpen(false);
 			setRejectingApplication(null);
 			setRejectedReason("");
@@ -98,7 +98,7 @@ export function useAdminDashboard({ currentUser }: UseAdminDashboardProps) {
 
 	const createAreaMutation = api.admin.createArea.useMutation({
 		onSuccess: async () => {
-			toast.success("成功建立新地區！");
+			toast.success("成功建立新分會！");
 			setNewAreaId("");
 			setNewAreaName("");
 			await utils.admin.getAreas.invalidate();
@@ -110,7 +110,7 @@ export function useAdminDashboard({ currentUser }: UseAdminDashboardProps) {
 
 	const deleteAreaMutation = api.admin.deleteArea.useMutation({
 		onSuccess: async () => {
-			toast.success("地區已成功刪除。");
+			toast.success("分會已成功刪除。");
 			await utils.admin.getAreas.invalidate();
 		},
 		onError: (err) => {
@@ -185,7 +185,7 @@ export function useAdminDashboard({ currentUser }: UseAdminDashboardProps) {
 	const handleCreateArea = (e: FormEvent) => {
 		e.preventDefault();
 		if (!newAreaId.trim() || !newAreaName.trim()) {
-			toast.danger("請填寫完整地區 ID 與名稱");
+			toast.danger("請填寫完整分會 ID 與名稱");
 			return;
 		}
 		createAreaMutation.mutate({
@@ -197,7 +197,7 @@ export function useAdminDashboard({ currentUser }: UseAdminDashboardProps) {
 	const handleDeleteArea = (id: string, name: string) => {
 		if (
 			window.confirm(
-				`確定要刪除「${name} (${id})」地區嗎？將一併移除所有使用者與該地區的連結。`,
+				`確定要刪除「${name} (${id})」分會嗎？將一併移除所有使用者與該分會的連結。`,
 			)
 		) {
 			deleteAreaMutation.mutate({ id });

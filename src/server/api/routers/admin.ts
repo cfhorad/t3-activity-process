@@ -160,7 +160,7 @@ export const adminRouter = createTRPCRouter({
 				if (!hasCommonArea) {
 					throw new TRPCError({
 						code: "FORBIDDEN",
-						message: "您沒有權限管理此使用者（不在您的管轄地區內）。",
+						message: "您沒有權限管理此使用者（不在您的管轄分會內）。",
 					});
 				}
 
@@ -261,7 +261,7 @@ export const adminRouter = createTRPCRouter({
 			if (!ctx.session.user.areaIds.includes("ALL")) {
 				throw new TRPCError({
 					code: "FORBIDDEN",
-					message: "僅超級管理員可建立新地區",
+					message: "僅超級管理員可建立新分會",
 				});
 			}
 
@@ -283,7 +283,7 @@ export const adminRouter = createTRPCRouter({
 			if (!ctx.session.user.areaIds.includes("ALL")) {
 				throw new TRPCError({
 					code: "FORBIDDEN",
-					message: "僅超級管理員可刪除地區",
+					message: "僅超級管理員可刪除分會",
 				});
 			}
 

@@ -33,7 +33,7 @@ export function PendingApprovalPanel({
 		<>
 			<div className="mb-4 flex items-center justify-between">
 				<h4 className="font-bold text-base text-foreground">
-					待審核地區申請清單
+					待審核分會申請清單
 				</h4>
 				<Tooltip closeDelay={0} delay={0}>
 					<Tooltip.Trigger>
@@ -64,7 +64,7 @@ export function PendingApprovalPanel({
 				<div className="flex flex-col items-center justify-center rounded-2xl border border-default-200 border-dashed bg-default-50 p-12 text-muted">
 					<UserCheck className="mb-2 size-12 text-default-300" />
 					<span className="font-medium text-sm">
-						目前沒有待審核的地區申請案件
+						目前沒有待審核的分會申請案件
 					</span>
 				</div>
 			) : (
@@ -72,14 +72,14 @@ export function PendingApprovalPanel({
 					<Table>
 						<Table.ScrollContainer>
 							<Table.Content
-								aria-label="待審核地區申請"
+								aria-label="待審核分會申請"
 								className="min-w-[650px]"
 							>
 								<Table.Header>
 									<Table.Column id="applicant" isRowHeader>
 										申請人
 									</Table.Column>
-									<Table.Column id="area">申請地區</Table.Column>
+									<Table.Column id="area">申請分會</Table.Column>
 									<Table.Column id="status">狀態</Table.Column>
 									<Table.Column id="date">申請日期</Table.Column>
 									<Table.Column className="text-end" id="actions">

@@ -45,7 +45,7 @@ export function UserManagementPanel({
 							</InputGroup.Prefix>
 							<InputGroup.Input
 								onChange={(e) => setUserSearch(e.target.value)}
-								placeholder="搜尋姓名、信箱、角色、地區..."
+								placeholder="搜尋姓名、信箱、角色、分會..."
 								value={userSearch}
 							/>
 						</InputGroup>
@@ -98,7 +98,7 @@ export function UserManagementPanel({
 									</Table.Column>
 									<Table.Column id="role">系統角色</Table.Column>
 									<Table.Column id="status">帳號狀態</Table.Column>
-									<Table.Column id="areas">管轄/核准地區</Table.Column>
+									<Table.Column id="areas">管轄/核准分會</Table.Column>
 									<Table.Column className="text-end" id="actions">
 										管理操作
 									</Table.Column>
@@ -222,7 +222,7 @@ export function UserManagementPanel({
 															})
 														) : (
 															<span className="text-muted text-xs italic">
-																無登記地區
+																無登記分會
 															</span>
 														)}
 													</div>
@@ -241,7 +241,7 @@ export function UserManagementPanel({
 																</Button>
 															</Tooltip.Trigger>
 															<Tooltip.Content placement="top">
-																變更角色與地區權限
+																變更角色與分會權限
 															</Tooltip.Content>
 														</Tooltip>
 													</div>

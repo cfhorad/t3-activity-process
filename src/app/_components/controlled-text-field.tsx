@@ -1,6 +1,7 @@
 "use client";
 
 import { Button, FieldError, Input, Label, TextField } from "@heroui/react";
+import { Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
 import {
 	type Control,
@@ -8,7 +9,6 @@ import {
 	type FieldPath,
 	type FieldValues,
 } from "react-hook-form";
-import { EyeIcon, EyeOffIcon } from "./auth/auth-icons";
 
 interface ControlledTextFieldProps<TFieldValues extends FieldValues> {
 	control: Control<TFieldValues>;
@@ -65,9 +65,9 @@ export function ControlledTextField<TFieldValues extends FieldValues>({
 								variant="ghost"
 							>
 								{isVisible ? (
-									<EyeOffIcon className="size-4" />
+									<EyeOff className="size-4" />
 								) : (
-									<EyeIcon className="size-4" />
+									<Eye className="size-4" />
 								)}
 							</Button>
 						)}
