@@ -3,6 +3,7 @@
 import { Spinner } from "@heroui/react";
 import { TableProperties } from "lucide-react";
 import type { User } from "~/server/better-auth/config";
+import type { Activity } from "~/server/db/schema";
 import { useProcessList } from "../_hooks/useProcessList";
 import { ProcessCard } from "./process-card";
 
@@ -13,12 +14,8 @@ export function ProcessList({
 }: {
 	activityId: number;
 	user: User;
-	activity: {
-		googleSheetId: string;
-		createdById: string;
-		areaId: string | null;
+	activity: Activity & {
 		creator?: { name: string | null } | null;
-		createdAt: Date;
 	};
 }) {
 	const { processes, isLoading } = useProcessList({ activityId });

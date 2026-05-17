@@ -3,15 +3,13 @@
 import { Modal } from "@heroui/react";
 import { Calendar, ExternalLink, Info, Layers, User } from "lucide-react";
 import Link from "next/link";
+import type { Activity } from "~/server/db/schema";
 
 interface ActivityInfoModalProps {
 	isOpen: boolean;
 	onOpenChange: (open: boolean) => void;
-	activity: {
-		name: string;
-		googleSheetId: string;
+	activity: Activity & {
 		creator?: { name: string | null } | null;
-		createdAt: Date;
 		processes?: { id: number }[];
 	};
 }

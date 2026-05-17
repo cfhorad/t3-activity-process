@@ -3,6 +3,7 @@
 import { Button, Tooltip, useOverlayState } from "@heroui/react";
 import { Plus } from "lucide-react";
 import type { User } from "~/server/better-auth/config";
+import type { Activity } from "~/server/db/schema";
 import { api } from "~/trpc/react";
 import { ProcessFormModal } from "./process-form-modal";
 
@@ -13,7 +14,7 @@ export function CreateProcessButton({
 	size = "md",
 	className,
 }: {
-	activity: { id: number; createdById: string; areaId: string | null };
+	activity: Pick<Activity, "id" | "createdById" | "areaId">;
 	user: User;
 	variant?:
 		| "primary"

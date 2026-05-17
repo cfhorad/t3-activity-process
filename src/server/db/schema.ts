@@ -224,3 +224,17 @@ export const processRelations = relations(processes, ({ one, many }) => ({
 	googleSheetData: many(googleSheetData),
 	googleSheetConfig: many(googleSheetConfig),
 }));
+
+// ─── Inferred types ────────────────────────────────────────────
+// Use these for tRPC router return values and server-side queries.
+// For session-based user props in UI components, use `User` from
+// `~/server/better-auth/config` instead.
+
+export type Activity = typeof activities.$inferSelect;
+export type NewActivity = typeof activities.$inferInsert;
+
+export type Process = typeof processes.$inferSelect;
+export type NewProcess = typeof processes.$inferInsert;
+
+export type Area = typeof area.$inferSelect;
+export type ActivityLeader = typeof activityLeaders.$inferSelect;

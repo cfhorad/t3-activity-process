@@ -3,22 +3,15 @@
 import { useRouter } from "next/navigation";
 import { ConfirmDeleteDialog } from "~/app/_components/confirm-delete-dialog";
 import type { User } from "~/server/better-auth/config";
+import type { Activity } from "~/server/db/schema";
 import { DashboardItemCard } from "../../_components/dashboard-item-card";
 import { useActivityActions } from "../_hooks/useActivityActions";
 import { ActivityInfoModal } from "./activity-info-modal";
 import { EditActivityModal } from "./edit-activity-modal";
 
 interface ActivityCardProps {
-	activity: {
-		id: number;
-		name: string;
-		googleSheetId: string;
-		activityDate: string;
-		activityMemo?: string | null;
-		createdAt: Date;
+	activity: Activity & {
 		creator?: { name: string | null } | null;
-		createdById: string;
-		areaId: string | null;
 		processes?: { id: number }[];
 	};
 	user: User;

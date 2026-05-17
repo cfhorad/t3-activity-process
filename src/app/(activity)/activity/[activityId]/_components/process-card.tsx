@@ -5,28 +5,16 @@ import { useRouter } from "next/navigation";
 import { ConfirmDeleteDialog } from "~/app/_components/confirm-delete-dialog";
 import { DashboardItemCard } from "~/app/_components/dashboard-item-card";
 import type { User } from "~/server/better-auth/config";
+import type { Activity, Process } from "~/server/db/schema";
 import { useProcessActions } from "../_hooks/useProcessActions";
 import { EditProcessModal } from "./edit-process-modal";
 import { ProcessInfoModal } from "./process-info-modal";
 
 interface ProcessCardProps {
-	process: {
-		id: number;
-		name: string;
-		sheetName: string;
-		type: "PROCESS" | "CHECK" | "WEB";
-		activityId: number;
-		processDate?: string | null;
-		processMemo?: string | null;
-		iframeSrc?: string | null;
-	};
+	process: Process;
 	user: User;
-	activity: {
-		googleSheetId: string;
-		createdById: string;
-		areaId: string | null;
+	activity: Activity & {
 		creator?: { name: string | null } | null;
-		createdAt: Date;
 	};
 }
 
