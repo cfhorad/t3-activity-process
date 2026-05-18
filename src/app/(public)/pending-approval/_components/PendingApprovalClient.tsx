@@ -14,14 +14,11 @@ import {
 	CheckCircle2,
 	Clock,
 	Info,
-	LogOut,
 	Plus,
 	ShieldAlert,
 	XCircle,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-
-import { authClient } from "~/server/better-auth/client";
 import type { User } from "~/server/better-auth/config";
 import type { AreaStatusItem } from "../_hooks/usePendingApproval";
 import { usePendingApproval } from "../_hooks/usePendingApproval";
@@ -33,34 +30,23 @@ import { usePendingApproval } from "../_hooks/usePendingApproval";
  */
 interface PendingHeaderCardProps {
 	user: User;
-	onLogout: () => void;
 }
 
-function PendingHeaderCard({ user, onLogout }: PendingHeaderCardProps) {
+function PendingHeaderCard({ user }: PendingHeaderCardProps) {
 	return (
-		<Card className="border border-border/40 bg-surface/60 p-6 backdrop-blur-md">
-			<div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-				<div className="flex items-center gap-3">
-					<div className="rounded-2xl bg-primary/10 p-3 text-primary">
-						<ShieldAlert className="size-6 animate-pulse" />
-					</div>
-					<div>
-						<h1 className="font-bold text-foreground text-xl">
-							分會審核與權限開通
-						</h1>
-						<p className="text-muted text-xs">
-							歡迎 {user.name} ({user.email})
-						</p>
-					</div>
+		<Card className="border border-border/40 bg-surface/60 p-4 backdrop-blur-md">
+			<div className="flex flex-col items-center justify-center gap-2 text-center">
+				<div className="rounded-2xl bg-primary/10 p-3 text-primary">
+					<ShieldAlert className="size-6 animate-pulse" />
 				</div>
-				<Button
-					className="flex items-center gap-1 text-xs hover:bg-danger-soft/20"
-					onPress={onLogout}
-					variant="secondary"
-				>
-					<LogOut className="size-3.5" />
-					登出帳號
-				</Button>
+				<div className="space-y-1">
+					<h1 className="font-bold text-foreground text-xl">
+						分會審核與權限開通
+					</h1>
+					<p className="text-muted text-xs">
+						歡迎 {user.name} ({user.email})
+					</p>
+				</div>
 			</div>
 		</Card>
 	);
@@ -91,7 +77,7 @@ function OnboardingApplyForm({
 	onCancel,
 }: OnboardingApplyFormProps) {
 	return (
-		<Card className="border border-border/40 bg-surface/80 p-6 backdrop-blur-lg">
+		<Card className="border border-border/40 bg-surface/80 p-4 backdrop-blur-lg">
 			<div className="space-y-4">
 				<div>
 					<h2 className="font-bold text-foreground text-lg">
@@ -201,8 +187,8 @@ function ApplicationStatusCard({
 	onRefresh,
 }: ApplicationStatusCardProps) {
 	return (
-		<Card className="border border-border/40 bg-surface/80 p-6 backdrop-blur-lg">
-			<div className="space-y-6">
+		<Card className="border border-border/40 bg-surface/80 p-4 backdrop-blur-lg">
+			<div className="space-y-4">
 				<div className="flex items-center justify-between">
 					<div>
 						<h2 className="font-bold text-foreground text-lg">
@@ -227,10 +213,10 @@ function ApplicationStatusCard({
 				<div className="divide-y divide-separator/20 rounded-2xl border border-border/40 bg-background/40">
 					{myApplications?.map((app) => (
 						<div
-							className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
+							className="flex flex-row flex-nowrap items-center justify-between gap-3 p-3"
 							key={app.areaId}
 						>
-							<div className="flex items-center gap-3">
+							<div className="flex min-w-0 items-center gap-2">
 								{app.status === "approved" && (
 									<div className="rounded-full bg-success-soft/20 p-2 text-success">
 										<CheckCircle2 className="size-5" />
@@ -246,9 +232,9 @@ function ApplicationStatusCard({
 										<XCircle className="size-5" />
 									</div>
 								)}
-								<div>
+								<div className="min-w-0">
 									<h3 className="font-bold text-foreground text-sm">
-										{app.area.name} ({app.area.id})
+										{app.area.name}
 									</h3>
 									{app.status === "rejected" && app.rejectedReason && (
 										<p className="mt-0.5 text-danger text-xs">
@@ -258,7 +244,7 @@ function ApplicationStatusCard({
 								</div>
 							</div>
 
-							<div>
+							<div className="shrink-0">
 								{app.status === "approved" && (
 									<Chip className="font-semibold" color="success" size="sm">
 										已開通
@@ -319,21 +305,6 @@ export function PendingApprovalClient({ user }: PendingApprovalClientProps) {
 		handleSubmit,
 	} = usePendingApproval({ userId: user.id });
 
-	const handleLogout = async () => {
-		try {
-			await authClient.signOut({
-				fetchOptions: {
-					onSuccess: () => {
-						router.push("/auth");
-						router.refresh();
-					},
-				},
-			});
-		} catch (error) {
-			console.error("Sign out failed", error);
-		}
-	};
-
 	if (isLoading) {
 		return (
 			<div className="flex flex-col items-center gap-3 py-24">
@@ -344,9 +315,9 @@ export function PendingApprovalClient({ user }: PendingApprovalClientProps) {
 	}
 
 	return (
-		<div className="w-full max-w-2xl space-y-6">
+		<div className="w-full max-w-2xl space-y-4">
 			{/* Top Header Section */}
-			<PendingHeaderCard onLogout={handleLogout} user={user} />
+			<PendingHeaderCard user={user} />
 
 			{/* Form / Status Switching Content */}
 			{showOnboardingForm ? (

@@ -12,6 +12,13 @@ export default async function DashboardPage() {
 		redirect("/auth");
 	}
 
+	if (
+		session.user.status === "pending" ||
+		session.user.status === "suspended"
+	) {
+		redirect("/pending-approval");
+	}
+
 	await api.activity.getAll.prefetch();
 
 	return (

@@ -45,9 +45,21 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
 		api.createClient({
 			links: [
 				loggerLink({
-					enabled: (op) =>
-						process.env.NODE_ENV === "development" ||
-						(op.direction === "down" && op.result instanceof Error),
+					enabled: (op) => {
+						const isExpectedError =
+							op.direction === "down" &&
+							op.result instanceof Error &&
+							(op.result.message.includes("PENDING_APPROVAL") ||
+								op.result.message.includes("UNAUTHORIZED") ||
+								op.result.message.includes("ACCOUNT_SUSPENDED"));
+
+						if (isExpectedError) return false;
+
+						return (
+							process.env.NODE_ENV === "development" ||
+							(op.direction === "down" && op.result instanceof Error)
+						);
+					},
 				}),
 				httpBatchStreamLink({
 					transformer: SuperJSON,

@@ -7,7 +7,7 @@ import {
 	publicProcedure,
 } from "~/server/api/trpc";
 import { auth } from "~/server/better-auth";
-import { userAreas } from "~/server/db/schema";
+import { user, userAreas } from "~/server/db/schema";
 
 export const userRouter = createTRPCRouter({
 	// Anyone can call this (for registration)
@@ -84,4 +84,55 @@ export const userRouter = createTRPCRouter({
 			with: { area: true },
 		});
 	}),
+
+	// Update user profile (name, area applications)
+	updateProfile: protectedProcedure
+		.input(
+			z.object({
+				name: z.string().min(1, "姓名不能為空"),
+				areaIds: z.array(z.string()).min(1, "請至少選擇一個分會"),
+			}),
+		)
+		.mutation(async ({ ctx, input }) => {
+			const userId = ctx.session.user.id;
+			const targetAreaIds = input.areaIds;
+
+			await ctx.db.transaction(async (tx) => {
+				// 1. Update name
+				await tx
+					.update(user)
+					.set({ name: input.name, updatedAt: new Date() })
+					.where(eq(user.id, userId));
+
+				// 2. Synchronize area applications:
+				// - Delete applications that are NOT in targetAreaIds
+				await tx
+					.delete(userAreas)
+					.where(
+						and(
+							eq(userAreas.userId, userId),
+							notInArray(userAreas.areaId, targetAreaIds),
+						),
+					);
+
+				// - Insert new applications that don't exist yet as pending
+				const existing = await tx
+					.select()
+					.from(userAreas)
+					.where(eq(userAreas.userId, userId));
+
+				const existingSet = new Set(existing.map((e) => e.areaId));
+				const toInsert = targetAreaIds.filter((id) => !existingSet.has(id));
+
+				if (toInsert.length > 0) {
+					await tx.insert(userAreas).values(
+						toInsert.map((areaId) => ({
+							userId,
+							areaId,
+							status: "pending" as const,
+						})),
+					);
+				}
+			});
+		}),
 });

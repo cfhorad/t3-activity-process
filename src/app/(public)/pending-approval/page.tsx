@@ -9,7 +9,7 @@ export default async function PendingApprovalPage() {
 	}
 
 	return (
-		<main className="flex min-h-screen items-center justify-center bg-linear-to-b from-background to-surface-secondary p-4 md:p-8">
+		<main className="flex h-full items-center justify-center bg-linear-to-b from-background to-surface-secondary p-4 md:p-8">
 			<PendingApprovalClient user={session.user} />
 		</main>
 	);

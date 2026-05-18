@@ -4,8 +4,6 @@ import {
 	ArrowRightFromSquare,
 	Bell,
 	ChevronDown,
-	Comment,
-	Gear,
 	Magnifier,
 	Person,
 	Plus,
@@ -13,7 +11,6 @@ import {
 } from "@gravity-ui/icons";
 import { Avatar, Button, Dropdown, Label, Separator } from "@heroui/react";
 import { Navbar } from "@heroui-pro/react";
-import { useState } from "react";
 
 const BrandLogo = ({ className }: { className?: string }) => (
 	<svg
@@ -52,13 +49,9 @@ const teams = [
 	},
 ];
 
-const navItems = [
-	{ href: "#dashboard", label: "儀表板" },
-	{ href: "#projects", label: "專案" },
-	{ href: "#members", label: "成員" },
-	{ href: "#billing", label: "帳單" },
-];
+const navItems = [{ href: "/", label: "活動管理" }];
 
+import { usePathname } from "next/navigation";
 import { authClient } from "~/server/better-auth/client";
 import type { Session } from "~/server/better-auth/config";
 
@@ -67,15 +60,15 @@ export function NavbarComponent({
 }: {
 	session?: Session | null;
 }) {
+	const pathname = usePathname();
 	const { data: clientSession } = authClient.useSession();
 	const session = clientSession ?? serverSession;
-	const [activeTeam, setActiveTeam] = useState("heroui");
 
 	if (!session) {
 		return null;
 	}
 
-	const team = teams.find((t) => t.id === activeTeam) ?? teams[0];
+	const team = teams[0];
 
 	return (
 		<div className="w-full overflow-hidden rounded-xl border border-border">
@@ -83,39 +76,40 @@ export function NavbarComponent({
 				<Navbar.Header>
 					<Navbar.MenuToggle className="md:hidden" />
 
-					<Dropdown>
-						<Button className="gap-1.5 px-2" variant="ghost">
-							{team?.logo}
-							<span className="font-semibold text-sm">{team?.name}</span>
-							<ChevronDown className="size-3.5 text-muted" />
-						</Button>
-						<Dropdown.Popover className="min-w-[220px]">
-							<Dropdown.Menu
-								onAction={(key) => {
-									if (key !== "team-settings" && key !== "new-workspace") {
-										setActiveTeam(String(key));
-									}
-								}}
-							>
-								<Dropdown.Item id="team-settings" textValue="團隊設定">
-									<Gear className="size-4 text-muted" />
-									<Label>團隊設定</Label>
-								</Dropdown.Item>
-								<Separator />
-								{teams.map((t) => (
-									<Dropdown.Item id={t.id} key={t.id} textValue={t.name}>
-										{t.logo}
-										<Label>{t.name}</Label>
+					{(session?.user as { role?: string })?.role === "ADMIN" ||
+					(session?.user as { role?: string })?.role === "MANAGER" ? (
+						<Dropdown>
+							<Button className="gap-1.5 px-2" variant="ghost">
+								{team?.logo}
+								<span className="font-semibold text-sm">{team?.name}</span>
+								<ChevronDown className="size-3.5 text-muted" />
+							</Button>
+							<Dropdown.Popover className="min-w-[180px]">
+								<Dropdown.Menu
+									onAction={(key) => {
+										if (key === "admin-dashboard") {
+											window.location.href = "/admin";
+											return;
+										}
+									}}
+								>
+									<Dropdown.Item id="admin-dashboard" textValue="管理員後台">
+										<ShieldCheck className="size-4 text-muted" />
+										<Label className="font-semibold text-primary">
+											管理員後台
+										</Label>
 									</Dropdown.Item>
-								))}
-								<Separator />
-								<Dropdown.Item id="new-workspace" textValue="建立工作區">
-									<Plus className="size-4 text-muted" />
-									<Label>建立工作區…</Label>
-								</Dropdown.Item>
-							</Dropdown.Menu>
-						</Dropdown.Popover>
-					</Dropdown>
+								</Dropdown.Menu>
+							</Dropdown.Popover>
+						</Dropdown>
+					) : (
+						<div className="flex items-center gap-1.5 px-2 py-1.5">
+							{team?.logo}
+							<span className="font-semibold text-foreground text-sm">
+								{team?.name}
+							</span>
+						</div>
+					)}
 
 					<Navbar.Separator className="hidden h-4 md:block" />
 
@@ -123,7 +117,7 @@ export function NavbarComponent({
 						{navItems.map((item) => (
 							<Navbar.Item
 								href={item.href}
-								isCurrent={item.href === "#dashboard"}
+								isCurrent={pathname === item.href}
 								key={item.href}
 							>
 								{item.label}
@@ -156,13 +150,15 @@ export function NavbarComponent({
 						</Button>
 						<Dropdown.Popover className="min-w-[200px]" placement="bottom end">
 							<Dropdown.Menu>
-								<Dropdown.Item id="account" textValue="您的帳戶">
+								<Dropdown.Item
+									id="account"
+									onAction={() => {
+										window.location.href = "/profile";
+									}}
+									textValue="您的帳戶"
+								>
 									<Person className="size-4 text-muted" />
 									<Label>您的帳戶</Label>
-								</Dropdown.Item>
-								<Dropdown.Item id="preferences" textValue="偏好設定">
-									<Gear className="size-4 text-muted" />
-									<Label>偏好設定</Label>
 								</Dropdown.Item>
 								<Separator />
 								<Dropdown.Item
@@ -174,14 +170,6 @@ export function NavbarComponent({
 								>
 									<Plus className="size-4 text-muted" />
 									<Label>申請加入分會</Label>
-								</Dropdown.Item>
-								<Dropdown.Item id="security" textValue="安全與隱私">
-									<ShieldCheck className="size-4 text-muted" />
-									<Label>安全與隱私</Label>
-								</Dropdown.Item>
-								<Dropdown.Item id="feedback" textValue="傳送回饋">
-									<Comment className="size-4 text-muted" />
-									<Label>傳送回饋</Label>
 								</Dropdown.Item>
 								<Separator />
 								<Dropdown.Item
@@ -209,7 +197,7 @@ export function NavbarComponent({
 					{navItems.map((item) => (
 						<Navbar.MenuItem
 							href={item.href}
-							isCurrent={item.href === "#dashboard"}
+							isCurrent={pathname === item.href}
 							key={item.href}
 						>
 							{item.label}

@@ -177,7 +177,7 @@ export const verification = createTable("verification", {
 export const userRelations = relations(user, ({ many }) => ({
 	account: many(account),
 	session: many(session),
-	areas: many(userAreas),
+	areas: many(userAreas, { relationName: "user_to_areas" }),
 	approvals: many(userAreas, { relationName: "approver" }),
 	ledActivities: many(activityLeaders),
 	activities: many(activities),
@@ -189,7 +189,11 @@ export const areaRelations = relations(area, ({ many }) => ({
 }));
 
 export const userAreasRelations = relations(userAreas, ({ one }) => ({
-	user: one(user, { fields: [userAreas.userId], references: [user.id] }),
+	user: one(user, {
+		fields: [userAreas.userId],
+		references: [user.id],
+		relationName: "user_to_areas",
+	}),
 	area: one(area, { fields: [userAreas.areaId], references: [area.id] }),
 	approvedBy: one(user, {
 		fields: [userAreas.approvedById],
