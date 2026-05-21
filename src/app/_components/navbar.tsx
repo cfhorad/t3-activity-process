@@ -49,9 +49,13 @@ const teams = [
 	},
 ];
 
-const navItems = [{ href: "/", label: "活動管理" }];
+const navItems = [
+	{ href: "/", label: "活動管理" },
+	{ href: "/pending-approval", label: "審核狀態" },
+];
 
 import { usePathname } from "next/navigation";
+import { useAuth } from "~/app/_hooks/useAuth";
 import { authClient } from "~/server/better-auth/client";
 import type { Session } from "~/server/better-auth/config";
 
@@ -61,8 +65,7 @@ export function NavbarComponent({
 	session?: Session | null;
 }) {
 	const pathname = usePathname();
-	const { data: clientSession } = authClient.useSession();
-	const session = clientSession ?? serverSession;
+	const { isSuperAdmin, isManagerOrAdmin, session } = useAuth(serverSession);
 
 	if (!session) {
 		return null;
@@ -76,8 +79,7 @@ export function NavbarComponent({
 				<Navbar.Header>
 					<Navbar.MenuToggle className="md:hidden" />
 
-					{(session?.user as { role?: string })?.role === "ADMIN" ||
-					(session?.user as { role?: string })?.role === "MANAGER" ? (
+					{isManagerOrAdmin ? (
 						<Dropdown>
 							<Button className="gap-1.5 px-2" variant="ghost">
 								{team?.logo}
@@ -161,17 +163,21 @@ export function NavbarComponent({
 									<Label>您的帳戶</Label>
 								</Dropdown.Item>
 								<Separator />
-								<Dropdown.Item
-									id="apply-areas"
-									onAction={() => {
-										window.location.href = "/pending-approval";
-									}}
-									textValue="申請加入分會"
-								>
-									<Plus className="size-4 text-muted" />
-									<Label>申請加入分會</Label>
-								</Dropdown.Item>
-								<Separator />
+								{!isSuperAdmin && (
+									<>
+										<Dropdown.Item
+											id="apply-areas"
+											onAction={() => {
+												window.location.href = "/pending-approval";
+											}}
+											textValue="申請加入分會"
+										>
+											<Plus className="size-4 text-muted" />
+											<Label>申請加入分會</Label>
+										</Dropdown.Item>
+										<Separator />
+									</>
+								)}
 								<Dropdown.Item
 									id="sign-out"
 									onAction={async () => {

@@ -1,7 +1,10 @@
 # Antigravity IDE - T3 AI Rules
 
 - **DB (Neon/Drizzle)**: Schema in `src/server/db/schema.ts`. Use `postgres-js` (Dev) / `neon-http` (Prod). Use `drizzle-kit push`.
-- **Auth (Better Auth)**: Server-side use `auth.getSession(headers())`. Middleware checks for `uploadthing`.
+- **Auth (Better Auth)**:
+  - Server-side: Use `auth.getSession(headers())`.
+  - Client-side: ALWAYS use the centralized custom hook `useAuth` from `~/app/_hooks/useAuth` for authentication states, role privilege checks (`isSuperAdmin`, `isManagerOrAdmin`, `isViewer`), and active `approvedAreaIds`. NEVER calculate role or area privileges inline or perform verbose typecasts on components.
+  - Middleware: Restricts access based on user account status. Handles redirects for pending/suspended users.
 - **API (tRPC)**: Prioritize tRPC with Zod validation.
 - **TS & Biome**: NEVER use `any`. Catch errors as `unknown`. Must pass `pnpm check:write`.
 - **Cache**: Use `unstable_cache` directly with `db`. Always `revalidateTag` on mutation.

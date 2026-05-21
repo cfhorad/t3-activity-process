@@ -4,6 +4,7 @@ import { Accordion, Button, Card } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { Calendar, Info, Pencil, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
+import { useAuth } from "~/app/_hooks/useAuth";
 
 interface DashboardItemCardProps {
 	// Content
@@ -50,7 +51,10 @@ export function DashboardItemCard({
 		}
 	};
 
-	const hasActions = onEdit || onDelete || onInfo || customActions;
+	const { isViewer } = useAuth();
+
+	const hasActions =
+		!isViewer && (onEdit || onDelete || onInfo || customActions);
 
 	return (
 		<Card

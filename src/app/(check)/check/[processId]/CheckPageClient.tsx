@@ -6,7 +6,7 @@ import { use } from "react";
 import { DataFilterToolbar } from "~/app/_components/data-filter-toolbar";
 import { PageHeader } from "~/app/_components/page-header";
 import { SyncConfirmDialog } from "~/app/_components/sync-confirm-dialog";
-import type { User } from "~/server/better-auth/config";
+import { useAuth } from "~/app/_hooks/useAuth";
 import { api } from "~/trpc/react";
 import { CheckboxStatsTable } from "./_components/CheckboxStatsTable";
 import { CheckListTable } from "./_components/CheckListTable";
@@ -21,23 +21,21 @@ interface CheckHeaderProps {
 	processId: number;
 	isSyncing: boolean;
 	onSync: () => void;
-	user: User & { areaIds?: string[] };
 }
 
-function CheckHeader({ processId, isSyncing, onSync, user }: CheckHeaderProps) {
+function CheckHeader({ processId, isSyncing, onSync }: CheckHeaderProps) {
 	const { data: process } = api.process.getById.useQuery({ id: processId });
+	const { isAdmin, isManager, approvedAreaIds, user } = useAuth();
 
-	const role = user?.role?.toUpperCase();
 	const userId = user?.id;
-	const areaIds = user?.areaIds ?? [];
 
 	const isCreator = process?.activity?.createdById === userId;
 	const isAreaAdmin =
-		role === "ADMIN" ||
-		(role === "MANAGER" &&
+		isAdmin ||
+		(isManager &&
 			process?.activity?.areaId !== null &&
 			process?.activity?.areaId !== undefined &&
-			areaIds.includes(process.activity.areaId));
+			approvedAreaIds.includes(process.activity.areaId));
 
 	const isAuthorized = isCreator || isAreaAdmin;
 
@@ -59,10 +57,8 @@ function CheckHeader({ processId, isSyncing, onSync, user }: CheckHeaderProps) {
 
 export function CheckPageClient({
 	params,
-	user,
 }: {
 	params: Promise<{ processId: string }>;
-	user: User;
 }) {
 	const { processId } = use(params);
 	const id = parseInt(processId, 10);
@@ -95,7 +91,6 @@ export function CheckPageClient({
 					isSyncing={syncMutation.isPending}
 					onSync={handleSync}
 					processId={id}
-					user={user}
 				/>
 
 				<DataFilterToolbar
@@ -144,7 +139,6 @@ export function CheckPageClient({
 										onSaveVisibleColumns={handleSaveVisibleColumns}
 										onVisibleColumnsChange={setVisibleColumnNames}
 										processId={id}
-										user={user}
 										visibleColumnNames={visibleColumnNames}
 										visibleColumns={visibleColumns}
 									/>

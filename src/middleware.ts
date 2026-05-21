@@ -12,11 +12,8 @@ export default async function middleware(request: NextRequest) {
 
 	const { status } = session.user as { status?: string };
 
-	// If pending-approval page itself, let them pass if they are actually pending
+	// If pending-approval page itself, let them pass
 	if (request.nextUrl.pathname === "/pending-approval") {
-		if (status === "active") {
-			return NextResponse.redirect(new URL("/", request.url));
-		}
 		return NextResponse.next();
 	}
 

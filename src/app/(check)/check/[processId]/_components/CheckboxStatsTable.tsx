@@ -10,6 +10,7 @@ import {
 	Tooltip,
 } from "@heroui/react";
 import { RefreshCcw } from "lucide-react";
+import { useAuth } from "~/app/_hooks/useAuth";
 import { useCheckboxStats } from "../_hooks/useCheckboxStats";
 
 interface Column {
@@ -39,6 +40,14 @@ export function CheckboxStatsTable({
 	onRefetch,
 	isRefetching,
 }: CheckboxStatsTableProps) {
+	const { isViewer } = useAuth();
+
+	const filteredColumns = isViewer
+		? columns.filter(
+				(col) => col.columnName !== "電話" && col.columnName !== "手機",
+			)
+		: columns;
+
 	const {
 		checkboxColumns,
 		groupableColumns,
@@ -47,9 +56,9 @@ export function CheckboxStatsTable({
 		showRowRatio,
 		setShowRowRatio,
 		statsData,
-	} = useCheckboxStats(columns, data);
+	} = useCheckboxStats(filteredColumns, data);
 
-	if (columns.length === 0) {
+	if (filteredColumns.length === 0) {
 		return null;
 	}
 

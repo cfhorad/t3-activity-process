@@ -4,6 +4,7 @@ import {
 	Button,
 	Checkbox,
 	Chip,
+	cn,
 	Label,
 	ListBox,
 	Modal,
@@ -14,7 +15,7 @@ import {
 } from "@heroui/react";
 import { Phone, Save, Settings2 } from "lucide-react";
 import { useState } from "react";
-import type { User } from "~/server/better-auth/config";
+import { useAuth } from "~/app/_hooks/useAuth";
 import { api } from "~/trpc/react";
 
 // ─── TYPES ───────────────────────────────────────────────────
@@ -42,7 +43,6 @@ interface CheckListTableProps {
 	onCheckboxChange: (id: number, columnName: string, newValue: boolean) => void;
 	onSaveVisibleColumns: () => void;
 	isSavingVisibleColumns: boolean;
-	user: User & { areaIds?: string[] };
 	processId: number;
 }
 
@@ -194,7 +194,6 @@ export function CheckListTable({
 	onCheckboxChange,
 	onSaveVisibleColumns,
 	isSavingVisibleColumns,
-	user,
 	processId,
 }: CheckListTableProps) {
 	const { data: process } = api.process.getById.useQuery({ id: processId });
@@ -206,9 +205,15 @@ export function CheckListTable({
 		infoState.open();
 	};
 
-	const role = user?.role?.toUpperCase();
-	const userId = user?.id;
-	const areaIds = user?.areaIds ?? [];
+	const {
+		isViewer,
+		isAdmin,
+		isManager,
+		approvedAreaIds,
+		user: currentUser,
+	} = useAuth();
+
+	const userId = currentUser?.id;
 
 	const activity = process?.activity as {
 		createdById: string;
@@ -217,22 +222,34 @@ export function CheckListTable({
 	} | null;
 	const isCreator = activity?.createdById === userId;
 	const isAreaAdmin =
-		role === "ADMIN" ||
-		(role === "MANAGER" &&
+		isAdmin ||
+		(isManager &&
 			activity?.areaId !== null &&
 			activity?.areaId !== undefined &&
-			areaIds.includes(activity.areaId));
+			approvedAreaIds.includes(activity.areaId));
 	const isLeader = activity?.leaders?.some(
 		(l: { userId: string }) => l.userId === userId,
 	);
 
 	const isEditable = isCreator || isAreaAdmin || isLeader;
 
+	const filteredAllColumns = isViewer
+		? allColumns.filter(
+				(col) => col.columnName !== "電話" && col.columnName !== "手機",
+			)
+		: allColumns;
+
+	const filteredVisibleColumns = isViewer
+		? visibleColumns.filter(
+				(col) => col.columnName !== "電話" && col.columnName !== "手機",
+			)
+		: visibleColumns;
+
 	return (
 		<div className="flex flex-col gap-4">
 			<div className="flex w-full items-center justify-between gap-4">
 				<ColumnSelect
-					columns={allColumns}
+					columns={filteredAllColumns}
 					onSelectionChange={onVisibleColumnsChange}
 					visibleColumnNames={visibleColumnNames}
 				/>
@@ -258,12 +275,12 @@ export function CheckListTable({
 				<Table.ScrollContainer>
 					<Table.Content aria-label="報到清單數據表">
 						<Table.Header>
-							{visibleColumns.length === 0 ? (
+							{filteredVisibleColumns.length === 0 ? (
 								<Table.Column id="placeholder" isRowHeader>
 									未選擇欄位
 								</Table.Column>
 							) : (
-								visibleColumns.map((col, index) => (
+								filteredVisibleColumns.map((col, index) => (
 									<Table.Column
 										className={`whitespace-nowrap ${col.isCheckbox ? "text-center" : ""}`}
 										id={col.columnName}
@@ -276,7 +293,7 @@ export function CheckListTable({
 							)}
 						</Table.Header>
 						<Table.Body>
-							{visibleColumns.length === 0 ? (
+							{filteredVisibleColumns.length === 0 ? (
 								<Table.Row id="no-columns">
 									<Table.Cell>
 										<div className="flex flex-col items-center justify-center py-20 text-muted">
@@ -288,12 +305,16 @@ export function CheckListTable({
 							) : (
 								data.map((row) => (
 									<Table.Row
-										className="cursor-pointer transition-colors hover:bg-surface-secondary/50"
+										className={cn(
+											"transition-colors",
+											!isViewer &&
+												"cursor-pointer hover:bg-surface-secondary/50",
+										)}
 										id={row.id.toString()}
 										key={row.id}
-										onAction={() => handleRowPress(row)}
+										onAction={!isViewer ? () => handleRowPress(row) : undefined}
 									>
-										{visibleColumns.map((col) => {
+										{filteredVisibleColumns.map((col) => {
 											const value = (row.data as Record<string, unknown>)[
 												col.columnName
 											];
@@ -361,7 +382,7 @@ export function CheckListTable({
 			</Table>
 
 			<RowInfoModal
-				allColumns={allColumns}
+				allColumns={filteredAllColumns}
 				isOpen={infoState.isOpen}
 				onOpenChange={infoState.setOpen}
 				row={selectedRow}

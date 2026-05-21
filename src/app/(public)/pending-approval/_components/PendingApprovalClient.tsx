@@ -19,6 +19,7 @@ import {
 	XCircle,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "~/app/_hooks/useAuth";
 import type { User } from "~/server/better-auth/config";
 import type { AreaStatusItem } from "../_hooks/usePendingApproval";
 import { usePendingApproval } from "../_hooks/usePendingApproval";
@@ -178,6 +179,7 @@ interface ApplicationStatusCardProps {
 	availableToApplyCount: number;
 	onApplyMore: () => void;
 	onRefresh: () => void;
+	isSuperAdmin: boolean;
 }
 
 function ApplicationStatusCard({
@@ -185,6 +187,7 @@ function ApplicationStatusCard({
 	availableToApplyCount,
 	onApplyMore,
 	onRefresh,
+	isSuperAdmin,
 }: ApplicationStatusCardProps) {
 	return (
 		<Card className="border border-border/40 bg-surface/80 p-4 backdrop-blur-lg">
@@ -198,7 +201,7 @@ function ApplicationStatusCard({
 							管理員正在審核您的申請，完成後您將自動獲得該分會的活動存取權限。
 						</p>
 					</div>
-					{availableToApplyCount > 0 && (
+					{!isSuperAdmin && availableToApplyCount > 0 && (
 						<Button
 							className="flex items-center gap-1 font-semibold text-xs"
 							onPress={onApplyMore}
@@ -305,6 +308,8 @@ export function PendingApprovalClient({ user }: PendingApprovalClientProps) {
 		handleSubmit,
 	} = usePendingApproval({ userId: user.id });
 
+	const { isSuperAdmin } = useAuth();
+
 	if (isLoading) {
 		return (
 			<div className="flex flex-col items-center gap-3 py-24">
@@ -336,6 +341,7 @@ export function PendingApprovalClient({ user }: PendingApprovalClientProps) {
 					availableToApplyCount={
 						availableToApply.length - (myApplications?.length ?? 0)
 					}
+					isSuperAdmin={!!isSuperAdmin}
 					myApplications={myApplications}
 					onApplyMore={() => setIsApplyingMore(true)}
 					onRefresh={() => router.refresh()}
