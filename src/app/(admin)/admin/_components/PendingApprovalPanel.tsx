@@ -121,7 +121,7 @@ export function PendingApprovalPanel({
 													color="accent"
 													variant="soft"
 												>
-													{ua.area?.name} ({ua.areaId})
+													{ua.area?.name || ua.areaId}
 												</Chip>
 											</Table.Cell>
 											<Table.Cell>

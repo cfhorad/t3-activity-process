@@ -7,6 +7,7 @@ import {
 	Info,
 	Layers,
 	LayoutGrid,
+	MapPin,
 	User as UserIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -24,6 +25,7 @@ import { ActivityFormModal } from "./activity-form-modal";
 interface ExtendedActivity extends Activity {
 	creator?: { name: string | null } | null;
 	processes?: { id: number }[];
+	area?: { id: string; name: string } | null;
 }
 
 // ─── SUB-COMPONENTS ───────────────────────────────────────────
@@ -88,15 +90,22 @@ function ActivityInfoModal({
 								</div>
 							</div>
 
-							<div className="border-separator border-t pt-2">
+							<div className="grid grid-cols-2 gap-4 border-separator border-t pt-2">
 								<div className="space-y-1">
-									<p className="font-semibold text-muted text-xs">
-										包含工作項目數量
-									</p>
+									<p className="font-semibold text-muted text-xs">營運分會</p>
+									<div className="flex items-center gap-1.5">
+										<MapPin className="h-3.5 w-3.5 text-muted" />
+										<span className="font-medium text-primary">
+											{activity.area ? activity.area.name : "未分配"}
+										</span>
+									</div>
+								</div>
+								<div className="space-y-1">
+									<p className="font-semibold text-muted text-xs">工作項目數量</p>
 									<div className="flex items-center gap-1.5">
 										<Layers className="h-3.5 w-3.5 text-muted" />
 										<span className="font-medium text-danger">
-											{activity.processes?.length ?? 0} 個工作項目
+											{activity.processes?.length ?? 0} 個項目
 										</span>
 									</div>
 								</div>

@@ -21,6 +21,7 @@ export const activityRouter = createTRPCRouter({
 			with: {
 				creator: true,
 				processes: true,
+				area: true,
 			},
 			orderBy: (activities, { desc }) => [desc(activities.createdAt)],
 		});
@@ -42,6 +43,7 @@ export const activityRouter = createTRPCRouter({
 				with: {
 					processes: true,
 					creator: true,
+					area: true,
 				},
 			});
 			return activity;
@@ -89,6 +91,7 @@ export const activityRouter = createTRPCRouter({
 				googleSheetId: z.string().min(1),
 				activityDate: z.string().min(1),
 				activityMemo: z.string().optional().nullable(),
+				areaId: z.string().min(1),
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {
@@ -114,6 +117,9 @@ export const activityRouter = createTRPCRouter({
 					message: "您沒有權限編輯此活動（僅限建立者或該區管理員）。",
 				});
 			}
+
+			// Verify they also have permission to manage the new area they are assigning it to
+			assertCanManageArea(areaIds, input.areaId);
 
 			const [activity] = await ctx.db
 				.update(activities)

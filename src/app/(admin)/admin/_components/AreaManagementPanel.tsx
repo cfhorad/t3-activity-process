@@ -147,10 +147,7 @@ export function AreaManagementPanel({
 							<Table.ScrollContainer>
 								<Table.Content aria-label="營運分會" className="w-full">
 									<Table.Header>
-										<Table.Column id="areaId" isRowHeader>
-											分會 ID / 代碼
-										</Table.Column>
-										<Table.Column id="areaName">分會顯示名稱</Table.Column>
+										<Table.Column id="areaName" isRowHeader>分會顯示名稱</Table.Column>
 										<Table.Column className="text-end" id="actions">
 											管理操作
 										</Table.Column>
@@ -158,9 +155,6 @@ export function AreaManagementPanel({
 									<Table.Body>
 										{areas.map((a) => (
 											<Table.Row id={a.id} key={a.id}>
-												<Table.Cell className="font-bold text-primary text-sm">
-													{a.id}
-												</Table.Cell>
 												<Table.Cell>
 													<Chip
 														className="font-bold"
