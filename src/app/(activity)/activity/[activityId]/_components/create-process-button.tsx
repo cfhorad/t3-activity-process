@@ -2,20 +2,18 @@
 
 import { Button, Tooltip, useOverlayState } from "@heroui/react";
 import { Plus } from "lucide-react";
-import type { User } from "~/server/better-auth/config";
+import { useAuth } from "~/app/_hooks/useAuth";
 import type { Activity } from "~/server/db/schema";
 import { api } from "~/trpc/react";
 import { ProcessFormModal } from "./process-form-modal";
 
 export function CreateProcessButton({
 	activity,
-	user,
 	variant = "primary",
 	size = "md",
 	className,
 }: {
 	activity: Pick<Activity, "id" | "createdById" | "areaId">;
-	user: User & { areaIds?: string[] };
 	variant?:
 		| "primary"
 		| "secondary"
@@ -38,18 +36,14 @@ export function CreateProcessButton({
 		},
 	});
 
-	const role = user?.role?.toUpperCase();
-	const userId = user?.id;
-	const areaIds = user?.areaIds ?? [];
+	const { isActivityEditor } = useAuth();
+	const isAuthorized = isActivityEditor(
+		activity.id,
+		activity.createdById,
+		activity.areaId,
+	);
 
-	const isCreator = activity.createdById === userId;
-	const isAreaAdmin =
-		role === "ADMIN" ||
-		(role === "MANAGER" &&
-			activity.areaId !== null &&
-			areaIds.includes(activity.areaId));
-
-	if (!isCreator && !isAreaAdmin) {
+	if (!isAuthorized) {
 		return null;
 	}
 

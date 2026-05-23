@@ -4,17 +4,14 @@ import { Button, Tooltip, useOverlayState } from "@heroui/react";
 import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ActivityFormModal } from "~/app/_components/activity-form-modal";
-import type { User } from "~/server/better-auth/config";
+import { useAuth } from "~/app/_hooks/useAuth";
 import { api } from "~/trpc/react";
 
-export function CreateActivityButton({
-	user,
-}: {
-	user: User & { areaIds?: string[] };
-}) {
+export function CreateActivityButton() {
 	const state = useOverlayState();
 	const router = useRouter();
 	const utils = api.useUtils();
+	const { isManagerOrAdmin } = useAuth();
 
 	const createActivity = api.activity.create.useMutation({
 		onSuccess: (data) => {
@@ -25,8 +22,7 @@ export function CreateActivityButton({
 		},
 	});
 
-	const normalizedRole = user?.role?.toUpperCase();
-	if (normalizedRole !== "ADMIN" && normalizedRole !== "MANAGER") {
+	if (!isManagerOrAdmin) {
 		return null;
 	}
 
@@ -57,7 +53,6 @@ export function CreateActivityButton({
 				onSubmit={(data) => createActivity.mutate(data)}
 				submitLabel="建立活動"
 				title="建立活動"
-				user={user}
 			/>
 		</>
 	);

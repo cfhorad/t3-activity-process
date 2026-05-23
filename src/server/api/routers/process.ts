@@ -6,7 +6,7 @@ import {
 	managerProcedure,
 	protectedProcedure,
 } from "~/server/api/trpc";
-import { activities, processes } from "~/server/db/schema";
+import { activities, processCheckers, processes } from "~/server/db/schema";
 
 export const processRouter = createTRPCRouter({
 	getByActivityId: protectedProcedure
@@ -29,6 +29,13 @@ export const processRouter = createTRPCRouter({
 
 			return await ctx.db.query.processes.findMany({
 				where: eq(processes.activityId, input.activityId),
+				with: {
+					checkers: {
+						with: {
+							user: true,
+						},
+					},
+				},
 				orderBy: (processes, { sql }) => [
 					sql`CASE WHEN ${processes.processDate} IS NULL OR ${processes.processDate} = '' THEN 0 ELSE 1 END`,
 					sql`${processes.processDate} ASC`,
@@ -50,7 +57,8 @@ export const processRouter = createTRPCRouter({
 			const process = await ctx.db.query.processes.findFirst({
 				where: eq(processes.id, input.id),
 				with: {
-					activity: { with: { leaders: true } },
+					activity: { with: { editors: true } },
+					checkers: { with: { user: true } },
 				},
 			});
 
@@ -80,6 +88,7 @@ export const processRouter = createTRPCRouter({
 				processDate: z.string().optional().nullable(),
 				processMemo: z.string().optional().nullable(),
 				iframeSrc: z.string().optional().nullable(),
+				checkerUserIds: z.array(z.string()).optional(),
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {
@@ -87,6 +96,7 @@ export const processRouter = createTRPCRouter({
 
 			const activity = await ctx.db.query.activities.findFirst({
 				where: eq(activities.id, input.activityId),
+				with: { editors: true },
 			});
 
 			if (!activity) throw new TRPCError({ code: "NOT_FOUND" });
@@ -96,27 +106,45 @@ export const processRouter = createTRPCRouter({
 				role === "ADMIN" &&
 				(areaIds.includes("ALL") ||
 					(activity.areaId !== null && areaIds.includes(activity.areaId)));
+			const isEditor = activity.editors.some((e) => e.userId === userId);
 
-			if (!isCreator && !isAreaAdmin) {
+			if (!isCreator && !isAreaAdmin && !isEditor) {
 				throw new TRPCError({
 					code: "FORBIDDEN",
 					message:
-						"您沒有權限在此活動下建立程序（僅限活動建立者或該區管理員）。",
+						"您沒有權限在此活動下建立程序（僅限活動建立者、協同編輯者或該區管理員）。",
 				});
 			}
 
-			const [process] = await ctx.db
-				.insert(processes)
-				.values({
-					name: input.name,
-					activityId: input.activityId,
-					sheetName: input.sheetName,
-					type: input.type,
-					processDate: input.processDate,
-					processMemo: input.processMemo,
-					iframeSrc: input.iframeSrc,
-				})
-				.returning();
+			const process = await ctx.db.transaction(async (tx) => {
+				const [newProcess] = await tx
+					.insert(processes)
+					.values({
+						name: input.name,
+						activityId: input.activityId,
+						sheetName: input.sheetName,
+						type: input.type,
+						processDate: input.processDate,
+						processMemo: input.processMemo,
+						iframeSrc: input.iframeSrc,
+					})
+					.returning();
+
+				if (
+					newProcess &&
+					input.type === "CHECK" &&
+					input.checkerUserIds &&
+					input.checkerUserIds.length > 0
+				) {
+					await tx.insert(processCheckers).values(
+						input.checkerUserIds.map((uId) => ({
+							processId: newProcess.id,
+							userId: uId,
+						})),
+					);
+				}
+				return newProcess;
+			});
 			return process;
 		}),
 
@@ -130,15 +158,16 @@ export const processRouter = createTRPCRouter({
 				processDate: z.string().optional().nullable(),
 				processMemo: z.string().optional().nullable(),
 				iframeSrc: z.string().optional().nullable(),
+				checkerUserIds: z.array(z.string()).optional(),
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {
-			const { id, ...data } = input;
+			const { id, checkerUserIds, ...data } = input;
 			const { id: userId, role, areaIds } = ctx.session.user;
 
 			const process = await ctx.db.query.processes.findFirst({
 				where: eq(processes.id, id),
-				with: { activity: true },
+				with: { activity: { with: { editors: true } } },
 			});
 
 			if (!process) throw new TRPCError({ code: "NOT_FOUND" });
@@ -149,19 +178,44 @@ export const processRouter = createTRPCRouter({
 				(areaIds.includes("ALL") ||
 					(process.activity.areaId !== null &&
 						areaIds.includes(process.activity.areaId)));
+			const isEditor = process.activity.editors.some(
+				(e) => e.userId === userId,
+			);
 
-			if (!isCreator && !isAreaAdmin) {
+			if (!isCreator && !isAreaAdmin && !isEditor) {
 				throw new TRPCError({
 					code: "FORBIDDEN",
-					message: "您沒有權限編輯此程序（僅限活動建立者或該區管理員）。",
+					message:
+						"您沒有權限編輯此程序（僅限活動建立者、協同編輯者或該區管理員）。",
 				});
 			}
 
-			const [updatedProcess] = await ctx.db
-				.update(processes)
-				.set(data)
-				.where(eq(processes.id, id))
-				.returning();
+			const updatedProcess = await ctx.db.transaction(async (tx) => {
+				const [updated] = await tx
+					.update(processes)
+					.set(data)
+					.where(eq(processes.id, id))
+					.returning();
+
+				await tx
+					.delete(processCheckers)
+					.where(eq(processCheckers.processId, id));
+
+				if (
+					updated &&
+					data.type === "CHECK" &&
+					checkerUserIds &&
+					checkerUserIds.length > 0
+				) {
+					await tx.insert(processCheckers).values(
+						checkerUserIds.map((uId) => ({
+							processId: id,
+							userId: uId,
+						})),
+					);
+				}
+				return updated;
+			});
 			return updatedProcess;
 		}),
 
@@ -172,7 +226,7 @@ export const processRouter = createTRPCRouter({
 
 			const process = await ctx.db.query.processes.findFirst({
 				where: eq(processes.id, input.id),
-				with: { activity: true },
+				with: { activity: { with: { editors: true } } },
 			});
 
 			if (!process) throw new TRPCError({ code: "NOT_FOUND" });
@@ -183,11 +237,15 @@ export const processRouter = createTRPCRouter({
 				(areaIds.includes("ALL") ||
 					(process.activity.areaId !== null &&
 						areaIds.includes(process.activity.areaId)));
+			const isEditor = process.activity.editors.some(
+				(e) => e.userId === userId,
+			);
 
-			if (!isCreator && !isAreaAdmin) {
+			if (!isCreator && !isAreaAdmin && !isEditor) {
 				throw new TRPCError({
 					code: "FORBIDDEN",
-					message: "您沒有權限刪除此程序（僅限活動建立者或該區管理員）。",
+					message:
+						"您沒有權限刪除此程序（僅限活動建立者、協同編輯者或該區管理員）。",
 				});
 			}
 

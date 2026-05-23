@@ -12,7 +12,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ConfirmDeleteDialog } from "~/app/_components/confirm-delete-dialog";
 import { DashboardItemCard } from "~/app/_components/dashboard-item-card";
-import type { User } from "~/server/better-auth/config";
+import { useAuth } from "~/app/_hooks/useAuth";
 import type { Activity, Process } from "~/server/db/schema";
 import { useProcessActions } from "../_hooks/useProcessActions";
 import { useProcessList } from "../_hooks/useProcessList";
@@ -22,6 +22,11 @@ import { ProcessFormModal } from "./process-form-modal";
 
 interface ExtendedActivity extends Activity {
 	creator?: { name: string | null } | null;
+	editors?: { userId: string }[];
+}
+
+interface ExtendedProcess extends Process {
+	checkers?: { userId: string }[];
 }
 
 // ─── SUB-COMPONENTS ───────────────────────────────────────────
@@ -106,30 +111,23 @@ function ProcessInfoModal({
  * 2. Individual Process Card Component
  */
 interface ProcessCardProps {
-	process: Process;
-	user: User & { areaIds?: string[] };
+	process: ExtendedProcess;
 	activity: ExtendedActivity;
 }
 
-function ProcessCard({ process, user, activity }: ProcessCardProps) {
+function ProcessCard({ process, activity }: ProcessCardProps) {
 	const router = useRouter();
 	const { editState, deleteState, infoState, deleteProcess, updateProcess } =
 		useProcessActions({
 			activityId: process.activityId,
 		});
 
-	const role = user?.role?.toUpperCase();
-	const userId = user?.id;
-	const areaIds = user?.areaIds ?? [];
-
-	const isCreator = activity.createdById === userId;
-	const isAreaAdmin =
-		role === "ADMIN" ||
-		(role === "MANAGER" &&
-			activity.areaId !== null &&
-			areaIds.includes(activity.areaId));
-
-	const isAuthorized = isCreator || isAreaAdmin;
+	const { isActivityEditor } = useAuth();
+	const isAuthorized = isActivityEditor(
+		activity.id,
+		activity.createdById,
+		activity.areaId,
+	);
 
 	const getIcon = () => {
 		switch (process.type) {
@@ -237,11 +235,9 @@ function ProcessCard({ process, user, activity }: ProcessCardProps) {
 
 export function ProcessList({
 	activityId,
-	user,
 	activity,
 }: {
 	activityId: number;
-	user: User;
 	activity: ExtendedActivity;
 }) {
 	const { processes, isLoading } = useProcessList({ activityId });
@@ -272,12 +268,7 @@ export function ProcessList({
 	return (
 		<div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
 			{processes.map((process) => (
-				<ProcessCard
-					activity={activity}
-					key={process.id}
-					process={process}
-					user={user}
-				/>
+				<ProcessCard activity={activity} key={process.id} process={process} />
 			))}
 		</div>
 	);

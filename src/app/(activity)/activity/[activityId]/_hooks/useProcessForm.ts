@@ -15,7 +15,12 @@ export function useProcessForm({
 	isOpen,
 	activityId,
 }: {
-	initialData?: Partial<ProcessFormData & { iframeSrc?: string | null }>;
+	initialData?: Partial<
+		ProcessFormData & {
+			iframeSrc?: string | null;
+			checkers?: { userId: string }[];
+		}
+	>;
 	onSubmit: (data: ProcessFormData & { iframeSrc: string | null }) => void;
 	isOpen: boolean;
 	activityId: number;
@@ -29,6 +34,7 @@ export function useProcessForm({
 			processDate: initialData?.processDate ?? "",
 			processMemo: initialData?.processMemo ?? "",
 			iframeCode: initialData?.iframeSrc ?? "",
+			checkerUserIds: initialData?.checkers?.map((c) => c.userId) ?? [],
 		},
 	});
 
@@ -53,6 +59,7 @@ export function useProcessForm({
 				processDate: initialData?.processDate ?? "",
 				processMemo: initialData?.processMemo ?? "",
 				iframeCode: initialData?.iframeSrc ?? "",
+				checkerUserIds: initialData?.checkers?.map((c) => c.userId) ?? [],
 			});
 		}
 	}, [initialData, isOpen, form]);

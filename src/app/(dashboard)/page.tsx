@@ -25,12 +25,9 @@ export default async function DashboardPage() {
 		<HydrateClient>
 			<main className="bg-linear-to-b from-background to-content2 p-4 md:p-8">
 				<div className="mx-auto max-w-7xl">
-					<PageHeader
-						action={<CreateActivityButton user={session.user} />}
-						title="活動管理"
-					/>
+					<PageHeader action={<CreateActivityButton />} title="活動管理" />
 
-					<ActivityList user={session.user} />
+					<ActivityList />
 				</div>
 			</main>
 		</HydrateClient>

@@ -7,6 +7,7 @@ export const processFormSchema = z.object({
 	processDate: z.string().optional().nullable(),
 	processMemo: z.string().optional().nullable(),
 	iframeCode: z.string().optional().nullable(),
+	checkerUserIds: z.array(z.string()).optional(),
 });
 
 export type ProcessFormData = z.infer<typeof processFormSchema>;

@@ -74,8 +74,8 @@ export const processes = createTable("process", (d) => ({
 	updatedAt: d.timestamp({ withTimezone: true }).$onUpdate(() => new Date()),
 }));
 
-export const activityLeaders = createTable(
-	"activity_leader",
+export const activityEditors = createTable(
+	"activity_editor",
 	{
 		activityId: integer("activity_id")
 			.notNull()
@@ -86,6 +86,21 @@ export const activityLeaders = createTable(
 	},
 	(t) => ({
 		pk: primaryKey({ columns: [t.activityId, t.userId] }),
+	}),
+);
+
+export const processCheckers = createTable(
+	"process_checker",
+	{
+		processId: integer("process_id")
+			.notNull()
+			.references(() => processes.id, { onDelete: "cascade" }),
+		userId: text("user_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+	},
+	(t) => ({
+		pk: primaryKey({ columns: [t.processId, t.userId] }),
 	}),
 );
 
@@ -179,7 +194,8 @@ export const userRelations = relations(user, ({ many }) => ({
 	session: many(session),
 	areas: many(userAreas, { relationName: "user_to_areas" }),
 	approvals: many(userAreas, { relationName: "approver" }),
-	ledActivities: many(activityLeaders),
+	editedActivities: many(activityEditors),
+	checkedProcesses: many(processCheckers),
 	activities: many(activities),
 }));
 
@@ -217,18 +233,32 @@ export const activityRelations = relations(activities, ({ many, one }) => ({
 		references: [user.id],
 	}),
 	area: one(area, { fields: [activities.areaId], references: [area.id] }),
-	leaders: many(activityLeaders),
+	editors: many(activityEditors),
 }));
 
-export const activityLeadersRelations = relations(
-	activityLeaders,
+export const activityEditorsRelations = relations(
+	activityEditors,
 	({ one }) => ({
 		activity: one(activities, {
-			fields: [activityLeaders.activityId],
+			fields: [activityEditors.activityId],
 			references: [activities.id],
 		}),
 		user: one(user, {
-			fields: [activityLeaders.userId],
+			fields: [activityEditors.userId],
+			references: [user.id],
+		}),
+	}),
+);
+
+export const processCheckersRelations = relations(
+	processCheckers,
+	({ one }) => ({
+		process: one(processes, {
+			fields: [processCheckers.processId],
+			references: [processes.id],
+		}),
+		user: one(user, {
+			fields: [processCheckers.userId],
 			references: [user.id],
 		}),
 	}),
@@ -261,6 +291,7 @@ export const processRelations = relations(processes, ({ one, many }) => ({
 	}),
 	googleSheetData: many(googleSheetData),
 	googleSheetConfig: many(googleSheetConfig),
+	checkers: many(processCheckers),
 }));
 
 // ─── Inferred types ────────────────────────────────────────────
@@ -275,7 +306,8 @@ export type Process = typeof processes.$inferSelect;
 export type NewProcess = typeof processes.$inferInsert;
 
 export type Area = typeof area.$inferSelect;
-export type ActivityLeader = typeof activityLeaders.$inferSelect;
+export type ActivityEditor = typeof activityEditors.$inferSelect;
+export type ProcessChecker = typeof processCheckers.$inferSelect;
 
 export type DbUser = typeof user.$inferSelect;
 

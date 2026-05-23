@@ -25,19 +25,13 @@ interface CheckHeaderProps {
 
 function CheckHeader({ processId, isSyncing, onSync }: CheckHeaderProps) {
 	const { data: process } = api.process.getById.useQuery({ id: processId });
-	const { isAdmin, isManager, approvedAreaIds, user } = useAuth();
+	const { isActivityEditor } = useAuth();
 
-	const userId = user?.id;
-
-	const isCreator = process?.activity?.createdById === userId;
-	const isAreaAdmin =
-		isAdmin ||
-		(isManager &&
-			process?.activity?.areaId !== null &&
-			process?.activity?.areaId !== undefined &&
-			approvedAreaIds.includes(process.activity.areaId));
-
-	const isAuthorized = isCreator || isAreaAdmin;
+	const isAuthorized = isActivityEditor(
+		process?.activityId,
+		process?.activity?.createdById,
+		process?.activity?.areaId,
+	);
 
 	return (
 		<PageHeader

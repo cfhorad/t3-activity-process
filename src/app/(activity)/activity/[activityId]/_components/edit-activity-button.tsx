@@ -2,8 +2,9 @@
 
 import { Button, Tooltip, useOverlayState } from "@heroui/react";
 import { Settings } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { ActivityFormModal } from "~/app/_components/activity-form-modal";
-import type { User } from "~/server/better-auth/config";
+import { useAuth } from "~/app/_hooks/useAuth";
 import type { Activity } from "~/server/db/schema";
 import { api } from "~/trpc/react";
 
@@ -11,18 +12,16 @@ interface ExtendedActivity extends Activity {
 	creator?: { name: string | null } | null;
 	processes?: { id: number }[];
 	area?: { id: string; name: string } | null;
-	leaders?: { userId: string }[];
+	editors?: { userId: string }[];
 }
 
 export function EditActivityButton({
 	activity,
-	user,
 	variant = "secondary",
 	size = "md",
 	className,
 }: {
 	activity: ExtendedActivity;
-	user: User & { areaIds?: string[] };
 	variant?:
 		| "primary"
 		| "secondary"
@@ -36,27 +35,26 @@ export function EditActivityButton({
 }) {
 	const state = useOverlayState();
 	const utils = api.useUtils();
+	const router = useRouter();
 
 	const updateActivity = api.activity.update.useMutation({
 		onSuccess: () => {
 			void utils.activity.getById.invalidate({ id: activity.id });
 			void utils.activity.getAll.invalidate();
+			void utils.user.getMyPermissions.invalidate();
+			router.refresh();
 			state.close();
 		},
 	});
 
-	const role = user?.role?.toUpperCase();
-	const userId = user?.id;
-	const areaIds = user?.areaIds ?? [];
+	const { isActivityEditor } = useAuth();
+	const isAuthorized = isActivityEditor(
+		activity.id,
+		activity.createdById,
+		activity.areaId,
+	);
 
-	const isCreator = activity.createdById === userId;
-	const isAreaAdmin =
-		role === "ADMIN" ||
-		(role === "MANAGER" &&
-			activity.areaId !== null &&
-			areaIds.includes(activity.areaId));
-
-	if (!isCreator && !isAreaAdmin) {
+	if (!isAuthorized) {
 		return null;
 	}
 
@@ -82,7 +80,7 @@ export function EditActivityButton({
 				initialData={{
 					...activity,
 					areaId: activity.areaId ?? "",
-					leaderUserIds: activity.leaders?.map((l) => l.userId) ?? [],
+					editorUserIds: activity.editors?.map((e) => e.userId) ?? [],
 				}}
 				isOpen={state.isOpen}
 				isPending={updateActivity.isPending}
@@ -92,7 +90,6 @@ export function EditActivityButton({
 				onSubmit={(data) => updateActivity.mutate({ ...data, id: activity.id })}
 				submitLabel="儲存變更"
 				title="編輯活動設定"
-				user={user}
 			/>
 		</>
 	);

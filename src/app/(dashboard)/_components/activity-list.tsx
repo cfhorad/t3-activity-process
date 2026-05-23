@@ -15,7 +15,7 @@ import { useRouter } from "next/navigation";
 import { ActivityFormModal } from "~/app/_components/activity-form-modal";
 import { ConfirmDeleteDialog } from "~/app/_components/confirm-delete-dialog";
 import { DashboardItemCard } from "~/app/_components/dashboard-item-card";
-import type { User } from "~/server/better-auth/config";
+import { useAuth } from "~/app/_hooks/useAuth";
 import type { Activity } from "~/server/db/schema";
 import { useActivities } from "../_hooks/useActivities";
 import { useActivityActions } from "../_hooks/useActivityActions";
@@ -26,7 +26,7 @@ interface ExtendedActivity extends Activity {
 	creator?: { name: string | null } | null;
 	processes?: { id: number }[];
 	area?: { id: string; name: string } | null;
-	leaders?: { userId: string }[];
+	editors?: { userId: string }[];
 }
 
 // ─── SUB-COMPONENTS ───────────────────────────────────────────
@@ -126,26 +126,20 @@ function ActivityInfoModal({
  */
 interface ActivityCardProps {
 	activity: ExtendedActivity;
-	user: User & { areaIds?: string[] };
 }
 
-function ActivityCard({ activity, user }: ActivityCardProps) {
+function ActivityCard({ activity }: ActivityCardProps) {
 	const router = useRouter();
 	const { editState, deleteState, infoState, deleteActivity, updateActivity } =
 		useActivityActions();
 
-	const role = user?.role?.toUpperCase();
-	const userId = user?.id;
-	const areaIds = user?.areaIds ?? [];
+	const { isActivityEditor } = useAuth();
 
-	const isCreator = activity.createdById === userId;
-	const isAreaAdmin =
-		role === "ADMIN" ||
-		(role === "MANAGER" &&
-			activity.areaId !== null &&
-			areaIds.includes(activity.areaId));
-
-	const isAuthorized = isCreator || isAreaAdmin;
+	const isAuthorized = isActivityEditor(
+		activity.id,
+		activity.createdById,
+		activity.areaId,
+	);
 	const linkHref = `/activity/${activity.id}`;
 
 	return (
@@ -166,7 +160,7 @@ function ActivityCard({ activity, user }: ActivityCardProps) {
 				initialData={{
 					...activity,
 					areaId: activity.areaId ?? "",
-					leaderUserIds: activity.leaders?.map((l) => l.userId) ?? [],
+					editorUserIds: activity.editors?.map((e) => e.userId) ?? [],
 				}}
 				isOpen={editState.isOpen}
 				isPending={updateActivity.isPending}
@@ -176,7 +170,6 @@ function ActivityCard({ activity, user }: ActivityCardProps) {
 				onSubmit={(data) => updateActivity.mutate({ ...data, id: activity.id })}
 				submitLabel="儲存變更"
 				title="編輯活動"
-				user={user}
 			/>
 
 			{/* Confirm Delete Dialog */}
@@ -208,7 +201,7 @@ function ActivityCard({ activity, user }: ActivityCardProps) {
 
 // ─── MAIN PRESENTATIONAL COMPONENT ───────────────────────────
 
-export function ActivityList({ user }: { user: User }) {
+export function ActivityList() {
 	const { activities, isLoading } = useActivities();
 
 	if (isLoading) {
@@ -235,7 +228,7 @@ export function ActivityList({ user }: { user: User }) {
 	return (
 		<div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
 			{activities.map((activity) => (
-				<ActivityCard activity={activity} key={activity.id} user={user} />
+				<ActivityCard activity={activity} key={activity.id} />
 			))}
 		</div>
 	);

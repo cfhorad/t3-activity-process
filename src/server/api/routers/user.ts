@@ -85,6 +85,34 @@ export const userRouter = createTRPCRouter({
 		});
 	}),
 
+	getMyPermissions: protectedProcedure.query(async ({ ctx }) => {
+		const userId = ctx.session.user.id;
+
+		// 1. Get user areas
+		const areas = await ctx.db.query.userAreas.findMany({
+			where: (ua, { eq }) => eq(ua.userId, userId),
+			with: { area: true },
+		});
+
+		// 2. Get activities where user is editor
+		const editors = await ctx.db.query.activityEditors.findMany({
+			where: (ae, { eq }) => eq(ae.userId, userId),
+		});
+		const editorActivityIds = editors.map((e) => e.activityId);
+
+		// 3. Get processes where user is checker
+		const checkers = await ctx.db.query.processCheckers.findMany({
+			where: (pc, { eq }) => eq(pc.userId, userId),
+		});
+		const checkerProcessIds = checkers.map((c) => c.processId);
+
+		return {
+			areas,
+			editorActivityIds,
+			checkerProcessIds,
+		};
+	}),
+
 	// Update user profile (name, area applications)
 	updateProfile: protectedProcedure
 		.input(

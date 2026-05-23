@@ -7,7 +7,7 @@ import {
 	managerProcedure,
 	protectedProcedure,
 } from "~/server/api/trpc";
-import { activities, activityLeaders, processes } from "~/server/db/schema";
+import { activities, activityEditors, processes } from "~/server/db/schema";
 
 export const activityRouter = createTRPCRouter({
 	getAll: protectedProcedure.query(async ({ ctx }) => {
@@ -22,7 +22,7 @@ export const activityRouter = createTRPCRouter({
 				creator: true,
 				processes: true,
 				area: true,
-				leaders: {
+				editors: {
 					with: {
 						user: true,
 					},
@@ -49,7 +49,7 @@ export const activityRouter = createTRPCRouter({
 					processes: true,
 					creator: true,
 					area: true,
-					leaders: {
+					editors: {
 						with: {
 							user: true,
 						},
@@ -68,13 +68,13 @@ export const activityRouter = createTRPCRouter({
 				activityMemo: z.string().optional().nullable(),
 				sheetName: z.string().optional(),
 				areaId: z.string().min(1),
-				leaderUserIds: z.array(z.string()).optional(),
+				editorUserIds: z.array(z.string()).optional(),
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {
 			assertCanManageArea(ctx.session.user.areaIds, input.areaId);
 
-			const { sheetName, leaderUserIds, ...activityData } = input;
+			const { sheetName, editorUserIds, ...activityData } = input;
 
 			const activity = await ctx.db.transaction(async (tx) => {
 				const [newActivity] = await tx
@@ -85,9 +85,9 @@ export const activityRouter = createTRPCRouter({
 					})
 					.returning();
 
-				if (newActivity && leaderUserIds && leaderUserIds.length > 0) {
-					await tx.insert(activityLeaders).values(
-						leaderUserIds.map((userId) => ({
+				if (newActivity && editorUserIds && editorUserIds.length > 0) {
+					await tx.insert(activityEditors).values(
+						editorUserIds.map((userId) => ({
 							activityId: newActivity.id,
 							userId,
 						})),
@@ -117,16 +117,17 @@ export const activityRouter = createTRPCRouter({
 				activityDate: z.string().min(1),
 				activityMemo: z.string().optional().nullable(),
 				areaId: z.string().min(1),
-				leaderUserIds: z.array(z.string()).optional(),
+				editorUserIds: z.array(z.string()).optional(),
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {
-			const { id, leaderUserIds, ...data } = input;
+			const { id, editorUserIds, ...data } = input;
 			const { id: userId, role, areaIds } = ctx.session.user;
 
 			// Fetch activity to check ownership/area
 			const existing = await ctx.db.query.activities.findFirst({
 				where: eq(activities.id, id),
+				with: { editors: true },
 			});
 
 			if (!existing) throw new TRPCError({ code: "NOT_FOUND" });
@@ -136,11 +137,13 @@ export const activityRouter = createTRPCRouter({
 				role === "ADMIN" &&
 				(areaIds.includes("ALL") ||
 					(existing.areaId !== null && areaIds.includes(existing.areaId)));
+			const isEditor = existing.editors.some((e) => e.userId === userId);
 
-			if (!isCreator && !isAreaAdmin) {
+			if (!isCreator && !isAreaAdmin && !isEditor) {
 				throw new TRPCError({
 					code: "FORBIDDEN",
-					message: "您沒有權限編輯此活動（僅限建立者或該區管理員）。",
+					message:
+						"您沒有權限編輯此活動（僅限建立者、協同編輯者或該區管理員）。",
 				});
 			}
 
@@ -155,12 +158,12 @@ export const activityRouter = createTRPCRouter({
 					.returning();
 
 				await tx
-					.delete(activityLeaders)
-					.where(eq(activityLeaders.activityId, id));
+					.delete(activityEditors)
+					.where(eq(activityEditors.activityId, id));
 
-				if (leaderUserIds && leaderUserIds.length > 0) {
-					await tx.insert(activityLeaders).values(
-						leaderUserIds.map((userId) => ({
+				if (editorUserIds && editorUserIds.length > 0) {
+					await tx.insert(activityEditors).values(
+						editorUserIds.map((userId) => ({
 							activityId: id,
 							userId,
 						})),
@@ -180,6 +183,7 @@ export const activityRouter = createTRPCRouter({
 
 			const existing = await ctx.db.query.activities.findFirst({
 				where: eq(activities.id, input.id),
+				with: { editors: true },
 			});
 
 			if (!existing) throw new TRPCError({ code: "NOT_FOUND" });
@@ -189,11 +193,13 @@ export const activityRouter = createTRPCRouter({
 				role === "ADMIN" &&
 				(areaIds.includes("ALL") ||
 					(existing.areaId !== null && areaIds.includes(existing.areaId)));
+			const isEditor = existing.editors.some((e) => e.userId === userId);
 
-			if (!isCreator && !isAreaAdmin) {
+			if (!isCreator && !isAreaAdmin && !isEditor) {
 				throw new TRPCError({
 					code: "FORBIDDEN",
-					message: "您沒有權限刪除此活動（僅限建立者或該區管理員）。",
+					message:
+						"您沒有權限刪除此活動（僅限建立者、協同編輯者或該區管理員）。",
 				});
 			}
 

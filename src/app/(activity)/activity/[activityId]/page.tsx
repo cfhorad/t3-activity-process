@@ -1,75 +1,68 @@
 import { Card, Chip, Tooltip } from "@heroui/react";
-import { and, eq } from "drizzle-orm";
 import { Calendar, ExternalLink, MapPin, Users } from "lucide-react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { PageHeader } from "~/app/_components/page-header";
 import { getSession } from "~/server/better-auth/server";
-import { db } from "~/server/db";
-import { userAreas } from "~/server/db/schema";
 import { api, HydrateClient } from "~/trpc/server";
 import { CreateProcessButton } from "./_components/create-process-button";
 import { EditActivityButton } from "./_components/edit-activity-button";
 import { ProcessList } from "./_components/process-list";
 
+/**
+ * Activity Details & Process Management Page (Server Component)
+ *
+ * Exposes full management controls for a single Activity:
+ * 1. View Activity Metadata (date, memo, area, co-editors list).
+ * 2. Edit activity settings (for Creator/Admins/Co-editors).
+ * 3. Create, edit, and list processes (flows, check sheets, Web Embeds) under this Activity.
+ */
 export default async function ActivityPage({
 	params,
 }: {
 	params: Promise<{ activityId: string }>;
 }) {
+	// ─── 1. EXTRACT ROUTE PARAMETERS & VERIFY SESSION ───────────────────
 	const { activityId } = await params;
 	const id = parseInt(activityId, 10);
 	const session = await getSession();
 
+	// Guard: Redirect to authentication page if no session is active
 	if (!session) {
 		redirect("/auth");
 	}
 
+	// Guard: Return a 404 page if the route ID is invalid
 	if (Number.isNaN(id)) {
 		notFound();
 	}
 
+	// ─── 2. FETCH MAIN ACTIVITY METADATA ────────────────────────────────
 	const activity = await api.activity.getById({ id });
 
+	// Guard: Return a 404 page if the activity does not exist
 	if (!activity) {
 		notFound();
 	}
 
-	// Fetch approved areaIds for current user
-	const approvedAreas = await db
-		.select({ areaId: userAreas.areaId })
-		.from(userAreas)
-		.where(
-			and(
-				eq(userAreas.userId, session.user.id),
-				eq(userAreas.status, "approved"),
-			),
-		);
-	const areaIds = approvedAreas.map((a) => a.areaId);
-
-	const userWithAreas = {
-		...session.user,
-		areaIds,
-	};
-
+	// ─── 3. PREFETCH DATA FOR SERVER-SIDE HYDRATION ─────────────────────
+	// Prefetch the processes list query on the server so that the client component
+	// has the data immediately available without layout shifts or loader flashes.
 	await api.process.getByActivityId.prefetch({ activityId: id });
 
 	return (
 		<HydrateClient>
 			<main className="bg-linear-to-b from-background to-content2 p-4 md:p-8">
 				<div className="mx-auto max-w-7xl">
+					{/* ─── 5. PAGE HEADER & MANAGEMENT CONTROLS ───────────────────── */}
 					<PageHeader
 						action={
 							session && (
 								<div className="flex items-center gap-2">
-									<EditActivityButton
-										activity={activity}
-										user={userWithAreas}
-									/>
-									<CreateProcessButton
-										activity={activity}
-										user={userWithAreas}
-									/>
+									{/* Button to edit Activity metadata & manage "Co-editors" */}
+									<EditActivityButton activity={activity} />
+									{/* Button to add a new operational process/sheet flow */}
+									<CreateProcessButton activity={activity} />
 								</div>
 							)
 						}
@@ -78,10 +71,11 @@ export default async function ActivityPage({
 						title={activity.name}
 					/>
 
-					{/* Activity Details Overview Card */}
+					{/* ─── 6. ACTIVITY DETAILS OVERVIEW CARD ──────────────────────── */}
 					<Card className="mb-8 border-none bg-surface/60 p-6 shadow-md backdrop-blur-md">
 						<div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
 							<div className="flex flex-wrap gap-x-8 gap-y-4">
+								{/* Activity execution date */}
 								<div className="flex items-center gap-2.5">
 									<div className="flex size-10 animate-hover-spin items-center justify-center rounded-xl bg-primary/10 text-primary">
 										<Calendar className="size-5" />
@@ -96,6 +90,7 @@ export default async function ActivityPage({
 									</div>
 								</div>
 
+								{/* Assigned operational area */}
 								<div className="flex items-center gap-2.5">
 									<div className="flex size-10 items-center justify-center rounded-xl bg-success/10 text-success">
 										<MapPin className="size-5" />
@@ -110,6 +105,7 @@ export default async function ActivityPage({
 									</div>
 								</div>
 
+								{/* Direct link to the source Google Sheet */}
 								<div className="flex items-center gap-2.5">
 									<div className="flex size-10 items-center justify-center rounded-xl bg-warning/10 text-warning">
 										<ExternalLink className="size-5" />
@@ -129,6 +125,7 @@ export default async function ActivityPage({
 								</div>
 							</div>
 
+							{/* Co-editors (協同編輯者) section */}
 							<div className="border-separator border-t pt-4 md:border-t-0 md:pt-0">
 								<div className="flex items-start gap-2.5">
 									<div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-accent">
@@ -139,22 +136,22 @@ export default async function ActivityPage({
 											協同編輯者
 										</span>
 										<div className="flex flex-wrap gap-1.5">
-											{activity.leaders && activity.leaders.length > 0 ? (
-												activity.leaders.map((leader) => (
-													<Tooltip closeDelay={0} delay={0} key={leader.userId}>
+											{activity.editors && activity.editors.length > 0 ? (
+												activity.editors.map((editor) => (
+													<Tooltip closeDelay={0} delay={0} key={editor.userId}>
 														<Tooltip.Trigger>
 															<Chip
 																className="font-medium"
 																size="sm"
 																variant="soft"
 															>
-																{leader.user?.name ??
-																	leader.user?.email ??
+																{editor.user?.name ??
+																	editor.user?.email ??
 																	"協同編輯"}
 															</Chip>
 														</Tooltip.Trigger>
 														<Tooltip.Content placement="top">
-															{leader.user?.email}
+															{editor.user?.email}
 														</Tooltip.Content>
 													</Tooltip>
 												))
@@ -169,6 +166,7 @@ export default async function ActivityPage({
 							</div>
 						</div>
 
+						{/* Optional Activity Memo/Remarks */}
 						{activity.activityMemo && (
 							<div className="mt-6 border-separator border-t pt-4">
 								<span className="font-semibold text-muted text-xs uppercase tracking-wider">
@@ -181,13 +179,10 @@ export default async function ActivityPage({
 						)}
 					</Card>
 
+					{/* ─── 7. PROCESSES FLOWS AND LISTS ───────────────────────────── */}
 					<div className="space-y-6">
 						<h2 className="font-bold text-2xl">項目清單</h2>
-						<ProcessList
-							activity={activity}
-							activityId={activity.id}
-							user={userWithAreas}
-						/>
+						<ProcessList activity={activity} activityId={activity.id} />
 					</div>
 				</div>
 			</main>

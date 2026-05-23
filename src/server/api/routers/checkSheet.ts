@@ -22,7 +22,7 @@ export const checkSheetRouter = createTRPCRouter({
 			const process = await ctx.db.query.processes.findFirst({
 				where: eq(processes.id, input.processId),
 				with: {
-					activity: true,
+					activity: { with: { editors: true } },
 				},
 			});
 
@@ -34,11 +34,15 @@ export const checkSheetRouter = createTRPCRouter({
 				(areaIds.includes("ALL") ||
 					(process.activity.areaId !== null &&
 						areaIds.includes(process.activity.areaId)));
+			const isEditor = process.activity.editors.some(
+				(e) => e.userId === userId,
+			);
 
-			if (!isCreator && !isAreaAdmin) {
+			if (!isCreator && !isAreaAdmin && !isEditor) {
 				throw new TRPCError({
 					code: "FORBIDDEN",
-					message: "您沒有權限同步此數據（僅限活動建立者或該區管理員）。",
+					message:
+						"您沒有權限同步此數據（僅限活動建立者、協同編輯者或該區管理員）。",
 				});
 			}
 
@@ -178,7 +182,10 @@ export const checkSheetRouter = createTRPCRouter({
 				where: eq(googleSheetData.id, input.databaseId),
 				with: {
 					process: {
-						with: { activity: { with: { leaders: true } } },
+						with: {
+							activity: { with: { editors: true } },
+							checkers: true,
+						},
 					},
 				},
 			});
@@ -191,11 +198,10 @@ export const checkSheetRouter = createTRPCRouter({
 				role === "ADMIN" &&
 				(areaIds.includes("ALL") ||
 					(activity.areaId !== null && areaIds.includes(activity.areaId)));
-			const isLeader = activity.leaders.some(
-				(l: { userId: string }) => l.userId === userId,
-			);
+			const isEditor = activity.editors.some((e) => e.userId === userId);
+			const isChecker = data.process.checkers.some((c) => c.userId === userId);
 
-			if (!isCreator && !isAreaAdmin && !isLeader) {
+			if (!isCreator && !isAreaAdmin && !isEditor && !isChecker) {
 				throw new TRPCError({
 					code: "FORBIDDEN",
 					message: "您沒有權限編輯此活動的核取方塊數據。",
@@ -222,7 +228,7 @@ export const checkSheetRouter = createTRPCRouter({
 
 			const process = await ctx.db.query.processes.findFirst({
 				where: eq(processes.id, input.processId),
-				with: { activity: true },
+				with: { activity: { with: { editors: true } } },
 			});
 
 			if (!process) throw new TRPCError({ code: "NOT_FOUND" });
@@ -233,11 +239,15 @@ export const checkSheetRouter = createTRPCRouter({
 				(areaIds.includes("ALL") ||
 					(process.activity.areaId !== null &&
 						areaIds.includes(process.activity.areaId)));
+			const isEditor = process.activity.editors.some(
+				(e) => e.userId === userId,
+			);
 
-			if (!isCreator && !isAreaAdmin) {
+			if (!isCreator && !isAreaAdmin && !isEditor) {
 				throw new TRPCError({
 					code: "FORBIDDEN",
-					message: "您沒有權限編輯欄位可見性（僅限建立者或該區管理員）。",
+					message:
+						"您沒有權限編輯欄位可見性（僅限建立者、協同編輯者或該區管理員）。",
 				});
 			}
 

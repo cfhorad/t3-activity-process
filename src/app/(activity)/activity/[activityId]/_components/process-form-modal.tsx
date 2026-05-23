@@ -1,19 +1,27 @@
 "use client";
 
 import {
+	Autocomplete,
 	Button,
+	EmptyState,
 	FieldError,
 	Form,
 	Label,
 	ListBox,
 	Modal,
+	SearchField,
 	Select,
+	Tag,
+	TagGroup,
 	TextArea,
 	TextField,
+	useFilter,
 } from "@heroui/react";
 import { Pencil, Plus, Sheet } from "lucide-react";
+import { useMemo } from "react";
 import { Controller } from "react-hook-form";
 import { ControlledTextField } from "~/app/_components/controlled-text-field";
+import { api } from "~/trpc/react";
 import { useProcessForm } from "../_hooks/useProcessForm";
 import type { ProcessFormData } from "./process-form-schema";
 
@@ -24,7 +32,12 @@ interface ProcessFormModalProps {
 	onSubmit: (data: ProcessFormData & { iframeSrc: string | null }) => void;
 	isPending: boolean;
 	activityId: number;
-	initialData?: Partial<ProcessFormData & { iframeSrc?: string | null }>;
+	initialData?: Partial<
+		ProcessFormData & {
+			iframeSrc?: string | null;
+			checkers?: { userId: string }[];
+		}
+	>;
 	title: string;
 	description?: string;
 	submitLabel: string;
@@ -51,6 +64,26 @@ export function ProcessFormModal({
 			isOpen,
 			activityId,
 		});
+
+	const { data: activity } = api.activity.getById.useQuery(
+		{ id: activityId },
+		{ enabled: isOpen },
+	);
+
+	const { data: usersList } = api.admin.getUsers.useQuery(undefined, {
+		enabled: isOpen,
+	});
+
+	const { contains } = useFilter({ sensitivity: "base" });
+
+	const filteredUsersList = useMemo(() => {
+		if (!usersList || !activity?.areaId) return [];
+		return usersList.filter((u) =>
+			u.areas.some(
+				(ua) => ua.areaId === activity.areaId && ua.status === "approved",
+			),
+		);
+	}, [usersList, activity?.areaId]);
 
 	return (
 		<Modal.Backdrop
@@ -161,6 +194,107 @@ export function ProcessFormModal({
 										</Select>
 									)}
 								/>
+
+								{selectedType === "CHECK" && (
+									<Controller
+										control={form.control}
+										name="checkerUserIds"
+										render={({ field }) => {
+											const selectedKeys = field.value || [];
+											const handleRemoveTags = (
+												keysToRemove: Set<string | number>,
+											) => {
+												const updatedKeys = selectedKeys.filter(
+													(key) => !keysToRemove.has(key),
+												);
+												field.onChange(updatedKeys);
+											};
+
+											return (
+												<Autocomplete
+													className="w-full"
+													isDisabled={!activity?.areaId}
+													onChange={(keys) => {
+														if (Array.isArray(keys)) {
+															field.onChange(keys.map(String));
+														}
+													}}
+													placeholder="選擇檢核人員 (可輸入名稱搜尋，可複選)"
+													selectionMode="multiple"
+													value={selectedKeys}
+													variant="secondary"
+												>
+													<Label>檢核人員 (僅可在此分頁勾選)</Label>
+													<Autocomplete.Trigger>
+														<Autocomplete.Value>
+															{({ isPlaceholder, state }) => {
+																if (
+																	isPlaceholder ||
+																	state.selectedItems.length === 0
+																) {
+																	return "選擇檢核人員";
+																}
+																return (
+																	<TagGroup
+																		onRemove={handleRemoveTags}
+																		size="sm"
+																	>
+																		<TagGroup.List>
+																			{state.selectedItems.map((item) => (
+																				<Tag id={item.key} key={item.key}>
+																					{item.textValue}
+																				</Tag>
+																			))}
+																		</TagGroup.List>
+																	</TagGroup>
+																);
+															}}
+														</Autocomplete.Value>
+														<Autocomplete.Indicator />
+													</Autocomplete.Trigger>
+													<Autocomplete.Popover>
+														<Autocomplete.Filter filter={contains}>
+															<SearchField
+																autoFocus
+																name="search"
+																variant="secondary"
+															>
+																<SearchField.Group>
+																	<SearchField.SearchIcon />
+																	<SearchField.Input placeholder="輸入名稱搜尋..." />
+																	<SearchField.ClearButton />
+																</SearchField.Group>
+															</SearchField>
+															<ListBox
+																renderEmptyState={() => (
+																	<EmptyState>找不到符合的使用者</EmptyState>
+																)}
+															>
+																{filteredUsersList.map((u) => (
+																	<ListBox.Item
+																		id={u.id}
+																		key={u.id}
+																		textValue={u.name ?? u.email}
+																	>
+																		<div className="flex flex-col">
+																			<span className="font-medium text-sm">
+																				{u.name ?? "未設定姓名"}
+																			</span>
+																			<span className="text-[10px] text-muted">
+																				{u.email}
+																			</span>
+																		</div>
+																		<ListBox.ItemIndicator />
+																	</ListBox.Item>
+																))}
+															</ListBox>
+														</Autocomplete.Filter>
+													</Autocomplete.Popover>
+												</Autocomplete>
+											);
+										}}
+									/>
+								)}
 
 								{selectedType === "WEB" && (
 									<Controller

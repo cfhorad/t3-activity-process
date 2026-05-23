@@ -205,33 +205,14 @@ export function CheckListTable({
 		infoState.open();
 	};
 
-	const {
-		isViewer,
-		isAdmin,
-		isManager,
-		approvedAreaIds,
-		user: currentUser,
-	} = useAuth();
+	const { isViewer, isProcessChecker } = useAuth();
 
-	const userId = currentUser?.id;
-
-	const activity = process?.activity as {
-		createdById: string;
-		areaId: string | null;
-		leaders: { userId: string }[];
-	} | null;
-	const isCreator = activity?.createdById === userId;
-	const isAreaAdmin =
-		isAdmin ||
-		(isManager &&
-			activity?.areaId !== null &&
-			activity?.areaId !== undefined &&
-			approvedAreaIds.includes(activity.areaId));
-	const isLeader = activity?.leaders?.some(
-		(l: { userId: string }) => l.userId === userId,
+	const isEditable = isProcessChecker(
+		processId,
+		process?.activityId,
+		process?.activity?.createdById,
+		process?.activity?.areaId,
 	);
-
-	const isEditable = isCreator || isAreaAdmin || isLeader;
 
 	const filteredAllColumns = isViewer
 		? allColumns.filter(

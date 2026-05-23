@@ -1,20 +1,25 @@
 import {
+	Autocomplete,
 	Button,
-	Chip,
+	EmptyState,
 	Form,
 	Input,
 	Label,
 	ListBox,
 	Modal,
+	SearchField,
 	Select,
+	Tag,
+	TagGroup,
 	TextField,
+	useFilter,
 } from "@heroui/react";
 import { Pencil, Plus } from "lucide-react";
 import { useEffect, useMemo } from "react";
 import { Controller } from "react-hook-form";
 
 import { ControlledTextField } from "~/app/_components/controlled-text-field";
-import type { User } from "~/server/better-auth/config";
+import { useAuth } from "~/app/_hooks/useAuth";
 import { api } from "~/trpc/react";
 
 import { useActivityForm } from "../_hooks/useActivityForm";
@@ -31,7 +36,6 @@ interface ActivityFormModalProps {
 	description?: string;
 	submitLabel: string;
 	mode: "create" | "edit";
-	user: User & { areaIds?: string[] };
 }
 
 export function ActivityFormModal({
@@ -45,7 +49,6 @@ export function ActivityFormModal({
 	description,
 	submitLabel,
 	mode,
-	user,
 }: ActivityFormModalProps) {
 	const {
 		form,
@@ -67,9 +70,8 @@ export function ActivityFormModal({
 		enabled: isOpen,
 	});
 
-	const role = user?.role?.toUpperCase();
-	const userAreaIds = user?.areaIds ?? [];
-	const isSuperAdmin = role === "ADMIN";
+	const { user, isSuperAdmin, approvedAreaIds: userAreaIds } = useAuth();
+	const { contains } = useFilter({ sensitivity: "base" });
 
 	// Filter available areas for this user
 	const availableAreas = useMemo(() => {
@@ -90,26 +92,26 @@ export function ActivityFormModal({
 		);
 	}, [usersList, selectedAreaId]);
 
-	// Keep leaderUserIds valid and clean when areaId changes
+	// Keep editorUserIds valid and clean when areaId changes
 	useEffect(() => {
 		if (!selectedAreaId) {
-			form.setValue("leaderUserIds", []);
+			form.setValue("editorUserIds", []);
 			return;
 		}
 
-		const currentLeaders = form.getValues("leaderUserIds") || [];
-		if (currentLeaders.length === 0 || !usersList) return;
+		const currentEditors = form.getValues("editorUserIds") || [];
+		if (currentEditors.length === 0 || !usersList) return;
 
 		// Filter out co-editors that do not belong / are not approved in the new selectedAreaId
-		const validLeaders = currentLeaders.filter((leaderId) => {
-			const u = usersList.find((usr) => usr.id === leaderId);
+		const validEditors = currentEditors.filter((editorId) => {
+			const u = usersList.find((usr) => usr.id === editorId);
 			return u?.areas.some(
 				(ua) => ua.areaId === selectedAreaId && ua.status === "approved",
 			);
 		});
 
-		if (validLeaders.length !== currentLeaders.length) {
-			form.setValue("leaderUserIds", validLeaders);
+		if (validEditors.length !== currentEditors.length) {
+			form.setValue("editorUserIds", validEditors);
 		}
 	}, [selectedAreaId, usersList, form]);
 
@@ -175,9 +177,9 @@ export function ActivityFormModal({
 										<Select
 											className="w-full"
 											isRequired
-											onSelectionChange={(key) => field.onChange(key as string)}
+											onChange={(val) => field.onChange(val as string)}
 											placeholder="選擇所屬營運分會"
-											selectedKey={field.value}
+											value={field.value}
 										>
 											<Label>活動營運分會</Label>
 											<Select.Trigger>
@@ -209,74 +211,105 @@ export function ActivityFormModal({
 
 								<Controller
 									control={form.control}
-									name="leaderUserIds"
-									render={({ field }) => (
-										<Select
-											className="w-full"
-											isDisabled={!selectedAreaId}
-											onChange={(val) => {
-												if (Array.isArray(val)) {
-													field.onChange(val.map((v) => String(v)));
+									name="editorUserIds"
+									render={({ field }) => {
+										const selectedKeys = field.value || [];
+										const handleRemoveTags = (
+											keysToRemove: Set<string | number>,
+										) => {
+											const updatedKeys = selectedKeys.filter(
+												(key) => !keysToRemove.has(key),
+											);
+											field.onChange(updatedKeys);
+										};
+
+										return (
+											<Autocomplete
+												className="w-full"
+												isDisabled={!selectedAreaId}
+												onChange={(keys) => {
+													if (Array.isArray(keys)) {
+														field.onChange(keys.map(String));
+													}
+												}}
+												placeholder={
+													selectedAreaId
+														? "選擇協同編輯者 (可輸入名稱搜尋，可複選)"
+														: "請先選擇活動營運分會"
 												}
-											}}
-											placeholder={
-												selectedAreaId
-													? "選擇允許編輯此活動報到狀態的成員 (可複選)"
-													: "請先選擇活動營運分會"
-											}
-											selectionMode="multiple"
-											value={field.value || []}
-										>
-											<Label>協同編輯者 (可編輯核取欄位)</Label>
-											<Select.Trigger>
-												<Select.Value>
-													{({ isPlaceholder, state }) => {
-														if (
-															isPlaceholder ||
-															state.selectedItems.length === 0
-														) {
-															return selectedAreaId
-																? "選擇協同編輯者"
-																: "請先選擇活動營運分會";
-														}
-														return (
-															<div className="flex flex-wrap gap-1">
-																{state.selectedItems.map((item) => (
-																	<Chip key={item.key} size="sm" variant="soft">
-																		{item.textValue}
-																	</Chip>
+												selectionMode="multiple"
+												value={selectedKeys}
+											>
+												<Label>協同編輯者 (擁有此活動完整管理權限)</Label>
+												<Autocomplete.Trigger>
+													<Autocomplete.Value>
+														{({ isPlaceholder, state }) => {
+															if (
+																isPlaceholder ||
+																state.selectedItems.length === 0
+															) {
+																return selectedAreaId
+																	? "選擇協同編輯者"
+																	: "請先選擇活動營運分會";
+															}
+															return (
+																<TagGroup onRemove={handleRemoveTags} size="sm">
+																	<TagGroup.List>
+																		{state.selectedItems.map((item) => (
+																			<Tag id={item.key} key={item.key}>
+																				{item.textValue}
+																			</Tag>
+																		))}
+																	</TagGroup.List>
+																</TagGroup>
+															);
+														}}
+													</Autocomplete.Value>
+													<Autocomplete.Indicator />
+												</Autocomplete.Trigger>
+												<Autocomplete.Popover>
+													<Autocomplete.Filter filter={contains}>
+														<SearchField
+															autoFocus
+															name="search"
+															variant="secondary"
+														>
+															<SearchField.Group>
+																<SearchField.SearchIcon />
+																<SearchField.Input placeholder="輸入名稱搜尋..." />
+																<SearchField.ClearButton />
+															</SearchField.Group>
+														</SearchField>
+														<ListBox
+															renderEmptyState={() => (
+																<EmptyState>找不到符合的使用者</EmptyState>
+															)}
+														>
+															{filteredUsersList
+																.filter((u) => u.id !== user?.id)
+																.map((u) => (
+																	<ListBox.Item
+																		id={u.id}
+																		key={u.id}
+																		textValue={u.name ?? u.email}
+																	>
+																		<div className="flex flex-col">
+																			<span className="font-medium text-sm">
+																				{u.name ?? "未設定姓名"}
+																			</span>
+																			<span className="text-[10px] text-muted">
+																				{u.email}
+																			</span>
+																		</div>
+																		<ListBox.ItemIndicator />
+																	</ListBox.Item>
 																))}
-															</div>
-														);
-													}}
-												</Select.Value>
-												<Select.Indicator />
-											</Select.Trigger>
-											<Select.Popover>
-												<ListBox selectionMode="multiple">
-													{filteredUsersList
-														.filter((u) => u.id !== user?.id)
-														.map((u) => (
-															<ListBox.Item
-																id={u.id}
-																key={u.id}
-																textValue={u.name ?? u.email}
-															>
-																<div className="flex flex-col">
-																	<span className="font-medium text-sm">
-																		{u.name ?? "未設定姓名"}
-																	</span>
-																	<span className="text-[10px] text-muted">
-																		{u.email}
-																	</span>
-																</div>
-																<ListBox.ItemIndicator />
-															</ListBox.Item>
-														))}
-												</ListBox>
-											</Select.Popover>
-										</Select>
-									)}
+														</ListBox>
+													</Autocomplete.Filter>
+												</Autocomplete.Popover>
+											</Autocomplete>
+										);
+									}}
 								/>
 
 								<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
