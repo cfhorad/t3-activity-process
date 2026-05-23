@@ -12,13 +12,13 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { ActivityFormModal } from "~/app/_components/activity-form-modal";
 import { ConfirmDeleteDialog } from "~/app/_components/confirm-delete-dialog";
 import { DashboardItemCard } from "~/app/_components/dashboard-item-card";
 import type { User } from "~/server/better-auth/config";
 import type { Activity } from "~/server/db/schema";
 import { useActivities } from "../_hooks/useActivities";
 import { useActivityActions } from "../_hooks/useActivityActions";
-import { ActivityFormModal } from "./activity-form-modal";
 
 // ─── TYPES ───────────────────────────────────────────────────
 
@@ -26,6 +26,7 @@ interface ExtendedActivity extends Activity {
 	creator?: { name: string | null } | null;
 	processes?: { id: number }[];
 	area?: { id: string; name: string } | null;
+	leaders?: { userId: string }[];
 }
 
 // ─── SUB-COMPONENTS ───────────────────────────────────────────
@@ -101,7 +102,9 @@ function ActivityInfoModal({
 									</div>
 								</div>
 								<div className="space-y-1">
-									<p className="font-semibold text-muted text-xs">工作項目數量</p>
+									<p className="font-semibold text-muted text-xs">
+										工作項目數量
+									</p>
 									<div className="flex items-center gap-1.5">
 										<Layers className="h-3.5 w-3.5 text-muted" />
 										<span className="font-medium text-danger">
@@ -160,7 +163,11 @@ function ActivityCard({ activity, user }: ActivityCardProps) {
 
 			{/* Edit Activity Modal - Directly rendered using ActivityFormModal */}
 			<ActivityFormModal
-				initialData={{ ...activity, areaId: activity.areaId ?? "" }}
+				initialData={{
+					...activity,
+					areaId: activity.areaId ?? "",
+					leaderUserIds: activity.leaders?.map((l) => l.userId) ?? [],
+				}}
 				isOpen={editState.isOpen}
 				isPending={updateActivity.isPending}
 				mode="edit"

@@ -65,6 +65,10 @@ export function usePendingApproval({ userId }: UsePendingApprovalProps) {
 	);
 	const showOnboardingForm = !hasApplications || isApplyingMore;
 
+	const refetchStatus = async () => {
+		await utils.user.getMyAreaStatuses.invalidate();
+	};
+
 	return {
 		isLoading: isAreasLoading || isAppsLoading,
 		myApplications: myApplications as AreaStatusItem[] | undefined,
@@ -77,5 +81,6 @@ export function usePendingApproval({ userId }: UsePendingApprovalProps) {
 		hasApplications,
 		showOnboardingForm,
 		handleSubmit,
+		refetchStatus,
 	};
 }

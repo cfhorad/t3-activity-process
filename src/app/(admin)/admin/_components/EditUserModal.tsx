@@ -167,6 +167,20 @@ export function EditUserModal({
 							<p className="text-[10px] text-muted">
 								* 停權中的帳號將被強制登出並阻斷所有 tRPC 操作門禁。
 							</p>
+							{selectedStatus === "active" && selectedAreaIds.length === 0 && (
+								<p className="mt-1 animate-pulse font-bold text-[10px] text-warning">
+									⚠️
+									提醒：啟用帳號但未勾選任何分會時，儲存後系統將自動將其變更為「待審核中
+									(pending)」狀態。
+								</p>
+							)}
+							{selectedStatus === "pending" && (
+								<p className="mt-1 font-bold text-[10px] text-warning">
+									⚠️ 提醒：將帳號設為「待審核中
+									(pending)」時，該成員所有已核准之分會權限亦將同步重設為「待審核
+									(pending)」。
+								</p>
+							)}
 						</div>
 
 						{/* Multi-Select Areas */}

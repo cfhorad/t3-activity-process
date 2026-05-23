@@ -1,5 +1,6 @@
 import {
 	Button,
+	Chip,
 	Form,
 	Input,
 	Label,
@@ -9,7 +10,7 @@ import {
 	TextField,
 } from "@heroui/react";
 import { Pencil, Plus } from "lucide-react";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { Controller } from "react-hook-form";
 
 import { ControlledTextField } from "~/app/_components/controlled-text-field";
@@ -62,6 +63,10 @@ export function ActivityFormModal({
 		enabled: isOpen,
 	});
 
+	const { data: usersList } = api.admin.getUsers.useQuery(undefined, {
+		enabled: isOpen,
+	});
+
 	const role = user?.role?.toUpperCase();
 	const userAreaIds = user?.areaIds ?? [];
 	const isSuperAdmin = role === "ADMIN";
@@ -72,6 +77,41 @@ export function ActivityFormModal({
 		if (isSuperAdmin) return areasList;
 		return areasList.filter((area) => userAreaIds.includes(area.id));
 	}, [areasList, isSuperAdmin, userAreaIds]);
+
+	const selectedAreaId = form.watch("areaId");
+
+	// Filter users to only those approved in the selected activity area
+	const filteredUsersList = useMemo(() => {
+		if (!usersList || !selectedAreaId) return [];
+		return usersList.filter((u) =>
+			u.areas.some(
+				(ua) => ua.areaId === selectedAreaId && ua.status === "approved",
+			),
+		);
+	}, [usersList, selectedAreaId]);
+
+	// Keep leaderUserIds valid and clean when areaId changes
+	useEffect(() => {
+		if (!selectedAreaId) {
+			form.setValue("leaderUserIds", []);
+			return;
+		}
+
+		const currentLeaders = form.getValues("leaderUserIds") || [];
+		if (currentLeaders.length === 0 || !usersList) return;
+
+		// Filter out co-editors that do not belong / are not approved in the new selectedAreaId
+		const validLeaders = currentLeaders.filter((leaderId) => {
+			const u = usersList.find((usr) => usr.id === leaderId);
+			return u?.areas.some(
+				(ua) => ua.areaId === selectedAreaId && ua.status === "approved",
+			);
+		});
+
+		if (validLeaders.length !== currentLeaders.length) {
+			form.setValue("leaderUserIds", validLeaders);
+		}
+	}, [selectedAreaId, usersList, form]);
 
 	return (
 		<Modal.Backdrop
@@ -163,6 +203,78 @@ export function ActivityFormModal({
 													{form.formState.errors.areaId.message}
 												</p>
 											)}
+										</Select>
+									)}
+								/>
+
+								<Controller
+									control={form.control}
+									name="leaderUserIds"
+									render={({ field }) => (
+										<Select
+											className="w-full"
+											isDisabled={!selectedAreaId}
+											onChange={(val) => {
+												if (Array.isArray(val)) {
+													field.onChange(val.map((v) => String(v)));
+												}
+											}}
+											placeholder={
+												selectedAreaId
+													? "選擇允許編輯此活動報到狀態的成員 (可複選)"
+													: "請先選擇活動營運分會"
+											}
+											selectionMode="multiple"
+											value={field.value || []}
+										>
+											<Label>協同編輯者 (可編輯核取欄位)</Label>
+											<Select.Trigger>
+												<Select.Value>
+													{({ isPlaceholder, state }) => {
+														if (
+															isPlaceholder ||
+															state.selectedItems.length === 0
+														) {
+															return selectedAreaId
+																? "選擇協同編輯者"
+																: "請先選擇活動營運分會";
+														}
+														return (
+															<div className="flex flex-wrap gap-1">
+																{state.selectedItems.map((item) => (
+																	<Chip key={item.key} size="sm" variant="soft">
+																		{item.textValue}
+																	</Chip>
+																))}
+															</div>
+														);
+													}}
+												</Select.Value>
+												<Select.Indicator />
+											</Select.Trigger>
+											<Select.Popover>
+												<ListBox selectionMode="multiple">
+													{filteredUsersList
+														.filter((u) => u.id !== user?.id)
+														.map((u) => (
+															<ListBox.Item
+																id={u.id}
+																key={u.id}
+																textValue={u.name ?? u.email}
+															>
+																<div className="flex flex-col">
+																	<span className="font-medium text-sm">
+																		{u.name ?? "未設定姓名"}
+																	</span>
+																	<span className="text-[10px] text-muted">
+																		{u.email}
+																	</span>
+																</div>
+																<ListBox.ItemIndicator />
+															</ListBox.Item>
+														))}
+												</ListBox>
+											</Select.Popover>
 										</Select>
 									)}
 								/>

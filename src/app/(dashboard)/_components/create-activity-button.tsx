@@ -3,9 +3,9 @@
 import { Button, Tooltip, useOverlayState } from "@heroui/react";
 import { Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { ActivityFormModal } from "~/app/_components/activity-form-modal";
 import type { User } from "~/server/better-auth/config";
 import { api } from "~/trpc/react";
-import { ActivityFormModal } from "./activity-form-modal";
 
 export function CreateActivityButton({
 	user,

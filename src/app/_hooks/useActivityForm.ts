@@ -30,6 +30,7 @@ export function useActivityForm({
 			activityDate: initialData?.activityDate ?? "",
 			areaId: initialData?.areaId ?? "",
 			activityMemo: initialData?.activityMemo ?? "",
+			leaderUserIds: initialData?.leaderUserIds ?? [],
 		},
 	});
 
@@ -55,6 +56,7 @@ export function useActivityForm({
 				activityDate: initialData?.activityDate ?? "",
 				areaId: initialData?.areaId ?? "",
 				activityMemo: initialData?.activityMemo ?? "",
+				leaderUserIds: initialData?.leaderUserIds ?? [],
 			});
 		}
 	}, [initialData, isOpen, form]);

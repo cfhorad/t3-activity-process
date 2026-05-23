@@ -147,7 +147,9 @@ export function AreaManagementPanel({
 							<Table.ScrollContainer>
 								<Table.Content aria-label="營運分會" className="w-full">
 									<Table.Header>
-										<Table.Column id="areaName" isRowHeader>分會顯示名稱</Table.Column>
+										<Table.Column id="areaName" isRowHeader>
+											分會顯示名稱
+										</Table.Column>
 										<Table.Column className="text-end" id="actions">
 											管理操作
 										</Table.Column>

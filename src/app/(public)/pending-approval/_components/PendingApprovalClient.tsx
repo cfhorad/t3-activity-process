@@ -1,6 +1,7 @@
 "use client";
 
 import {
+	Alert,
 	Button,
 	Card,
 	Chip,
@@ -19,7 +20,9 @@ import {
 	XCircle,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { useAuth } from "~/app/_hooks/useAuth";
+import { authClient } from "~/server/better-auth/client";
 import type { User } from "~/server/better-auth/config";
 import type { AreaStatusItem } from "../_hooks/usePendingApproval";
 import { usePendingApproval } from "../_hooks/usePendingApproval";
@@ -65,6 +68,7 @@ interface OnboardingApplyFormProps {
 	isPending: boolean;
 	onSubmit: (e: React.FormEvent) => void;
 	onCancel: () => void;
+	isSuspended?: boolean;
 }
 
 function OnboardingApplyForm({
@@ -76,6 +80,7 @@ function OnboardingApplyForm({
 	isPending,
 	onSubmit,
 	onCancel,
+	isSuspended,
 }: OnboardingApplyFormProps) {
 	return (
 		<Card className="border border-border/40 bg-surface/80 p-4 backdrop-blur-lg">
@@ -98,6 +103,7 @@ function OnboardingApplyForm({
 						<div className="space-y-2">
 							<Select
 								aria-label="選擇所屬分會"
+								isDisabled={isSuspended}
 								onChange={(keys) => {
 									const keysArray = Array.isArray(keys)
 										? keys
@@ -156,7 +162,7 @@ function OnboardingApplyForm({
 							)}
 							<Button
 								className="flex-1 font-bold text-white"
-								isDisabled={selectedAreaIds.length === 0}
+								isDisabled={selectedAreaIds.length === 0 || isSuspended}
 								isPending={isPending}
 								type="submit"
 								variant="primary"
@@ -180,6 +186,7 @@ interface ApplicationStatusCardProps {
 	onApplyMore: () => void;
 	onRefresh: () => void;
 	isSuperAdmin: boolean;
+	isSuspended?: boolean;
 }
 
 function ApplicationStatusCard({
@@ -188,6 +195,7 @@ function ApplicationStatusCard({
 	onApplyMore,
 	onRefresh,
 	isSuperAdmin,
+	isSuspended,
 }: ApplicationStatusCardProps) {
 	return (
 		<Card className="border border-border/40 bg-surface/80 p-4 backdrop-blur-lg">
@@ -201,7 +209,7 @@ function ApplicationStatusCard({
 							管理員正在審核您的申請，完成後您將自動獲得該分會的活動存取權限。
 						</p>
 					</div>
-					{!isSuperAdmin && availableToApplyCount > 0 && (
+					{!isSuperAdmin && !isSuspended && availableToApplyCount > 0 && (
 						<Button
 							className="flex items-center gap-1 font-semibold text-xs"
 							onPress={onApplyMore}
@@ -306,11 +314,18 @@ export function PendingApprovalClient({ user }: PendingApprovalClientProps) {
 		hasApplications,
 		showOnboardingForm,
 		handleSubmit,
+		refetchStatus,
 	} = usePendingApproval({ userId: user.id });
 
 	const { isSuperAdmin } = useAuth();
+	const { refetch: refetchSession } = authClient.useSession();
 
-	if (isLoading) {
+	const [isMounted, setIsMounted] = useState(false);
+	useEffect(() => {
+		setIsMounted(true);
+	}, []);
+
+	if (!isMounted || isLoading) {
 		return (
 			<div className="flex flex-col items-center gap-3 py-24">
 				<Spinner size="lg" />
@@ -319,10 +334,36 @@ export function PendingApprovalClient({ user }: PendingApprovalClientProps) {
 		);
 	}
 
+	const isSuspended = user.status === "suspended";
+
+	const handleRefresh = async () => {
+		await refetchSession();
+		await refetchStatus();
+		router.refresh();
+	};
+
 	return (
 		<div className="w-full max-w-2xl space-y-4">
 			{/* Top Header Section */}
 			<PendingHeaderCard user={user} />
+
+			{/* Suspended Alert */}
+			{isSuspended && (
+				<Alert
+					className="rounded-2xl border border-danger/25 bg-danger-soft/10 shadow-sm"
+					status="danger"
+				>
+					<Alert.Indicator />
+					<Alert.Content>
+						<Alert.Title className="font-bold text-danger text-sm">
+							帳號已被停權
+						</Alert.Title>
+						<Alert.Description className="mt-1 text-danger/90 text-xs">
+							您的帳號已被系統管理員停權。在此狀態下，您將無法進行任何操作、申請新分會或存取系統資源。如有任何疑問，請聯絡系統管理員。
+						</Alert.Description>
+					</Alert.Content>
+				</Alert>
+			)}
 
 			{/* Form / Status Switching Content */}
 			{showOnboardingForm ? (
@@ -331,6 +372,7 @@ export function PendingApprovalClient({ user }: PendingApprovalClientProps) {
 					hasApplications={hasApplications}
 					isApplyingMore={isApplyingMore}
 					isPending={applyMutation.isPending}
+					isSuspended={isSuspended}
 					onCancel={() => setIsApplyingMore(false)}
 					onSelectionChange={setSelectedAreaIds}
 					onSubmit={handleSubmit}
@@ -342,9 +384,10 @@ export function PendingApprovalClient({ user }: PendingApprovalClientProps) {
 						availableToApply.length - (myApplications?.length ?? 0)
 					}
 					isSuperAdmin={!!isSuperAdmin}
+					isSuspended={isSuspended}
 					myApplications={myApplications}
 					onApplyMore={() => setIsApplyingMore(true)}
-					onRefresh={() => router.refresh()}
+					onRefresh={handleRefresh}
 				/>
 			)}
 		</div>

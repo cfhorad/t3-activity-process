@@ -65,11 +65,17 @@ export const adminRouter = createTRPCRouter({
 				if (!targetUser) throw new TRPCError({ code: "NOT_FOUND" });
 
 				// 3. If global status is 'pending', change it to 'active' now that one area is approved
+				// Also assign the default "VIEWER" role if they don't have one yet
+				const updates: Partial<typeof user.$inferSelect> = {};
 				if (targetUser.status === "pending") {
-					await tx
-						.update(user)
-						.set({ status: "active" })
-						.where(eq(user.id, input.userId));
+					updates.status = "active";
+				}
+				if (!targetUser.role) {
+					updates.role = "VIEWER";
+				}
+
+				if (Object.keys(updates).length > 0) {
+					await tx.update(user).set(updates).where(eq(user.id, input.userId));
 				}
 			});
 
@@ -88,20 +94,43 @@ export const adminRouter = createTRPCRouter({
 		.mutation(async ({ ctx, input }) => {
 			assertCanManageArea(ctx.session.user.areaIds, input.areaId);
 
-			await ctx.db
-				.update(userAreas)
-				.set({
-					status: "rejected",
-					approvedById: ctx.session.user.id,
-					approvedAt: new Date(),
-					rejectedReason: input.rejectedReason ?? null,
-				})
-				.where(
-					and(
-						eq(userAreas.userId, input.userId),
-						eq(userAreas.areaId, input.areaId),
-					),
-				);
+			await ctx.db.transaction(async (tx) => {
+				// 1. Reject the area application
+				await tx
+					.update(userAreas)
+					.set({
+						status: "rejected",
+						approvedById: ctx.session.user.id,
+						approvedAt: new Date(),
+						rejectedReason: input.rejectedReason ?? null,
+					})
+					.where(
+						and(
+							eq(userAreas.userId, input.userId),
+							eq(userAreas.areaId, input.areaId),
+						),
+					);
+
+				// 2. Fetch the target user with all their area applications
+				const targetUser = await tx.query.user.findFirst({
+					where: eq(user.id, input.userId),
+					with: { areas: true },
+				});
+
+				// 3. If the user is currently active but now has zero approved areas, downgrade global status to pending
+				if (targetUser && targetUser.status === "active") {
+					const approvedCount = targetUser.areas.filter(
+						(ua) => ua.status === "approved",
+					).length;
+
+					if (approvedCount === 0) {
+						await tx
+							.update(user)
+							.set({ status: "pending" })
+							.where(eq(user.id, input.userId));
+					}
+				}
+			});
 
 			return { success: true };
 		}),
@@ -173,17 +202,23 @@ export const adminRouter = createTRPCRouter({
 				}
 			}
 
+			// 1. Resolve global status: Cannot be active with zero approved areas! Fall back to pending
+			let resolvedStatus = input.status;
+			if (input.status === "active" && input.areaIds.length === 0) {
+				resolvedStatus = "pending";
+			}
+
 			await ctx.db.transaction(async (tx) => {
-				// 1. Update role and status
+				// 2. Update role and status
 				await tx
 					.update(user)
 					.set({
 						role: input.role,
-						status: input.status,
+						status: resolvedStatus,
 					})
 					.where(eq(user.id, input.userId));
 
-				// 2. Sync areas: delete relations no longer in the list
+				// 3. Sync areas: delete relations no longer in the list
 				if (input.areaIds.length > 0) {
 					// Delete areas that are not in the new approved list under control
 					const areasToDelete = targetUser.areas
@@ -202,10 +237,15 @@ export const adminRouter = createTRPCRouter({
 							);
 					}
 
-					// 3. Upsert newly selected areas under control
+					// 4. Upsert newly selected areas under control
 					const areasToAdd = input.areaIds.filter(
 						(id) => isSuperAdmin || approverAreaIds.includes(id),
 					);
+
+					const targetAreaStatus =
+						resolvedStatus === "pending"
+							? ("pending" as const)
+							: ("approved" as const);
 
 					if (areasToAdd.length > 0) {
 						await tx
@@ -214,17 +254,25 @@ export const adminRouter = createTRPCRouter({
 								areasToAdd.map((areaId) => ({
 									userId: input.userId,
 									areaId,
-									status: "approved" as const,
-									approvedById: ctx.session.user.id,
-									approvedAt: new Date(),
+									status: targetAreaStatus,
+									approvedById:
+										targetAreaStatus === "approved"
+											? ctx.session.user.id
+											: null,
+									approvedAt:
+										targetAreaStatus === "approved" ? new Date() : null,
 								})),
 							)
 							.onConflictDoUpdate({
 								target: [userAreas.userId, userAreas.areaId],
 								set: {
-									status: "approved",
-									approvedById: ctx.session.user.id,
-									approvedAt: new Date(),
+									status: targetAreaStatus,
+									approvedById:
+										targetAreaStatus === "approved"
+											? ctx.session.user.id
+											: null,
+									approvedAt:
+										targetAreaStatus === "approved" ? new Date() : null,
 								},
 							});
 					}
@@ -238,6 +286,18 @@ export const adminRouter = createTRPCRouter({
 							);
 
 					await tx.delete(userAreas).where(deleteCondition);
+				}
+
+				// 5. Force all areas to pending if global status was resolved to pending
+				if (resolvedStatus === "pending") {
+					await tx
+						.update(userAreas)
+						.set({
+							status: "pending",
+							approvedById: null,
+							approvedAt: null,
+						})
+						.where(eq(userAreas.userId, input.userId));
 				}
 			});
 

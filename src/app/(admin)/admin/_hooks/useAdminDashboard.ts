@@ -162,7 +162,9 @@ export function useAdminDashboard({ currentUser }: UseAdminDashboardProps) {
 
 	const handleEditClick = (userItem: UserItem) => {
 		setEditingUser(userItem);
-		setSelectedRole(userItem.role as "ADMIN" | "MANAGER" | "VIEWER");
+		setSelectedRole(
+			(userItem.role ?? "VIEWER") as "ADMIN" | "MANAGER" | "VIEWER",
+		);
 		setSelectedStatus(userItem.status);
 		setSelectedAreaIds(
 			userItem.areas

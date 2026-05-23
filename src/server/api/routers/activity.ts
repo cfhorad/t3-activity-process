@@ -7,7 +7,7 @@ import {
 	managerProcedure,
 	protectedProcedure,
 } from "~/server/api/trpc";
-import { activities, processes } from "~/server/db/schema";
+import { activities, activityLeaders, processes } from "~/server/db/schema";
 
 export const activityRouter = createTRPCRouter({
 	getAll: protectedProcedure.query(async ({ ctx }) => {
@@ -22,6 +22,11 @@ export const activityRouter = createTRPCRouter({
 				creator: true,
 				processes: true,
 				area: true,
+				leaders: {
+					with: {
+						user: true,
+					},
+				},
 			},
 			orderBy: (activities, { desc }) => [desc(activities.createdAt)],
 		});
@@ -44,6 +49,11 @@ export const activityRouter = createTRPCRouter({
 					processes: true,
 					creator: true,
 					area: true,
+					leaders: {
+						with: {
+							user: true,
+						},
+					},
 				},
 			});
 			return activity;
@@ -58,27 +68,42 @@ export const activityRouter = createTRPCRouter({
 				activityMemo: z.string().optional().nullable(),
 				sheetName: z.string().optional(),
 				areaId: z.string().min(1),
+				leaderUserIds: z.array(z.string()).optional(),
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {
 			assertCanManageArea(ctx.session.user.areaIds, input.areaId);
 
-			const { sheetName, ...activityData } = input;
-			const [activity] = await ctx.db
-				.insert(activities)
-				.values({
-					...activityData,
-					createdById: ctx.session.user.id,
-				})
-				.returning();
+			const { sheetName, leaderUserIds, ...activityData } = input;
 
-			if (sheetName && activity) {
-				await ctx.db.insert(processes).values({
-					name: activityData.name,
-					activityId: activity.id,
-					sheetName,
-				});
-			}
+			const activity = await ctx.db.transaction(async (tx) => {
+				const [newActivity] = await tx
+					.insert(activities)
+					.values({
+						...activityData,
+						createdById: ctx.session.user.id,
+					})
+					.returning();
+
+				if (newActivity && leaderUserIds && leaderUserIds.length > 0) {
+					await tx.insert(activityLeaders).values(
+						leaderUserIds.map((userId) => ({
+							activityId: newActivity.id,
+							userId,
+						})),
+					);
+				}
+
+				if (sheetName && newActivity) {
+					await tx.insert(processes).values({
+						name: activityData.name,
+						activityId: newActivity.id,
+						sheetName,
+					});
+				}
+
+				return newActivity;
+			});
 
 			return activity;
 		}),
@@ -92,10 +117,11 @@ export const activityRouter = createTRPCRouter({
 				activityDate: z.string().min(1),
 				activityMemo: z.string().optional().nullable(),
 				areaId: z.string().min(1),
+				leaderUserIds: z.array(z.string()).optional(),
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {
-			const { id, ...data } = input;
+			const { id, leaderUserIds, ...data } = input;
 			const { id: userId, role, areaIds } = ctx.session.user;
 
 			// Fetch activity to check ownership/area
@@ -121,11 +147,29 @@ export const activityRouter = createTRPCRouter({
 			// Verify they also have permission to manage the new area they are assigning it to
 			assertCanManageArea(areaIds, input.areaId);
 
-			const [activity] = await ctx.db
-				.update(activities)
-				.set(data)
-				.where(eq(activities.id, id))
-				.returning();
+			const [activity] = await ctx.db.transaction(async (tx) => {
+				const [updated] = await tx
+					.update(activities)
+					.set(data)
+					.where(eq(activities.id, id))
+					.returning();
+
+				await tx
+					.delete(activityLeaders)
+					.where(eq(activityLeaders.activityId, id));
+
+				if (leaderUserIds && leaderUserIds.length > 0) {
+					await tx.insert(activityLeaders).values(
+						leaderUserIds.map((userId) => ({
+							activityId: id,
+							userId,
+						})),
+					);
+				}
+
+				return [updated];
+			});
+
 			return activity;
 		}),
 
