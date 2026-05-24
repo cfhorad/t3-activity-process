@@ -272,6 +272,7 @@ export function ActivityFormModal({
 												<Autocomplete.Popover>
 													<Autocomplete.Filter filter={contains}>
 														<SearchField
+															aria-label="搜尋協同編輯者"
 															autoFocus
 															name="search"
 															variant="secondary"

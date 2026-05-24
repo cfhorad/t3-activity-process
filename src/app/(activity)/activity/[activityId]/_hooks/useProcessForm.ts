@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { api } from "~/trpc/react";
+
 import {
 	type ProcessFormData,
 	processFormSchema,
@@ -13,7 +13,7 @@ export function useProcessForm({
 	initialData,
 	onSubmit,
 	isOpen,
-	activityId,
+	activityId: _activityId,
 }: {
 	initialData?: Partial<
 		ProcessFormData & {
@@ -37,17 +37,6 @@ export function useProcessForm({
 			checkerUserIds: initialData?.checkers?.map((c) => c.userId) ?? [],
 		},
 	});
-
-	const { data: activity } = api.activity.getById.useQuery(
-		{ id: activityId },
-		{ enabled: isOpen },
-	);
-
-	const { data: sheetNames, isLoading: isLoadingSheets } =
-		api.googleSheet.getSheetMetadata.useQuery(
-			{ spreadsheetId: activity?.googleSheetId ?? "" },
-			{ enabled: !!activity?.googleSheetId && isOpen },
-		);
 
 	// Reset state when initialData changes or modal opens
 	useEffect(() => {
@@ -73,6 +62,7 @@ export function useProcessForm({
 
 		onSubmit({
 			...data,
+			sheetName: data.type === "WEB" ? "WEB" : data.sheetName,
 			iframeSrc,
 		});
 	});
@@ -80,8 +70,6 @@ export function useProcessForm({
 	return {
 		form,
 		handleSubmit,
-		sheetNames,
-		isLoadingSheets,
 		selectedType: form.watch("type"),
 	};
 }

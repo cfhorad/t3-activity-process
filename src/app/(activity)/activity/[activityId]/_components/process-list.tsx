@@ -51,6 +51,28 @@ function ProcessInfoModal({
 	process,
 	activity,
 }: ProcessInfoModalProps) {
+	const getTypeLabel = () => {
+		switch (process.type) {
+			case "CHECK":
+				return "報到清單";
+			case "WEB":
+				return "網頁嵌入";
+			case "PROCESS":
+				return "流程處理";
+		}
+	};
+
+	const getTypeColor = () => {
+		switch (process.type) {
+			case "CHECK":
+				return "success";
+			case "WEB":
+				return "warning";
+			case "PROCESS":
+				return "accent";
+		}
+	};
+
 	return (
 		<Modal.Backdrop isOpen={isOpen} onOpenChange={onOpenChange}>
 			<Modal.Container>
@@ -64,26 +86,44 @@ function ProcessInfoModal({
 					</Modal.Header>
 					<Modal.Body className="space-y-4 pb-6">
 						<div className="grid gap-4 rounded-xl bg-surface-secondary p-4 text-sm">
-							<div className="grid grid-cols-2 gap-4">
+							<div className="flex items-center justify-between border-separator border-b pb-2">
+								<span className="font-semibold text-base text-foreground">
+									{process.name}
+								</span>
+								<Chip color={getTypeColor()} size="sm" variant="soft">
+									{getTypeLabel()}
+								</Chip>
+							</div>
+
+							{process.type !== "WEB" && process.sheetName && (
 								<div className="space-y-1">
 									<p className="font-semibold text-muted text-xs">
-										Google 試算表
+										CSV 資料來源
 									</p>
 									<Link
-										className="flex items-center gap-1.5 font-medium text-accent hover:underline"
-										href={`https://docs.google.com/spreadsheets/d/${activity.googleSheetId}`}
+										className="inline-flex items-center gap-1.5 break-all font-medium text-accent text-xs hover:underline"
+										href={process.sheetName}
 										target="_blank"
 									>
-										<ExternalLink className="h-3.5 w-3.5 shrink-0" />
-										開啟連結
+										<ExternalLink className="h-3.5 w-3.5 shrink-0 text-accent" />
+										開啟發布的 CSV 連結
 									</Link>
 								</div>
+							)}
 
+							{process.type === "WEB" && process.iframeSrc && (
 								<div className="space-y-1">
-									<p className="font-semibold text-muted text-xs">分頁名稱</p>
-									<p className="font-medium text-danger">{process.sheetName}</p>
+									<p className="font-semibold text-muted text-xs">嵌入網址</p>
+									<Link
+										className="inline-flex items-center gap-1.5 break-all font-medium text-accent text-xs hover:underline"
+										href={process.iframeSrc}
+										target="_blank"
+									>
+										<ExternalLink className="h-3.5 w-3.5 shrink-0 text-accent" />
+										開啟嵌入網頁
+									</Link>
 								</div>
-							</div>
+							)}
 
 							{process.type === "CHECK" && (
 								<div className="space-y-1.5 border-separator border-t pt-2">
@@ -112,6 +152,15 @@ function ProcessInfoModal({
 											</span>
 										)}
 									</div>
+								</div>
+							)}
+
+							{process.processMemo && (
+								<div className="space-y-1 border-separator border-t pt-2">
+									<p className="font-semibold text-muted text-xs">備註說明</p>
+									<p className="whitespace-pre-wrap text-muted-foreground text-xs leading-relaxed">
+										{process.processMemo}
+									</p>
 								</div>
 							)}
 

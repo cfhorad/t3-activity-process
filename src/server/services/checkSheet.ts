@@ -1,9 +1,7 @@
 import { and, eq, or, type SQL, sql } from "drizzle-orm";
-import { JWT } from "google-auth-library";
-import { GoogleSpreadsheet } from "google-spreadsheet";
-import { env } from "~/env";
 import type { db as database } from "~/server/db";
 import { googleSheetConfig, googleSheetData } from "~/server/db/schema";
+import { parseCSV } from "~/utils/csv";
 
 export type DB = typeof database;
 
@@ -17,56 +15,53 @@ export const checkSheetService = {
 	async syncData(
 		db: DB,
 		processId: number,
-		spreadsheetId: string,
-		sheetName: string,
+		_spreadsheetId: string, // Kept to avoid changing router calling signatures
+		sheetName: string, // This parameter now receives the CSV URL
 	) {
-		const jwt = new JWT({
-			email: env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-			key: env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n"),
-			scopes: ["https://www.googleapis.com/auth/spreadsheets"],
+		const response = await fetch(sheetName, {
+			headers: {
+				"User-Agent":
+					"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+			},
 		});
-
-		const doc = new GoogleSpreadsheet(spreadsheetId, jwt);
-		await doc.loadInfo();
-		const sheet = doc.sheetsByTitle[sheetName];
-
-		if (!sheet) {
+		if (!response.ok) {
+			if (response.status === 401) {
+				throw new Error(
+					"無法取得 CSV 檔案 (401 Unauthorized)。請確認您的 Google 試算表已「發布到網路」（檔案 -> 分享 -> 發布到網路），且沒有受限於您的組織網域限制（例如企業 G Suite 限制外部存取）。",
+				);
+			}
+			if (response.status === 403) {
+				throw new Error(
+					"無法取得 CSV 檔案 (403 Forbidden)。該試算表可能限制了存取權限，請確認試算表已設定為「發布到網路」且所有人皆可讀取。",
+				);
+			}
 			throw new Error(
-				`Sheet named "${sheetName}" not found in the Google Spreadsheet.`,
+				`無法取得 CSV 檔案：${response.statusText} (${response.status})`,
+			);
+		}
+		const csvText = await response.text();
+		const rows = parseCSV(csvText);
+
+		if (rows.length < 3) {
+			throw new Error(
+				"CSV 檔案格式錯誤，必須至少包含 3 列（第 1 列：核取方塊、第 2 列：篩選條件、第 3 列：表頭）。",
 			);
 		}
 
-		if (sheet.rowCount < 3) {
-			throw new Error(
-				"The sheet must have at least 3 rows to be used as a Check-in List (Row 1: Checkbox Flags, Row 2: Filter Flags, Row 3: Headers).",
-			);
-		}
+		const checkboxRow = rows[0] ?? [];
+		const filterableRow = rows[1] ?? [];
+		const headerRow = rows[2] ?? [];
 
-		// Load headers and control rows (Rows 1-3)
-		await sheet.loadCells({
-			startRowIndex: 0,
-			endRowIndex: 3,
-			startColumnIndex: 0,
-			endColumnIndex: sheet.columnCount,
-		});
-
-		// Manually extract headers from Row 3 (index 2)
 		const headers: string[] = [];
 		const checkboxFlags: boolean[] = [];
 		const filterableFlags: boolean[] = [];
 
-		for (let i = 0; i < sheet.columnCount; i++) {
-			const headerValue = sheet.getCell(2, i).value?.toString() ?? "";
-			if (headerValue) {
+		for (let i = 0; i < headerRow.length; i++) {
+			const headerValue = headerRow[i]?.trim() ?? "";
+			if (headerValue !== "") {
 				headers.push(headerValue);
-				// Check Row 1 (index 0) for checkbox flag
-				checkboxFlags.push(
-					sheet.getCell(0, i).value?.toString().toLowerCase() === "true",
-				);
-				// Check Row 2 (index 1) for filterable flag
-				filterableFlags.push(
-					sheet.getCell(1, i).value?.toString().toLowerCase() === "true",
-				);
+				checkboxFlags.push(checkboxRow[i]?.trim().toLowerCase() === "true");
+				filterableFlags.push(filterableRow[i]?.trim().toLowerCase() === "true");
 			} else {
 				// Stop at the first empty header
 				break;
@@ -75,7 +70,7 @@ export const checkSheetService = {
 
 		if (headers.length === 0) {
 			throw new Error(
-				"No headers found in Row 3. Please ensure Row 3 contains your column titles.",
+				"表頭列（第 3 列）沒有任何欄位名稱。請確認第 3 列包含欄位標題。",
 			);
 		}
 
@@ -88,32 +83,25 @@ export const checkSheetService = {
 			displayOrder: index,
 		}));
 
-		// Load all data cells starting from Row 4 (index 3)
-		await sheet.loadCells({
-			startRowIndex: 3,
-			endRowIndex: sheet.rowCount,
-			startColumnIndex: 0,
-			endColumnIndex: headers.length,
-		});
-
 		const dataToSave: {
 			processId: number;
 			data: Record<string, string | boolean>;
 		}[] = [];
+
 		// Iterate through rows starting from index 3 (Row 4)
-		for (let r = 3; r < sheet.rowCount; r++) {
+		for (let r = 3; r < rows.length; r++) {
+			const row = rows[r] ?? [];
 			const filteredObj: Record<string, string | boolean> = {};
 			let hasValue = false;
 
 			headers.forEach((col, cIndex) => {
-				const cell = sheet.getCell(r, cIndex);
 				const isCheckbox = checkboxFlags[cIndex];
-				const val = cell.value ?? "";
+				const val = row[cIndex] ?? "";
 
 				if (val !== "") hasValue = true;
 
 				if (isCheckbox) {
-					const stringVal = val.toString().toLowerCase();
+					const stringVal = val.toLowerCase().trim();
 					filteredObj[col] = stringVal === "true";
 				} else {
 					let finalVal = val.toString();

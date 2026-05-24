@@ -17,7 +17,7 @@ import {
 	TextField,
 	useFilter,
 } from "@heroui/react";
-import { Pencil, Plus, Sheet } from "lucide-react";
+import { Pencil, Plus } from "lucide-react";
 import { useMemo } from "react";
 import { Controller } from "react-hook-form";
 import { ControlledTextField } from "~/app/_components/controlled-text-field";
@@ -57,13 +57,12 @@ export function ProcessFormModal({
 	submitLabel,
 	mode,
 }: ProcessFormModalProps) {
-	const { form, handleSubmit, sheetNames, isLoadingSheets, selectedType } =
-		useProcessForm({
-			initialData,
-			onSubmit,
-			isOpen,
-			activityId,
-		});
+	const { form, handleSubmit, selectedType } = useProcessForm({
+		initialData,
+		onSubmit,
+		isOpen,
+		activityId,
+	});
 
 	const { data: activity } = api.activity.getById.useQuery(
 		{ id: activityId },
@@ -128,45 +127,6 @@ export function ProcessFormModal({
 
 								<Controller
 									control={form.control}
-									name="sheetName"
-									render={({ field, fieldState }) => (
-										<Select
-											isInvalid={!!fieldState.error}
-											isRequired
-											onChange={field.onChange}
-											placeholder={
-												isLoadingSheets ? "載入工作表中..." : "選擇工作表"
-											}
-											value={field.value}
-											variant="secondary"
-										>
-											<Label>Google 試算表分頁名稱</Label>
-											<Select.Trigger>
-												<Select.Value />
-												<Select.Indicator />
-											</Select.Trigger>
-											<Select.Popover>
-												<ListBox>
-													{(sheetNames ?? []).map((name) => (
-														<ListBox.Item id={name} key={name} textValue={name}>
-															<Sheet className="mr-2 h-4 w-4 text-muted-foreground" />
-															{name}
-															<ListBox.ItemIndicator />
-														</ListBox.Item>
-													))}
-												</ListBox>
-											</Select.Popover>
-											{fieldState.error && (
-												<p className="mt-1 text-danger text-xs">
-													{fieldState.error.message}
-												</p>
-											)}
-										</Select>
-									)}
-								/>
-
-								<Controller
-									control={form.control}
 									name="type"
 									render={({ field }) => (
 										<Select
@@ -196,6 +156,15 @@ export function ProcessFormModal({
 										</Select>
 									)}
 								/>
+
+								{selectedType !== "WEB" && (
+									<ControlledTextField
+										control={form.control}
+										label="發布到網路的 CSV 網址"
+										name="sheetName"
+										placeholder="https://docs.google.com/spreadsheets/d/e/.../pub?gid=...&single=true&output=csv"
+									/>
+								)}
 
 								{selectedType === "CHECK" && (
 									<Controller
@@ -257,6 +226,7 @@ export function ProcessFormModal({
 													<Autocomplete.Popover>
 														<Autocomplete.Filter filter={contains}>
 															<SearchField
+																aria-label="搜尋檢核人員"
 																autoFocus
 																name="search"
 																variant="secondary"
@@ -345,7 +315,9 @@ export function ProcessFormModal({
 								取消
 							</Button>
 							<Button
-								isDisabled={!form.watch("sheetName")}
+								isDisabled={
+									selectedType !== "WEB" ? !form.watch("sheetName") : false
+								}
 								isPending={isPending}
 								type="submit"
 							>

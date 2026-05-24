@@ -110,10 +110,4 @@ export const googleSheetRouter = createTRPCRouter({
 				input.processId,
 			);
 		}),
-
-	getSheetMetadata: managerProcedure
-		.input(z.object({ spreadsheetId: z.string().min(1) }))
-		.query(async ({ input }) => {
-			return googleSheetService.getSheetMetadata(input.spreadsheetId);
-		}),
 });
