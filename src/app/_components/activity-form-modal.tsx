@@ -82,13 +82,15 @@ export function ActivityFormModal({
 
 	const selectedAreaId = form.watch("areaId");
 
-	// Filter users to only those approved in the selected activity area
+	// Filter users to only those approved in the selected activity area and having active global status
 	const filteredUsersList = useMemo(() => {
 		if (!usersList || !selectedAreaId) return [];
-		return usersList.filter((u) =>
-			u.areas.some(
-				(ua) => ua.areaId === selectedAreaId && ua.status === "approved",
-			),
+		return usersList.filter(
+			(u) =>
+				u.status === "active" &&
+				u.areas.some(
+					(ua) => ua.areaId === selectedAreaId && ua.status === "approved",
+				),
 		);
 	}, [usersList, selectedAreaId]);
 

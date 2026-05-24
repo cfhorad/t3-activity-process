@@ -1,6 +1,6 @@
 "use client";
 
-import { Modal, Spinner } from "@heroui/react";
+import { Chip, Modal, Spinner } from "@heroui/react";
 import {
 	Calendar,
 	ExternalLink,
@@ -9,6 +9,7 @@ import {
 	LayoutGrid,
 	MapPin,
 	User as UserIcon,
+	Users,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -26,7 +27,10 @@ interface ExtendedActivity extends Activity {
 	creator?: { name: string | null } | null;
 	processes?: { id: number }[];
 	area?: { id: string; name: string } | null;
-	editors?: { userId: string }[];
+	editors?: {
+		userId: string;
+		user?: { name: string | null; email: string | null } | null;
+	}[];
 }
 
 // ─── SUB-COMPONENTS ───────────────────────────────────────────
@@ -60,15 +64,15 @@ function ActivityInfoModal({
 						<div className="grid gap-4 rounded-xl bg-surface-secondary p-4 text-sm">
 							<div className="space-y-1">
 								<p className="font-semibold text-muted text-xs">
-									Google 試算表 ID
+									Google 試算表
 								</p>
 								<Link
-									className="flex items-center gap-1.5 break-all font-mono text-accent hover:underline"
+									className="flex items-center gap-1.5 font-medium text-accent hover:underline"
 									href={`https://docs.google.com/spreadsheets/d/${activity.googleSheetId}`}
 									target="_blank"
 								>
 									<ExternalLink className="h-3.5 w-3.5 shrink-0" />
-									{activity.googleSheetId}
+									開啟連結
 								</Link>
 							</div>
 
@@ -81,12 +85,10 @@ function ActivityInfoModal({
 									</div>
 								</div>
 								<div className="space-y-1">
-									<p className="font-semibold text-muted text-xs">建立日期</p>
+									<p className="font-semibold text-muted text-xs">活動日期</p>
 									<div className="flex items-center gap-1.5">
 										<Calendar className="h-3.5 w-3.5 text-muted" />
-										<span>
-											{new Date(activity.createdAt).toLocaleDateString("zh-TW")}
-										</span>
+										<span>{activity.activityDate}</span>
 									</div>
 								</div>
 							</div>
@@ -111,6 +113,32 @@ function ActivityInfoModal({
 											{activity.processes?.length ?? 0} 個項目
 										</span>
 									</div>
+								</div>
+							</div>
+
+							<div className="space-y-1.5 border-separator border-t pt-2">
+								<p className="flex items-center gap-1.5 font-semibold text-muted text-xs">
+									<Users className="h-3.5 w-3.5 text-muted" />
+									協同編輯者
+								</p>
+								<div className="flex flex-wrap gap-1.5">
+									{activity.editors && activity.editors.length > 0 ? (
+										activity.editors.map((editor) => (
+											<Chip
+												className="font-medium"
+												color="accent"
+												key={editor.userId}
+												size="sm"
+												variant="soft"
+											>
+												{editor.user?.name ?? editor.user?.email ?? "協同編輯"}
+											</Chip>
+										))
+									) : (
+										<span className="text-muted-foreground text-xs italic">
+											尚未設定（僅限建立者與管理員可編輯）
+										</span>
+									)}
 								</div>
 							</div>
 						</div>

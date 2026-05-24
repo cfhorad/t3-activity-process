@@ -50,56 +50,62 @@ function StatsCards({
 	areasCount,
 }: StatsCardsProps) {
 	return (
-		<div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-			<Card className="border border-border/40 bg-linear-to-br from-primary/10 via-background to-background p-5 shadow-sm">
+		<div className="grid grid-cols-3 gap-2 md:gap-4">
+			<Card className="border border-border/40 bg-linear-to-br from-danger/10 via-background to-background p-3 shadow-sm">
 				<div className="flex items-center justify-between">
 					<div>
-						<p className="font-semibold text-muted text-xs">待審核分會申請</p>
-						<h3 className="mt-2 font-black text-3xl text-primary">
+						<p className="font-semibold text-[10px] text-muted md:text-xs">
+							待審核分會
+						</p>
+						<h3 className="mt-1 font-black text-danger text-xl md:text-2xl">
 							{loadingApprovals ? (
-								<RefreshCw className="size-6 animate-spin" />
+								<RefreshCw className="size-5 animate-spin" />
 							) : (
 								pendingApprovalsCount
 							)}
 						</h3>
 					</div>
-					<div className="rounded-2xl bg-primary/20 p-3 text-primary">
-						<ShieldAlert className="size-6" />
+					<div className="rounded-xl bg-danger-soft-hover p-2 text-danger">
+						<ShieldAlert className="size-4 md:size-5" />
 					</div>
 				</div>
 			</Card>
 
-			<Card className="border border-border/40 bg-linear-to-br from-success/10 via-background to-background p-5 shadow-sm">
+			<Card className="border border-border/40 bg-linear-to-br from-success/10 via-background to-background p-3 shadow-sm">
 				<div className="flex items-center justify-between">
 					<div>
-						<p className="font-semibold text-muted text-xs">系統總成員數</p>
-						<h3 className="mt-2 font-black text-3xl text-success">
+						<p className="font-semibold text-[10px] text-muted md:text-xs">
+							總成員數
+						</p>
+						<h3 className="mt-1 font-black text-success text-xl md:text-2xl">
 							{loadingUsers ? (
-								<RefreshCw className="size-6 animate-spin" />
+								<RefreshCw className="size-5 animate-spin" />
 							) : (
 								usersCount
 							)}
 						</h3>
 					</div>
-					<div className="rounded-2xl bg-success-soft-hover p-3 text-success">
-						<Users className="size-6" />
+					<div className="rounded-xl bg-success-soft-hover p-2 text-success">
+						<Users className="size-4 md:size-5" />
 					</div>
 				</div>
 			</Card>
 
-			<Card className="border border-border/40 bg-linear-to-br from-secondary/10 via-background to-background p-5 shadow-sm">
+			<Card className="border border-border/40 bg-linear-to-br from-warning/10 via-background to-background p-3 shadow-sm">
 				<div className="flex items-center justify-between">
 					<div>
-						<p className="font-semibold text-muted text-xs">營運分會總數</p>
-						<h3 className="mt-2 font-black text-3xl text-secondary">
+						<p className="font-semibold text-[10px] text-muted md:text-xs">
+							分會總數
+						</p>
+						<h3 className="mt-1 font-black text-warning text-xl md:text-2xl">
 							{loadingAreas ? (
-								<RefreshCw className="size-6 animate-spin" />
+								<RefreshCw className="size-5 animate-spin" />
 							) : (
 								areasCount
 							)}
 						</h3>
 					</div>
-					<div className="rounded-2xl bg-secondary/20 p-3 text-secondary">
+					<div className="rounded-2xl bg-warning-soft-hover p-3 text-warning">
 						<Globe className="size-6" />
 					</div>
 				</div>
@@ -269,7 +275,10 @@ export function AdminDashboardClient({
 				>
 					<Tabs.ListContainer>
 						<Tabs.List className="border-separator border-b pb-0 *:data-[selected=true]:text-primary-foreground">
-							<Tabs.Tab className="flex items-center gap-2" id="pending">
+							<Tabs.Tab
+								className="flex items-center gap-2 whitespace-nowrap"
+								id="pending"
+							>
 								<UserCheck className="size-4" />
 								審核申請
 								{pendingApprovals && pendingApprovals.length > 0 && (
@@ -279,12 +288,18 @@ export function AdminDashboardClient({
 								)}
 								<Tabs.Indicator />
 							</Tabs.Tab>
-							<Tabs.Tab className="flex items-center gap-2" id="users">
+							<Tabs.Tab
+								className="flex items-center gap-2 whitespace-nowrap"
+								id="users"
+							>
 								<Users className="size-4" />
 								成員管理
 								<Tabs.Indicator />
 							</Tabs.Tab>
-							<Tabs.Tab className="flex items-center gap-2" id="areas">
+							<Tabs.Tab
+								className="flex items-center gap-2 whitespace-nowrap"
+								id="areas"
+							>
 								<Building className="size-4" />
 								分會管理
 								<Tabs.Indicator />

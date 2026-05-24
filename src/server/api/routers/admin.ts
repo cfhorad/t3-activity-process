@@ -20,7 +20,7 @@ export const adminRouter = createTRPCRouter({
 					inArray(userAreas.areaId, areaIds),
 				);
 
-		return await ctx.db.query.userAreas.findMany({
+		const list = await ctx.db.query.userAreas.findMany({
 			where,
 			with: {
 				user: true,
@@ -28,6 +28,15 @@ export const adminRouter = createTRPCRouter({
 			},
 			orderBy: (ua, { desc }) => [desc(ua.approvedAt)],
 		});
+
+		// Exclude users whose account status is suspended and sort by user.name
+		return list
+			.filter((ua) => ua.user?.status !== "suspended")
+			.sort((a, b) => {
+				const nameA = a.user?.name ?? "";
+				const nameB = b.user?.name ?? "";
+				return nameA.localeCompare(nameB, "zh-Hant");
+			});
 	}),
 
 	// Approve an area application
@@ -135,7 +144,7 @@ export const adminRouter = createTRPCRouter({
 			return { success: true };
 		}),
 
-	// Get users with their area relationships
+	// Get users with their area relationships (sorted by name)
 	getUsers: managerProcedure.query(async ({ ctx }) => {
 		const { areaIds } = ctx.session.user;
 
@@ -150,13 +159,18 @@ export const adminRouter = createTRPCRouter({
 		});
 
 		// Managers can only see users that are in their areas
-		if (areaIds.includes("ALL")) {
-			return usersWithAreas;
-		}
+		const filtered = areaIds.includes("ALL")
+			? usersWithAreas
+			: usersWithAreas.filter((u) =>
+					u.areas.some((ua) => areaIds.includes(ua.areaId)),
+				);
 
-		return usersWithAreas.filter((u) =>
-			u.areas.some((ua) => areaIds.includes(ua.areaId)),
-		);
+		// Sort by name alphabetically
+		return filtered.sort((a, b) => {
+			const nameA = a.name ?? "";
+			const nameB = b.name ?? "";
+			return nameA.localeCompare(nameB, "zh-Hant");
+		});
 	}),
 
 	// Update user role, status, and approved areas (ADMIN/MANAGER can adjust users in their scope)
@@ -218,74 +232,56 @@ export const adminRouter = createTRPCRouter({
 					})
 					.where(eq(user.id, input.userId));
 
-				// 3. Sync areas: delete relations no longer in the list
-				if (input.areaIds.length > 0) {
-					// Delete areas that are not in the new approved list under control
-					const areasToDelete = targetUser.areas
-						.map((a) => a.areaId)
-						.filter((id) => !input.areaIds.includes(id))
-						.filter((id) => isSuperAdmin || approverAreaIds.includes(id));
+				// 3. Sync areas: delete relations no longer in the list (only those that were previously approved)
+				const areasToDelete = targetUser.areas
+					.filter((a) => a.status === "approved")
+					.map((a) => a.areaId)
+					.filter((id) => !input.areaIds.includes(id))
+					.filter((id) => isSuperAdmin || approverAreaIds.includes(id));
 
-					if (areasToDelete.length > 0) {
-						await tx
-							.delete(userAreas)
-							.where(
-								and(
-									eq(userAreas.userId, input.userId),
-									inArray(userAreas.areaId, areasToDelete),
-								),
-							);
-					}
-
-					// 4. Upsert newly selected areas under control
-					const areasToAdd = input.areaIds.filter(
-						(id) => isSuperAdmin || approverAreaIds.includes(id),
-					);
-
-					const targetAreaStatus =
-						resolvedStatus === "pending"
-							? ("pending" as const)
-							: ("approved" as const);
-
-					if (areasToAdd.length > 0) {
-						await tx
-							.insert(userAreas)
-							.values(
-								areasToAdd.map((areaId) => ({
-									userId: input.userId,
-									areaId,
-									status: targetAreaStatus,
-									approvedById:
-										targetAreaStatus === "approved"
-											? ctx.session.user.id
-											: null,
-									approvedAt:
-										targetAreaStatus === "approved" ? new Date() : null,
-								})),
-							)
-							.onConflictDoUpdate({
-								target: [userAreas.userId, userAreas.areaId],
-								set: {
-									status: targetAreaStatus,
-									approvedById:
-										targetAreaStatus === "approved"
-											? ctx.session.user.id
-											: null,
-									approvedAt:
-										targetAreaStatus === "approved" ? new Date() : null,
-								},
-							});
-					}
-				} else {
-					// Delete all approved relations under control
-					const deleteCondition = isSuperAdmin
-						? eq(userAreas.userId, input.userId)
-						: and(
+				if (areasToDelete.length > 0) {
+					await tx
+						.delete(userAreas)
+						.where(
+							and(
 								eq(userAreas.userId, input.userId),
-								inArray(userAreas.areaId, approverAreaIds),
-							);
+								inArray(userAreas.areaId, areasToDelete),
+							),
+						);
+				}
 
-					await tx.delete(userAreas).where(deleteCondition);
+				// 4. Upsert newly selected areas under control
+				const areasToAdd = input.areaIds.filter(
+					(id) => isSuperAdmin || approverAreaIds.includes(id),
+				);
+
+				const targetAreaStatus =
+					resolvedStatus === "pending"
+						? ("pending" as const)
+						: ("approved" as const);
+
+				if (areasToAdd.length > 0) {
+					await tx
+						.insert(userAreas)
+						.values(
+							areasToAdd.map((areaId) => ({
+								userId: input.userId,
+								areaId,
+								status: targetAreaStatus,
+								approvedById:
+									targetAreaStatus === "approved" ? ctx.session.user.id : null,
+								approvedAt: targetAreaStatus === "approved" ? new Date() : null,
+							})),
+						)
+						.onConflictDoUpdate({
+							target: [userAreas.userId, userAreas.areaId],
+							set: {
+								status: targetAreaStatus,
+								approvedById:
+									targetAreaStatus === "approved" ? ctx.session.user.id : null,
+								approvedAt: targetAreaStatus === "approved" ? new Date() : null,
+							},
+						});
 				}
 
 				// 5. Force all areas to pending if global status was resolved to pending
@@ -298,6 +294,18 @@ export const adminRouter = createTRPCRouter({
 							approvedAt: null,
 						})
 						.where(eq(userAreas.userId, input.userId));
+				}
+
+				// 6. Delete all pending area applications if global status was resolved to suspended
+				if (resolvedStatus === "suspended") {
+					await tx
+						.delete(userAreas)
+						.where(
+							and(
+								eq(userAreas.userId, input.userId),
+								eq(userAreas.status, "pending"),
+							),
+						);
 				}
 			});
 

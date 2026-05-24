@@ -19,6 +19,7 @@ import {
 	Clock,
 	Info,
 	Mail,
+	MapPin,
 	Plus,
 	Save,
 	Shield,
@@ -27,6 +28,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { useAuth } from "~/app/_hooks/useAuth";
 import type { User as AuthUser } from "~/server/better-auth/config";
 import { api } from "~/trpc/react";
 
@@ -67,13 +69,15 @@ export function ProfileClient({ user }: ProfileClientProps) {
 		},
 	});
 
+	const { isAdmin, isSuperAdmin, approvedAreaIds } = useAuth();
+
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!name.trim()) {
 			toast.danger("姓名不能為空！");
 			return;
 		}
-		if (selectedAreaIds.length === 0) {
+		if (!isAdmin && selectedAreaIds.length === 0) {
 			toast.danger("請至少選擇一個營運分會！");
 			return;
 		}
@@ -87,10 +91,12 @@ export function ProfileClient({ user }: ProfileClientProps) {
 
 	const roleLabel = useMemo(() => {
 		const role = (user as { role?: string }).role?.toUpperCase();
-		if (role === "ADMIN") return "超級管理員 (ADMIN)";
-		if (role === "MANAGER") return "經理角色 (MANAGER)";
-		return "一般檢視者 (VIEWER)";
-	}, [user]);
+		if (role === "ADMIN") {
+			return isSuperAdmin ? "超級管理員" : "管理員";
+		}
+		if (role === "MANAGER") return "組長";
+		return "一般檢視者";
+	}, [user, isSuperAdmin]);
 
 	const roleColor = useMemo(() => {
 		const role = (user as { role?: string }).role?.toUpperCase();
@@ -129,6 +135,26 @@ export function ProfileClient({ user }: ProfileClientProps) {
 							</Chip>
 						</div>
 						<p className="truncate text-muted text-xs">{user.email}</p>
+						{approvedAreaIds.length > 0 && (
+							<div className="flex flex-wrap items-center gap-1.5 pt-1">
+								<MapPin className="size-3.5 shrink-0 text-muted" />
+								{approvedAreaIds.map((areaId) => {
+									const areaName =
+										publicAreas?.find((a) => a.id === areaId)?.name ?? areaId;
+									return (
+										<Chip
+											className="font-semibold"
+											color="success"
+											key={areaId}
+											size="sm"
+											variant="soft"
+										>
+											{areaName}
+										</Chip>
+									);
+								})}
+							</div>
+						)}
 					</div>
 				</div>
 			</Card>
@@ -191,157 +217,163 @@ export function ProfileClient({ user }: ProfileClientProps) {
 						</div>
 
 						{/* Editable Area Applications */}
-						<div className="flex flex-col gap-1.5">
-							<Select
-								aria-label="所屬營運分會"
-								onChange={(keys) => {
-									const keysArray = Array.isArray(keys)
-										? keys
-										: keys
-											? [keys]
-											: [];
-									setSelectedAreaIds(keysArray.map(String));
-								}}
-								placeholder="選擇所屬分會"
-								selectionMode="multiple"
-								value={selectedAreaIds}
-								variant="secondary"
-							>
-								<Label className="flex items-center gap-1.5 font-medium text-foreground text-sm">
-									所屬營運分會 (可複選)
-								</Label>
-								<Select.Trigger>
-									<Select.Value>
-										{({ state }) => {
-											if (state.selectedItems.length === 0) {
-												return "選擇所屬分會";
-											}
-											return state.selectedItems
-												.map((item) => item.textValue)
-												.join("、");
-										}}
-									</Select.Value>
-									<Select.Indicator />
-								</Select.Trigger>
-								<Select.Popover>
-									<ListBox selectionMode="multiple">
-										{(publicAreas ?? []).map((area) => (
-											<ListBox.Item
-												id={area.id}
-												key={area.id}
-												textValue={area.name}
-											>
-												<span className="font-medium text-sm">{area.name}</span>
-												<ListBox.ItemIndicator />
-											</ListBox.Item>
-										))}
-									</ListBox>
-								</Select.Popover>
-							</Select>
-						</div>
+						{!isAdmin && (
+							<div className="flex flex-col gap-1.5">
+								<Select
+									aria-label="所屬營運分會"
+									onChange={(keys) => {
+										const keysArray = Array.isArray(keys)
+											? keys
+											: keys
+												? [keys]
+												: [];
+										setSelectedAreaIds(keysArray.map(String));
+									}}
+									placeholder="選擇所屬分會"
+									selectionMode="multiple"
+									value={selectedAreaIds}
+									variant="secondary"
+								>
+									<Label className="flex items-center gap-1.5 font-medium text-foreground text-sm">
+										所屬營運分會 (可複選)
+									</Label>
+									<Select.Trigger>
+										<Select.Value>
+											{({ state }) => {
+												if (state.selectedItems.length === 0) {
+													return "選擇所屬分會";
+												}
+												return state.selectedItems
+													.map((item) => item.textValue)
+													.join("、");
+											}}
+										</Select.Value>
+										<Select.Indicator />
+									</Select.Trigger>
+									<Select.Popover>
+										<ListBox selectionMode="multiple">
+											{(publicAreas ?? []).map((area) => (
+												<ListBox.Item
+													id={area.id}
+													key={area.id}
+													textValue={area.name}
+												>
+													<span className="font-medium text-sm">
+														{area.name}
+													</span>
+													<ListBox.ItemIndicator />
+												</ListBox.Item>
+											))}
+										</ListBox>
+									</Select.Popover>
+								</Select>
+							</div>
+						)}
 					</div>
 
 					{/* Live Area Status Section */}
-					<div className="space-y-2 border-separator/20 border-t pt-4">
-						<Label className="flex items-center gap-1.5 font-medium text-foreground text-sm">
-							<Info className="size-4 text-muted" />
-							目前分會權限審核狀態
-						</Label>
-						<div className="divide-y divide-separator/20 rounded-2xl border border-border/40 bg-background/40">
-							{selectedAreaIds.map((areaId) => {
-								const areaObj = publicAreas?.find((a) => a.id === areaId);
-								const appObj = myApplications?.find(
-									(app) => app.areaId === areaId,
-								);
+					{!isAdmin && (
+						<div className="space-y-2 border-separator/20 border-t pt-4">
+							<Label className="flex items-center gap-1.5 font-medium text-foreground text-sm">
+								<Info className="size-4 text-muted" />
+								目前分會權限審核狀態
+							</Label>
+							<div className="divide-y divide-separator/20 rounded-2xl border border-border/40 bg-background/40">
+								{selectedAreaIds.map((areaId) => {
+									const areaObj = publicAreas?.find((a) => a.id === areaId);
+									const appObj = myApplications?.find(
+										(app) => app.areaId === areaId,
+									);
 
-								const status = appObj?.status ?? "new";
+									const status = appObj?.status ?? "new";
 
-								return (
-									<div
-										className="flex flex-row flex-nowrap items-center justify-between gap-3 p-3"
-										key={areaId}
-									>
-										<div className="flex min-w-0 items-center gap-2">
-											{status === "approved" && (
-												<div className="shrink-0 rounded-full bg-success-soft/20 p-2 text-success">
-													<CheckCircle2 className="size-4" />
+									return (
+										<div
+											className="flex flex-row flex-nowrap items-center justify-between gap-3 p-3"
+											key={areaId}
+										>
+											<div className="flex min-w-0 items-center gap-2">
+												{status === "approved" && (
+													<div className="shrink-0 rounded-full bg-success-soft/20 p-2 text-success">
+														<CheckCircle2 className="size-4" />
+													</div>
+												)}
+												{status === "pending" && (
+													<div className="shrink-0 animate-pulse rounded-full bg-warning-soft/20 p-2 text-warning">
+														<Clock className="size-4" />
+													</div>
+												)}
+												{status === "rejected" && (
+													<div className="shrink-0 rounded-full bg-danger-soft/20 p-2 text-danger">
+														<XCircle className="size-4" />
+													</div>
+												)}
+												{status === "new" && (
+													<div className="shrink-0 rounded-full bg-primary-soft/20 p-2 text-primary">
+														<Plus className="size-4" />
+													</div>
+												)}
+												<div className="min-w-0">
+													<h3 className="truncate font-bold text-foreground text-sm">
+														{areaObj?.name ?? areaId}
+													</h3>
+													{status === "rejected" && appObj?.rejectedReason && (
+														<p className="mt-0.5 truncate text-danger text-xs">
+															退回原因: {appObj.rejectedReason}
+														</p>
+													)}
 												</div>
-											)}
-											{status === "pending" && (
-												<div className="shrink-0 animate-pulse rounded-full bg-warning-soft/20 p-2 text-warning">
-													<Clock className="size-4" />
-												</div>
-											)}
-											{status === "rejected" && (
-												<div className="shrink-0 rounded-full bg-danger-soft/20 p-2 text-danger">
-													<XCircle className="size-4" />
-												</div>
-											)}
-											{status === "new" && (
-												<div className="shrink-0 rounded-full bg-primary-soft/20 p-2 text-primary">
-													<Plus className="size-4" />
-												</div>
-											)}
-											<div className="min-w-0">
-												<h3 className="truncate font-bold text-foreground text-sm">
-													{areaObj?.name ?? areaId}
-												</h3>
-												{status === "rejected" && appObj?.rejectedReason && (
-													<p className="mt-0.5 truncate text-danger text-xs">
-														退回原因: {appObj.rejectedReason}
-													</p>
+											</div>
+
+											<div className="shrink-0">
+												{status === "approved" && (
+													<Chip
+														className="font-semibold"
+														color="success"
+														size="sm"
+													>
+														已開通
+													</Chip>
+												)}
+												{status === "pending" && (
+													<Chip
+														className="font-semibold"
+														color="warning"
+														size="sm"
+													>
+														審核中
+													</Chip>
+												)}
+												{status === "rejected" && (
+													<Chip
+														className="font-semibold"
+														color="danger"
+														size="sm"
+													>
+														被退回
+													</Chip>
+												)}
+												{status === "new" && (
+													<Chip
+														className="animate-pulse font-semibold"
+														color="accent"
+														size="sm"
+													>
+														待送出申請
+													</Chip>
 												)}
 											</div>
 										</div>
-
-										<div className="shrink-0">
-											{status === "approved" && (
-												<Chip
-													className="font-semibold"
-													color="success"
-													size="sm"
-												>
-													已開通
-												</Chip>
-											)}
-											{status === "pending" && (
-												<Chip
-													className="font-semibold"
-													color="warning"
-													size="sm"
-												>
-													審核中
-												</Chip>
-											)}
-											{status === "rejected" && (
-												<Chip
-													className="font-semibold"
-													color="danger"
-													size="sm"
-												>
-													被退回
-												</Chip>
-											)}
-											{status === "new" && (
-												<Chip
-													className="animate-pulse font-semibold"
-													color="accent"
-													size="sm"
-												>
-													待送出申請
-												</Chip>
-											)}
-										</div>
+									);
+								})}
+								{selectedAreaIds.length === 0 && (
+									<div className="p-4 text-center text-muted text-xs">
+										無已選分會，請在上方選擇。
 									</div>
-								);
-							})}
-							{selectedAreaIds.length === 0 && (
-								<div className="p-4 text-center text-muted text-xs">
-									無已選分會，請在上方選擇。
-								</div>
-							)}
+								)}
+							</div>
 						</div>
-					</div>
+					)}
 
 					{/* Form Actions */}
 					<div className="flex gap-3 border-separator/20 border-t pt-4">
@@ -351,11 +383,11 @@ export function ProfileClient({ user }: ProfileClientProps) {
 							variant="secondary"
 						>
 							<ArrowLeft className="size-4" />
-							返回儀表板
+							返回活動管理
 						</Button>
 						<Button
 							className="flex flex-1 items-center gap-1.5 font-bold text-white"
-							isDisabled={selectedAreaIds.length === 0}
+							isDisabled={!isAdmin && selectedAreaIds.length === 0}
 							isPending={updateProfileMutation.isPending}
 							type="submit"
 							variant="primary"

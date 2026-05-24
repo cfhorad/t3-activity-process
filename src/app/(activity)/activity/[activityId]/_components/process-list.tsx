@@ -7,6 +7,7 @@ import {
 	Info,
 	TableProperties,
 	User as UserIcon,
+	Users,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -26,7 +27,10 @@ interface ExtendedActivity extends Activity {
 }
 
 interface ExtendedProcess extends Process {
-	checkers?: { userId: string }[];
+	checkers?: {
+		userId: string;
+		user?: { name: string | null; email: string | null } | null;
+	}[];
 }
 
 // ─── SUB-COMPONENTS ───────────────────────────────────────────
@@ -37,7 +41,7 @@ interface ExtendedProcess extends Process {
 interface ProcessInfoModalProps {
 	isOpen: boolean;
 	onOpenChange: (open: boolean) => void;
-	process: Pick<Process, "sheetName">;
+	process: ExtendedProcess;
 	activity: ExtendedActivity;
 }
 
@@ -60,26 +64,56 @@ function ProcessInfoModal({
 					</Modal.Header>
 					<Modal.Body className="space-y-4 pb-6">
 						<div className="grid gap-4 rounded-xl bg-surface-secondary p-4 text-sm">
-							<div className="space-y-1">
-								<p className="font-semibold text-muted text-xs">
-									Google 試算表 ID
-								</p>
-								<Link
-									className="flex items-center gap-1.5 break-all font-mono text-accent hover:underline"
-									href={`https://docs.google.com/spreadsheets/d/${activity.googleSheetId}`}
-									target="_blank"
-								>
-									<ExternalLink className="h-3.5 w-3.5 shrink-0" />
-									{activity.googleSheetId}
-								</Link>
+							<div className="grid grid-cols-2 gap-4">
+								<div className="space-y-1">
+									<p className="font-semibold text-muted text-xs">
+										Google 試算表
+									</p>
+									<Link
+										className="flex items-center gap-1.5 font-medium text-accent hover:underline"
+										href={`https://docs.google.com/spreadsheets/d/${activity.googleSheetId}`}
+										target="_blank"
+									>
+										<ExternalLink className="h-3.5 w-3.5 shrink-0" />
+										開啟連結
+									</Link>
+								</div>
+
+								<div className="space-y-1">
+									<p className="font-semibold text-muted text-xs">分頁名稱</p>
+									<p className="font-medium text-danger">{process.sheetName}</p>
+								</div>
 							</div>
 
-							<div className="space-y-1">
-								<p className="font-semibold text-muted text-xs">
-									試算表分頁名稱 (Sheet Name)
-								</p>
-								<p className="font-medium text-danger">{process.sheetName}</p>
-							</div>
+							{process.type === "CHECK" && (
+								<div className="space-y-1.5 border-separator border-t pt-2">
+									<p className="flex items-center gap-1.5 font-semibold text-muted text-xs">
+										<Users className="h-3.5 w-3.5 text-muted" />
+										檢核人員
+									</p>
+									<div className="flex flex-wrap gap-1.5">
+										{process.checkers && process.checkers.length > 0 ? (
+											process.checkers.map((checker) => (
+												<Chip
+													className="font-medium"
+													color="success"
+													key={checker.userId}
+													size="sm"
+													variant="soft"
+												>
+													{checker.user?.name ??
+														checker.user?.email ??
+														"檢核人員"}
+												</Chip>
+											))
+										) : (
+											<span className="text-muted-foreground text-xs italic">
+												尚未設定檢核人員
+											</span>
+										)}
+									</div>
+								</div>
+							)}
 
 							<div className="grid grid-cols-2 gap-4 border-separator border-t pt-2">
 								<div className="space-y-1">
@@ -90,12 +124,10 @@ function ProcessInfoModal({
 									</div>
 								</div>
 								<div className="space-y-1">
-									<p className="font-semibold text-muted text-xs">建立日期</p>
+									<p className="font-semibold text-muted text-xs">執行日期</p>
 									<div className="flex items-center gap-1.5">
 										<Calendar className="h-3.5 w-3.5 text-muted" />
-										<span>
-											{new Date(activity.createdAt).toLocaleDateString()}
-										</span>
+										<span>{process.processDate || "未設定"}</span>
 									</div>
 								</div>
 							</div>

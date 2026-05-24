@@ -78,10 +78,12 @@ export function ProcessFormModal({
 
 	const filteredUsersList = useMemo(() => {
 		if (!usersList || !activity?.areaId) return [];
-		return usersList.filter((u) =>
-			u.areas.some(
-				(ua) => ua.areaId === activity.areaId && ua.status === "approved",
-			),
+		return usersList.filter(
+			(u) =>
+				u.status === "active" &&
+				u.areas.some(
+					(ua) => ua.areaId === activity.areaId && ua.status === "approved",
+				),
 		);
 	}, [usersList, activity?.areaId]);
 

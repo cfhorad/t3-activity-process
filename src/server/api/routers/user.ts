@@ -118,12 +118,20 @@ export const userRouter = createTRPCRouter({
 		.input(
 			z.object({
 				name: z.string().min(1, "姓名不能為空"),
-				areaIds: z.array(z.string()).min(1, "請至少選擇一個分會"),
+				areaIds: z.array(z.string()),
 			}),
 		)
 		.mutation(async ({ ctx, input }) => {
 			const userId = ctx.session.user.id;
+			const isSuperAdmin = ctx.session.user.role === "ADMIN";
 			const targetAreaIds = input.areaIds;
+
+			if (!isSuperAdmin && targetAreaIds.length === 0) {
+				throw new TRPCError({
+					code: "BAD_REQUEST",
+					message: "請至少選擇一個分會",
+				});
+			}
 
 			await ctx.db.transaction(async (tx) => {
 				// 1. Update name
@@ -132,34 +140,40 @@ export const userRouter = createTRPCRouter({
 					.set({ name: input.name, updatedAt: new Date() })
 					.where(eq(user.id, userId));
 
-				// 2. Synchronize area applications:
-				// - Delete applications that are NOT in targetAreaIds
-				await tx
-					.delete(userAreas)
-					.where(
-						and(
-							eq(userAreas.userId, userId),
-							notInArray(userAreas.areaId, targetAreaIds),
-						),
-					);
+				// 2. Synchronize area applications if not admin:
+				if (!isSuperAdmin) {
+					// - Delete applications that are NOT in targetAreaIds
+					if (targetAreaIds.length > 0) {
+						await tx
+							.delete(userAreas)
+							.where(
+								and(
+									eq(userAreas.userId, userId),
+									notInArray(userAreas.areaId, targetAreaIds),
+								),
+							);
+					} else {
+						await tx.delete(userAreas).where(eq(userAreas.userId, userId));
+					}
 
-				// - Insert new applications that don't exist yet as pending
-				const existing = await tx
-					.select()
-					.from(userAreas)
-					.where(eq(userAreas.userId, userId));
+					// - Insert new applications that don't exist yet as pending
+					const existing = await tx
+						.select()
+						.from(userAreas)
+						.where(eq(userAreas.userId, userId));
 
-				const existingSet = new Set(existing.map((e) => e.areaId));
-				const toInsert = targetAreaIds.filter((id) => !existingSet.has(id));
+					const existingSet = new Set(existing.map((e) => e.areaId));
+					const toInsert = targetAreaIds.filter((id) => !existingSet.has(id));
 
-				if (toInsert.length > 0) {
-					await tx.insert(userAreas).values(
-						toInsert.map((areaId) => ({
-							userId,
-							areaId,
-							status: "pending" as const,
-						})),
-					);
+					if (toInsert.length > 0) {
+						await tx.insert(userAreas).values(
+							toInsert.map((areaId) => ({
+								userId,
+								areaId,
+								status: "pending" as const,
+							})),
+						);
+					}
 				}
 			});
 		}),

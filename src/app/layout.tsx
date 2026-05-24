@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { getSession } from "~/server/better-auth/server";
 import { TRPCReactProvider } from "~/trpc/react";
-import { NavbarComponent } from "./_components/navbar";
+import { NavbarClient } from "./_components/navbar-client";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
@@ -27,7 +27,7 @@ export default async function RootLayout({
 				<TRPCReactProvider>
 					<Providers>
 						<div className="relative flex h-screen flex-col overflow-hidden">
-							<NavbarComponent session={session} />
+							<NavbarClient session={session} />
 							<main className="flex-1 overflow-auto">{children}</main>
 						</div>
 					</Providers>

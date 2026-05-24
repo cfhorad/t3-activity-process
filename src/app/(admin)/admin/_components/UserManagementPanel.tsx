@@ -139,7 +139,7 @@ export function UserManagementPanel({
 
 										return (
 											<Table.Row id={userItem.id} key={userItem.id}>
-												<Table.Cell>
+												<Table.Cell className="whitespace-nowrap">
 													<div className="flex items-center gap-3">
 														<Avatar className="size-8 rounded-full">
 															{userItem.image ? (
@@ -170,7 +170,7 @@ export function UserManagementPanel({
 														</div>
 													</div>
 												</Table.Cell>
-												<Table.Cell>
+												<Table.Cell className="whitespace-nowrap">
 													<Chip
 														className="font-bold text-xs"
 														color={
@@ -181,7 +181,7 @@ export function UserManagementPanel({
 														{userItem.role ?? "VIEWER"}
 													</Chip>
 												</Table.Cell>
-												<Table.Cell>
+												<Table.Cell className="whitespace-nowrap">
 													<Chip
 														className="font-bold text-xs"
 														color={statusColors[userItem.status] ?? "warning"}
@@ -227,7 +227,7 @@ export function UserManagementPanel({
 														)}
 													</div>
 												</Table.Cell>
-												<Table.Cell>
+												<Table.Cell className="whitespace-nowrap">
 													<div className="flex items-center justify-end">
 														<Tooltip closeDelay={0} delay={0}>
 															<Tooltip.Trigger>

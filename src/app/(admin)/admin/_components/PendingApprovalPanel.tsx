@@ -73,7 +73,7 @@ export function PendingApprovalPanel({
 						<Table.ScrollContainer>
 							<Table.Content
 								aria-label="待審核分會申請"
-								className="min-w-[650px]"
+								className="min-w-[650px] whitespace-nowrap"
 							>
 								<Table.Header>
 									<Table.Column id="applicant" isRowHeader>
@@ -92,7 +92,7 @@ export function PendingApprovalPanel({
 											id={`${ua.userId}-${ua.areaId}`}
 											key={`${ua.userId}-${ua.areaId}`}
 										>
-											<Table.Cell>
+											<Table.Cell className="whitespace-nowrap">
 												<div className="flex items-center gap-3">
 													<Avatar className="size-8 rounded-full">
 														{ua.user?.image ? (
@@ -115,7 +115,7 @@ export function PendingApprovalPanel({
 													</div>
 												</div>
 											</Table.Cell>
-											<Table.Cell>
+											<Table.Cell className="whitespace-nowrap">
 												<Chip
 													className="font-bold"
 													color="accent"
@@ -124,7 +124,7 @@ export function PendingApprovalPanel({
 													{ua.area?.name || ua.areaId}
 												</Chip>
 											</Table.Cell>
-											<Table.Cell>
+											<Table.Cell className="whitespace-nowrap">
 												<Chip
 													className="font-bold"
 													color="warning"
@@ -134,12 +134,12 @@ export function PendingApprovalPanel({
 													等待審核
 												</Chip>
 											</Table.Cell>
-											<Table.Cell className="text-muted text-xs">
+											<Table.Cell className="whitespace-nowrap text-muted text-xs">
 												{ua.approvedAt
 													? new Date(ua.approvedAt).toLocaleString()
 													: "剛剛"}
 											</Table.Cell>
-											<Table.Cell>
+											<Table.Cell className="whitespace-nowrap">
 												<div className="flex items-center justify-end gap-2">
 													<Button
 														className="flex items-center gap-1 font-bold text-white shadow-sm"
