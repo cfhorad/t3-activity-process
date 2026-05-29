@@ -1,7 +1,7 @@
 ---
-trigger: model_decision
+trigger: glob
 description: 身分驗證系統的開發規範。在處理任何與登入、Session、權限、身分驗證相關的程式碼時，AI 必須嚴格遵循本文件所有規則。
-globs: ["src/app/auth/**", "src/app/_components/auth/**", "src/server/better-auth/**", "src/middleware.ts"]
+globs: ["src/app/auth/**", "src/app/_components/auth/**", "src/server/better-auth/**", "src/middleware.ts", "src/app/_hooks/useAuth.ts"]
 ---
 
 # 身分驗證系統開發規範 (Auth System Workspace Rule)
@@ -10,12 +10,11 @@ globs: ["src/app/auth/**", "src/app/_components/auth/**", "src/server/better-aut
 
 本專案使用 **Better Auth** 作為唯一的身分驗證解決方案，嚴格分為三層：
 
-```
+```text
 前端 UI (Client)          後端邏輯 (Server)         資料庫
 -----------------         -------------------       --------
-authClient (react)   →    Better Auth Server   →    Drizzle ORM (pg)
-src/server/better-auth/   src/server/better-auth/   src/server/db
-client.ts                 config.ts + server.ts
+useAuth (Global Hook) →   Better Auth Server   →    Drizzle ORM (pg)
+src/app/_hooks/useAuth.ts src/server/better-auth/   src/server/db
 ```
 
 **禁止** 使用任何其他身分驗證函式庫（如 NextAuth、Auth.js、Clerk）。
@@ -36,7 +35,7 @@ client.ts                 config.ts + server.ts
 
 **正確範例：**
 ```ts
-// 在 Server Component 中取得 Session
+// 在 Server Component 中取得 Session 作為路由守衛
 import { getSession } from "~/server/better-auth/server";
 
 const session = await getSession(); // 已透過 React.cache() 優化，不會重複查詢
@@ -50,23 +49,40 @@ import { auth } from "~/server/better-auth";
 const session = await auth.api.getSession({ headers: await headers() }); // 應改用 getSession()
 ```
 
-### 2.2 客戶端 (Client Components)
+### 2.2 客戶端權限控制 (Client Components) - The `useAuth` Hook
+
+在客戶端，**絕對禁止**直接使用原始的 `authClient.useSession()` 進行權限判斷，也**禁止**從 Server Component 將 `session.user` 或權限狀態透過 Props 往下傳遞（Prop-drilling）。
+
+所有 Client Components 必須**自主呼叫全域智能 Hook `useAuth()`** 來取得會話與權限狀態。
 
 | 工具 | 位置 | 用途 |
 |------|------|------|
-| `authClient` | `~/server/better-auth/client` | **唯一**的客戶端 auth 操作實例 |
-| `authClient.useSession()` | — | 取得客戶端 session（用於 UI 顯示） |
-| `authClient.signIn.email()` | — | 電子郵件登入 |
-| `authClient.signUp.email()` | — | 電子郵件註冊 |
-| `authClient.signIn.social()` | — | 社群登入（目前僅支援 `google`） |
-| `authClient.signOut()` | — | 登出 |
+| `useAuth()` | `~/app/_hooks/useAuth` | **唯一**的前端權限、Session 與角色判斷來源 |
+| `authClient.signIn` | `~/server/better-auth/client` | 登入操作 (email, social) |
+| `authClient.signOut` | `~/server/better-auth/client` | 登出操作 |
 
-**正確範例：**
+**正確範例 (Auth Session Exception Pattern)：**
 ```tsx
-// 在 Client Component (Navbar) 中
-import { authClient } from "~/server/better-auth/client";
+// ✅ 在 Client Component 中自主判斷權限
+"use client";
+import { useAuth } from "~/app/_hooks/useAuth";
 
-const { data: clientSession } = authClient.useSession();
+export function EditButton({ activityId }) {
+  // O(1) 複雜度的高效權限查詢
+  const { isActivityEditor, isAdmin } = useAuth(); 
+  
+  if (!isActivityEditor(activityId)) return null;
+  return <Button>編輯</Button>;
+}
+```
+
+**禁止範例：**
+```tsx
+// ❌ 禁止從 Server 傳遞 session 給 Client
+<ClientComponent session={session} /> 
+
+// ❌ 禁止在 UI 元件內直接使用原始 authClient
+const { data: session } = authClient.useSession(); 
 ```
 
 ---
@@ -95,64 +111,31 @@ if (!session) redirect("/auth");
 
 ---
 
-## 4. 角色與權限系統 (RBAC)
+## 4. 角色與精細權限系統 (RBAC + ABAC)
 
-系統定義三種角色，存儲在 `user.role` 欄位（預設為 `VIEWER`）：
+系統採用混合權限模型：基本身分由 Role 決定，精細操作權限由 `useAuth()` 的 Set 結構進行 `O(1)` 複雜度比對。
 
+### 4.1 基本角色 (Role)
 | 角色 | 權限範圍 | tRPC 程序 |
 |------|---------|-----------|
-| `ADMIN` | 所有操作 | `adminProcedure` |
+| `ADMIN` | 所有操作 (若 approvedArea 為 ALL 則為 SuperAdmin) | `adminProcedure` |
 | `MANAGER` | 管理功能（非刪除核心資料）| `managerProcedure` |
 | `VIEWER` | 唯讀 | `protectedProcedure` |
 
-**規則**：
-- 新增 tRPC 程序時，必須明確選擇適當的 procedure 類型，不得預設使用 `publicProcedure`。
-- 前端 UI 的權限檢查（顯示/隱藏按鈕）應讀取 `session.user.role`，但不能替代後端的權限驗證。
+### 4.2 精細權限檢驗 (Client-Side)
+請一律使用 `useAuth()` 提供的 Helper 函數，這些函數內部已實作 `O(1)` Set 查詢，確保在渲染包含數百個 Checkbox 的表格時不會卡頓：
+- `isActivityEditor(activityId, creatorId, areaId)`: 是否有權編輯該活動。
+- `isProcessChecker(processId, activityId, creatorId, areaId)`: 是否有權操作該流程的 Checkbox。
 
 ---
 
 ## 5. 表單開發規範 (Auth UI)
 
-### 5.1 核心依賴套件 (Mandatory Packages)
-
-在開發 Auth UI 前，必須確保專案已安裝以下套件：
-- `react-hook-form`: 表單狀態管理核心。
-- `zod`: 模式驗證。
-- `@hookform/resolvers`: 將 Zod 與 React Hook Form 橋接。
-- `@heroui/react`: UI 組件庫（v3+）。
-
----
+### 5.1 核心依賴套件
+- `react-hook-form`, `zod`, `@hookform/resolvers`, `@heroui/react` (v3+).
 
 ### 5.2 禁止直接使用原始 Controller (Controlled Component Pattern)
-
-所有 auth 表單輸入框必須使用 **Controlled** 元件封裝。這不僅是為了樣式統一，更為了確保 HeroUI v3 的無障礙 (A11y) 結構與 `react-hook-form` 的狀態正確橋接。
-
-#### 封裝模式 (The Pattern)
-若需建立新的受控元件（如 `ControlledSelect`），必須遵循以下模式：
-
-1.  **所需依賴**：必須匯入 `react-hook-form` 的 `Control`, `Controller`, `FieldPath`, `FieldValues` 以及 `@heroui/react` 的對應組件。
-2.  **泛型約束**：使用 `<TFieldValues extends FieldValues>` 確保 `control` 與 `name` 類型安全。
-3.  **狀態橋接**：將 `fieldState.error` 映射至 `isInvalid` 與 `<FieldError>`。
-4.  **Slot 結構**：遵循 HeroUI v3 的 `TextField/Select` -> `Label` -> `Input` 結構。
-
-**實作範例：**
-```tsx
-export function ControlledField<T extends FieldValues>({ control, name, label }: Props<T>) {
-  return (
-    <Controller
-      control={control}
-      name={name}
-      render={({ field, fieldState }) => (
-        <TextField isInvalid={!!fieldState.error} {...field}>
-          <Label>{label}</Label>
-          <Input />
-          <FieldError>{fieldState.error?.message}</FieldError>
-        </TextField>
-      )}
-    />
-  );
-}
-```
+所有 auth 表單輸入框必須使用 **Controlled** 元件封裝，將 `fieldState.error` 映射至 HeroUI 的 `isInvalid` 與 `<FieldError>`。
 
 **正確使用方式：**
 ```tsx
@@ -162,38 +145,11 @@ import { ControlledTextField } from "~/app/_components/auth/controlled-text-fiel
   control={form.control}
   name="email"
   label="電子郵件"
-  type="email"
-  autoComplete="email"
 />
 ```
-
-**禁止範例：**
-```tsx
-// ❌ 禁止在業務表單中直接使用裸 Controller
-<Controller
-  control={control}
-  name="email"
-  render={({ field }) => <input {...field} />}
-/>
-```
-
-### 5.2 Zod Schema 管理
-
-- 所有 auth 相關的驗證 schema 必須集中在 `auth-schemas.ts`。
-- `registerSchema` 必須基於 `loginSchema` 使用 `.extend()`，確保一致性。
-- 錯誤訊息使用中文。
 
 ### 5.3 錯誤處理模式
-
-Better Auth 返回的錯誤代碼（`ctx.error.code`）必須透過 `errorMap` 物件轉換為使用者可讀的中文訊息，並使用 `MessageDialog` 元件顯示。
-
-```ts
-const errorMap: Record<string, string> = {
-  INVALID_EMAIL_OR_PASSWORD: "電子郵件或密碼不正確",
-  USER_ALREADY_EXISTS: "此電子郵件已被註冊",
-  // ... 根據 Better Auth 文件持續擴充
-};
-```
+Better Auth 返回的錯誤代碼必須透過 `errorMap` 轉換為中文訊息，並使用 `MessageDialog` 顯示。
 
 ---
 
@@ -201,24 +157,16 @@ const errorMap: Record<string, string> = {
 
 | 環境 | 可使用 | 禁止 |
 |------|--------|------|
-| Server Component | `getSession`, `auth.api.*` | `authClient`, `useSession`, React Hooks |
-| Client Component | `authClient.*`, `authClient.useSession()` | `getSession`, 直接呼叫 Drizzle |
+| Server Component | `getSession`, `auth.api.*` | `useAuth`, `authClient`, 傳遞 session 作為 prop |
+| Client Component | `useAuth()`, `authClient.signIn/signOut` | `getSession`, 直接呼叫 `authClient.useSession()` |
 | Middleware | `auth.api.getSession({ headers })` | 任何客戶端工具 |
-
-- **所有 auth 相關的 UI 元件必須有 `"use client"` 指令**。
-- `getSession` 在 `server.ts` 中已用 `React.cache()` 包裹，同一次請求的多次呼叫只會執行一次資料庫查詢，不需要額外快取。
 
 ---
 
 ## 7. 類型安全規範
 
-- **永遠**使用 `Session` 類型，從 `~/server/better-auth/client` 或 `~/server/better-auth/config` 匯入。
+- **永遠**使用 `Session` 類型，從 `~/server/better-auth/config` 匯入。
 - **禁止**使用 `any` 來繞過 session 類型。
-- 使用 Better Auth 的 `$Infer` 工具確保類型與執行時一致。
-
-```ts
-import type { Session } from "~/server/better-auth/client";
-```
 
 ---
 
@@ -226,8 +174,6 @@ import type { Session } from "~/server/better-auth/client";
 
 | 需求 | 動作 |
 |------|------|
-| 新增社群登入（如 GitHub） | 在 `config.ts` 的 `socialProviders` 中新增，並在 `auth-card.tsx` 加入對應按鈕 |
+| 新增社群登入 | 在 `config.ts` 的 `socialProviders` 中新增，並在 `auth-card.tsx` 加入對應按鈕 |
 | 新增表單欄位 | 先更新 `auth-schemas.ts`，再修改對應的 Form 元件 |
-| 新增使用者欄位 | 在 `config.ts` 的 `user.additionalFields` 中聲明，並執行資料庫 migration |
-| 新增保護路由 | 更新 `middleware.ts` 的 `matcher` 陣列 |
-| 新增 SVG 圖示 | 加入 `auth-icons.tsx`，必須包含非空的 `<title>` 標籤 |
+| 新增權限判斷 | 在 `useAuth.ts` 中新增 Helper function 並返回 |

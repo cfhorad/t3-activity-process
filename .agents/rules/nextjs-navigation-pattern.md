@@ -1,3 +1,8 @@
+---
+trigger: glob
+globs: src/**/*.{ts,tsx}
+---
+
 # Next.js 路由導覽規範 (避免使用 window.location.href)
 
 ## 核心規則

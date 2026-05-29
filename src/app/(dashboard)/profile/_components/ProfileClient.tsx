@@ -27,7 +27,7 @@ import {
 	XCircle,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "~/app/_hooks/useAuth";
 import type { User as AuthUser } from "~/server/better-auth/config";
 import { api } from "~/trpc/react";
@@ -89,21 +89,21 @@ export function ProfileClient({ user }: ProfileClientProps) {
 
 	const isLoading = isAreasLoading || isAppsLoading;
 
-	const roleLabel = useMemo(() => {
+	const roleLabel = (() => {
 		const role = (user as { role?: string }).role?.toUpperCase();
 		if (role === "ADMIN") {
 			return isSuperAdmin ? "超級管理員" : "管理員";
 		}
 		if (role === "MANAGER") return "組長";
 		return "一般檢視者";
-	}, [user, isSuperAdmin]);
+	})();
 
-	const roleColor = useMemo(() => {
+	const roleColor = (() => {
 		const role = (user as { role?: string }).role?.toUpperCase();
 		if (role === "ADMIN") return "danger" as const;
 		if (role === "MANAGER") return "warning" as const;
 		return "default" as const;
-	}, [user]);
+	})();
 
 	if (isLoading) {
 		return (

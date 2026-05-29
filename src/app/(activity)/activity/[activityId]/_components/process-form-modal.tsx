@@ -18,7 +18,7 @@ import {
 	useFilter,
 } from "@heroui/react";
 import { Pencil, Plus } from "lucide-react";
-import { useMemo } from "react";
+
 import { Controller } from "react-hook-form";
 import { ControlledTextField } from "~/app/_components/controlled-text-field";
 import { api } from "~/trpc/react";
@@ -75,7 +75,7 @@ export function ProcessFormModal({
 
 	const { contains } = useFilter({ sensitivity: "base" });
 
-	const filteredUsersList = useMemo(() => {
+	const filteredUsersList = (() => {
 		if (!usersList || !activity?.areaId) return [];
 		return usersList.filter(
 			(u) =>
@@ -84,7 +84,7 @@ export function ProcessFormModal({
 					(ua) => ua.areaId === activity.areaId && ua.status === "approved",
 				),
 		);
-	}, [usersList, activity?.areaId]);
+	})();
 
 	return (
 		<Modal.Backdrop

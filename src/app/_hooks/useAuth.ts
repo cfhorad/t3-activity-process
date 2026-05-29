@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { authClient } from "~/server/better-auth/client";
 import type { Session } from "~/server/better-auth/config";
 import { api } from "~/trpc/react";
@@ -50,13 +50,11 @@ export function useAuth(serverSession?: Session | null) {
 	const isViewer = normalizedRole === "VIEWER" || (!isAdmin && !isManager);
 	const isManagerOrAdmin = isAdmin || isManager;
 
-	const approvedAreaIds = useMemo(() => {
-		return (
-			myPermissions?.areas
-				?.filter((app) => app.status === "approved")
-				.map((app) => app.areaId) ?? []
-		);
-	}, [myPermissions?.areas]);
+	const approvedAreaIds = (
+		myPermissions?.areas
+			?.filter((app) => app.status === "approved")
+			.map((app) => app.areaId) ?? []
+	);
 
 	const isSuperAdmin = isAdmin && approvedAreaIds.includes("ALL");
 
@@ -65,13 +63,9 @@ export function useAuth(serverSession?: Session | null) {
 	// we convert these permission arrays into `Set` objects once.
 	// This guarantees O(1) constant lookup time when mapping through hundreds of
 	// checkboxes inside the CheckSheet table.
-	const editorActivityIdsSet = useMemo(() => {
-		return new Set(myPermissions?.editorActivityIds ?? []);
-	}, [myPermissions?.editorActivityIds]);
+	const editorActivityIdsSet = new Set(myPermissions?.editorActivityIds ?? []);
 
-	const checkerProcessIdsSet = useMemo(() => {
-		return new Set(myPermissions?.checkerProcessIds ?? []);
-	}, [myPermissions?.checkerProcessIds]);
+	const checkerProcessIdsSet = new Set(myPermissions?.checkerProcessIds ?? []);
 
 	// ─── INSTANTANEOUS PERMISSION HELPERS ──────────────────────────────────
 
@@ -79,52 +73,41 @@ export function useAuth(serverSession?: Session | null) {
 	 * Determines if the current user has full CRUD editing rights over a specific Activity.
 	 * Evaluates hierarchical privileges: Super Admin -> Creator -> Area Admin -> Co-editor.
 	 */
-	const isActivityEditor = useMemo(() => {
-		return (
-			activityId: number | undefined | null,
-			creatorId?: string | null,
-			areaId?: string | null,
-		) => {
-			if (!session || !user) return false;
-			// 1. Super admin has access to everything
-			if (isSuperAdmin) return true;
-			// 2. The original creator always has access
-			if (creatorId && creatorId === user.id) return true;
-			// 3. Area Admin has access if their approved areas cover the activity's assigned area
-			// (Note: Array.includes is used here because approvedAreaIds is extremely small, typically N <= 5, so sequential scan is faster than Set creation overhead)
-			if (isAdmin && areaId && approvedAreaIds.includes(areaId)) return true;
-			// 4. Specifically assigned activity co-editor (O(1) Set lookup)
-			if (activityId && editorActivityIdsSet.has(activityId)) return true;
-			return false;
-		};
-	}, [
-		session,
-		user,
-		isSuperAdmin,
-		isAdmin,
-		approvedAreaIds,
-		editorActivityIdsSet,
-	]);
+	const isActivityEditor = (
+		activityId: number | undefined | null,
+		creatorId?: string | null,
+		areaId?: string | null,
+	) => {
+		if (!session || !user) return false;
+		// 1. Super admin has access to everything
+		if (isSuperAdmin) return true;
+		// 2. The original creator always has access
+		if (creatorId && creatorId === user.id) return true;
+		// 3. Area Admin has access if their approved areas cover the activity's assigned area
+		// (Note: Array.includes is used here because approvedAreaIds is extremely small, typically N <= 5, so sequential scan is faster than Set creation overhead)
+		if (isAdmin && areaId && approvedAreaIds.includes(areaId)) return true;
+		// 4. Specifically assigned activity co-editor (O(1) Set lookup)
+		if (activityId && editorActivityIdsSet.has(activityId)) return true;
+		return false;
+	};
 
 	/**
 	 * Determines if the current user has rights to check/uncheck items in a CHECK type process.
 	 * Inherits full access from parent Activity rights, and falls back to specific checker assignment.
 	 */
-	const isProcessChecker = useMemo(() => {
-		return (
-			processId: number | undefined | null,
-			activityId?: number | null,
-			creatorId?: string | null,
-			areaId?: string | null,
-		) => {
-			if (!session || !user) return false;
-			// 1. If they are the editor/creator/admin of the parent activity, they automatically inherit checker rights!
-			if (isActivityEditor(activityId, creatorId, areaId)) return true;
-			// 2. Specifically assigned process checker (O(1) Set lookup)
-			if (processId && checkerProcessIdsSet.has(processId)) return true;
-			return false;
-		};
-	}, [session, user, isActivityEditor, checkerProcessIdsSet]);
+	const isProcessChecker = (
+		processId: number | undefined | null,
+		activityId?: number | null,
+		creatorId?: string | null,
+		areaId?: string | null,
+	) => {
+		if (!session || !user) return false;
+		// 1. If they are the editor/creator/admin of the parent activity, they automatically inherit checker rights!
+		if (isActivityEditor(activityId, creatorId, areaId)) return true;
+		// 2. Specifically assigned process checker (O(1) Set lookup)
+		if (processId && checkerProcessIdsSet.has(processId)) return true;
+		return false;
+	};
 
 	return {
 		session,

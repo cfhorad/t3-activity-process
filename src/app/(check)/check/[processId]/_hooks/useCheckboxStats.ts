@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 export interface Column {
 	id: number;
@@ -25,22 +25,14 @@ export interface StatRow {
 
 export function useCheckboxStats(columns: Column[], data: DataRow[]) {
 	// 1. Identify all checkbox columns (X-axis)
-	const checkboxColumns = useMemo(
-		() =>
-			columns
-				.filter((col) => col.isCheckbox)
-				.sort((a, b) => a.displayOrder - b.displayOrder),
-		[columns],
-	);
+	const checkboxColumns = columns
+		.filter((col) => col.isCheckbox)
+		.sort((a, b) => a.displayOrder - b.displayOrder);
 
 	// 2. Identify eligible Y-axis columns (non-checkbox columns)
-	const groupableColumns = useMemo(
-		() =>
-			columns
-				.filter((col) => !col.isCheckbox)
-				.sort((a, b) => a.displayOrder - b.displayOrder),
-		[columns],
-	);
+	const groupableColumns = columns
+		.filter((col) => !col.isCheckbox)
+		.sort((a, b) => a.displayOrder - b.displayOrder);
 
 	// Default to the first groupable column
 	const [groupByColumn, setGroupByColumn] = useState<string>(
@@ -49,7 +41,7 @@ export function useCheckboxStats(columns: Column[], data: DataRow[]) {
 	const [showRowRatio, setShowRowRatio] = useState(false);
 
 	// 3. Process the data
-	const statsData = useMemo<StatRow[]>(() => {
+	const statsData = (() => {
 		if (!groupByColumn || checkboxColumns.length === 0) return [];
 
 		const groups: Record<
@@ -149,7 +141,7 @@ export function useCheckboxStats(columns: Column[], data: DataRow[]) {
 		}
 
 		return rows;
-	}, [data, groupByColumn, checkboxColumns]);
+	})();
 
 	return {
 		checkboxColumns,

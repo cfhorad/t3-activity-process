@@ -1,6 +1,6 @@
 import { toast } from "@heroui/react";
 import type { FormEvent } from "react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import type { User } from "~/server/better-auth/config";
 import type { Area, DbUser, UserArea } from "~/server/db/schema";
 import { api } from "~/trpc/react";
@@ -206,7 +206,7 @@ export function useAdminDashboard({ currentUser }: UseAdminDashboardProps) {
 		}
 	};
 
-	const filteredUsers = useMemo(() => {
+	const filteredUsers = (() => {
 		if (!users) return [];
 		const search = userSearch.toLowerCase().trim();
 		if (!search) return users as UserItem[];
@@ -220,7 +220,7 @@ export function useAdminDashboard({ currentUser }: UseAdminDashboardProps) {
 			);
 			return nameMatch || emailMatch || roleMatch || areaMatch;
 		});
-	}, [users, userSearch]);
+	})();
 
 	const toggleAreaSelection = (areaId: string) => {
 		setSelectedAreaIds((prev) =>

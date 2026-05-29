@@ -1,7 +1,7 @@
 "use client";
 
 import { toast } from "@heroui/react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "~/trpc/react";
 
 export function useCheckData(processId: number) {
@@ -57,7 +57,7 @@ export function useCheckData(processId: number) {
 				toast.danger(`儲存失敗: ${error.message}`);
 			},
 		});
-
+		// MEMO: optimistic update，先更新 UI，再更新資料，若失敗則回滾
 	const updateCheckboxMutation = api.checkSheet.updateCheckbox.useMutation({
 		onMutate: async ({ databaseId, columnName, newValue }) => {
 			// Optimistic UI update
@@ -172,9 +172,7 @@ export function useCheckData(processId: number) {
 	const visibleColumns =
 		columns?.filter((c) => visibleColumnNames.includes(c.columnName)) ?? [];
 
-	const sortedData = useMemo(() => {
-		return syncedData ? [...syncedData].sort((a, b) => a.id - b.id) : [];
-	}, [syncedData]);
+	const sortedData = syncedData ? [...syncedData].sort((a, b) => a.id - b.id) : [];
 
 	const handleSaveVisibleColumns = () => {
 		saveVisibleColumnsMutation.mutate({

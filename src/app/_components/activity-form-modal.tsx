@@ -15,7 +15,7 @@ import {
 	useFilter,
 } from "@heroui/react";
 import { Pencil, Plus } from "lucide-react";
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { Controller } from "react-hook-form";
 
 import { ControlledTextField } from "~/app/_components/controlled-text-field";
@@ -74,16 +74,16 @@ export function ActivityFormModal({
 	const { contains } = useFilter({ sensitivity: "base" });
 
 	// Filter available areas for this user
-	const availableAreas = useMemo(() => {
+	const availableAreas = (() => {
 		if (!areasList) return [];
 		if (isSuperAdmin) return areasList;
 		return areasList.filter((area) => userAreaIds.includes(area.id));
-	}, [areasList, isSuperAdmin, userAreaIds]);
+	})();
 
 	const selectedAreaId = form.watch("areaId");
 
 	// Filter users to only those approved in the selected activity area and having active global status
-	const filteredUsersList = useMemo(() => {
+	const filteredUsersList = (() => {
 		if (!usersList || !selectedAreaId) return [];
 		return usersList.filter(
 			(u) =>
@@ -92,7 +92,7 @@ export function ActivityFormModal({
 					(ua) => ua.areaId === selectedAreaId && ua.status === "approved",
 				),
 		);
-	}, [usersList, selectedAreaId]);
+	})();
 
 	// Keep editorUserIds valid and clean when areaId changes
 	useEffect(() => {

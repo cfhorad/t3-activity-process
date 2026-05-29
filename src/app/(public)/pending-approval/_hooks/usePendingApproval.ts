@@ -1,5 +1,5 @@
 import { toast } from "@heroui/react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import type { Area, UserArea } from "~/server/db/schema";
 import { api } from "~/trpc/react";
 
@@ -45,9 +45,7 @@ export function usePendingApproval({ userId }: UsePendingApprovalProps) {
 		}
 	}, [myApplications]);
 
-	const availableToApply = useMemo(() => {
-		return publicAreas ?? [];
-	}, [publicAreas]);
+	const availableToApply = publicAreas ?? [];
 
 	const handleSubmit = (e: React.FormEvent) => {
 		e.preventDefault();
