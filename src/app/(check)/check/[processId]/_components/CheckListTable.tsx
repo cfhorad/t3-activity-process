@@ -11,10 +11,11 @@ import {
 	Select,
 	Table,
 	Tooltip,
+	toast,
 	useOverlayState,
 } from "@heroui/react";
-import { Phone, Save, Settings2 } from "lucide-react";
-import { useState } from "react";
+import { Download, Phone, Save, Settings2 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "~/app/_hooks/useAuth";
 import { api } from "~/trpc/react";
 
@@ -196,14 +197,16 @@ export function CheckListTable({
 	isSavingVisibleColumns,
 	processId,
 }: CheckListTableProps) {
-	const { data: process } = api.process.getById.useQuery({ id: processId });
+	const { data: process } = api.process.getById.useQuery(
+		{ id: processId },
+		{
+			staleTime: 1000 * 60 * 5, // Cache process metadata for 5 minutes
+		},
+	);
 	const infoState = useOverlayState();
 	const [selectedRow, setSelectedRow] = useState<DataRow | null>(null);
-
-	const handleRowPress = (row: DataRow) => {
-		setSelectedRow(row);
-		infoState.open();
-	};
+	const [isDownloading, setIsDownloading] = useState(false);
+	const utils = api.useUtils();
 
 	const { isViewer, isProcessChecker } = useAuth();
 
@@ -226,34 +229,192 @@ export function CheckListTable({
 			)
 		: visibleColumns;
 
+	const dummyScrollRef = useRef<HTMLDivElement>(null);
+	const tableScrollRef = useRef<HTMLDivElement>(null);
+	const [tableScrollWidth, setTableScrollWidth] = useState(0);
+	const [hasOverflow, setHasOverflow] = useState(false);
+
+	useEffect(() => {
+		const tableScroll = tableScrollRef.current;
+		if (!tableScroll) return;
+
+		const updateWidth = () => {
+			setTableScrollWidth(tableScroll.scrollWidth);
+			setHasOverflow(tableScroll.scrollWidth > tableScroll.clientWidth);
+		};
+
+		updateWidth();
+
+		const observer = new ResizeObserver(updateWidth);
+		observer.observe(tableScroll);
+
+		return () => observer.disconnect();
+	}, []);
+
+	const handleDummyScroll = () => {
+		const dummy = dummyScrollRef.current;
+		const table = tableScrollRef.current;
+		if (!dummy || !table) return;
+		if (table.scrollLeft !== dummy.scrollLeft) {
+			table.scrollLeft = dummy.scrollLeft;
+		}
+	};
+
+	const handleTableScroll = () => {
+		const dummy = dummyScrollRef.current;
+		const table = tableScrollRef.current;
+		if (!dummy || !table) return;
+		if (dummy.scrollLeft !== table.scrollLeft) {
+			dummy.scrollLeft = table.scrollLeft;
+		}
+	};
+
+	const handleRowPress = (row: DataRow) => {
+		setSelectedRow(row);
+		infoState.open();
+	};
+
+	/**
+	 * Imperatively fetches all unfiltered, unsorted checklist rows for this process
+	 * and outputs them to a CSV download locally.
+	 */
+	const downloadUnfilteredCSV = async () => {
+		try {
+			setIsDownloading(true);
+
+			// 1. Fetch complete database checklist rows without applying current UI filters/searches
+			const allData = await utils.checkSheet.getAll.fetch({
+				processId,
+				search: "",
+				filters: {},
+			});
+
+			if (!allData || allData.length === 0) {
+				toast.danger("沒有資料可供下載");
+				return;
+			}
+
+			// 2. Select headers matching all allowed columns (hiding phone/mobile fields if user is a Viewer)
+			const headers = filteredAllColumns.map((col) => col.columnName);
+
+			// 3. Transform database rows to CSV fields
+			const csvRows = allData.map((row) => {
+				const rowData = row.data as Record<string, unknown>;
+				const csvRow = filteredAllColumns.map((col) => {
+					const val = rowData[col.columnName];
+					if (col.isCheckbox) {
+						return val ? "已核取" : "未核取";
+					}
+					return val !== undefined && val !== null ? String(val) : "";
+				});
+
+				// Escape fields for safety
+				return csvRow
+					.map((field) => {
+						const escaped = field.replace(/"/g, '""');
+						return `"${escaped}"`;
+					})
+					.join(",");
+			});
+
+			// 4. Join all lines
+			const csvContent = [
+				headers.map((h) => `"${h.replace(/"/g, '""')}"`).join(","),
+				...csvRows,
+			].join("\n");
+
+			// 5. Append UTF-8 Byte Order Mark (BOM) to prevent Excel garbling Chinese letters
+			const blob = new Blob([`\uFEFF${csvContent}`], {
+				type: "text/csv;charset=utf-8;",
+			});
+			const url = URL.createObjectURL(blob);
+			const link = document.createElement("a");
+			link.setAttribute("href", url);
+
+			// Filename pattern: checklist-[process-name]-[date].csv
+			const processName = process?.name || "checklist";
+			const timestamp = new Date().toISOString().slice(0, 10);
+			const fileName = `${processName}-${timestamp}.csv`;
+			link.setAttribute("download", fileName);
+
+			// 6. Append to document, trigger, and discard
+			document.body.appendChild(link);
+			link.click();
+			document.body.removeChild(link);
+
+			toast.success("CSV 檔案下載成功");
+		} catch (error) {
+			console.error("Failed to download CSV:", error);
+			toast.danger("下載 CSV 失敗，請重試");
+		} finally {
+			setIsDownloading(false);
+		}
+	};
+
 	return (
 		<div className="flex flex-col gap-4">
-			<div className="flex w-full items-center justify-between gap-4">
+			<div className="flex w-full flex-row flex-nowrap items-end justify-between gap-4">
 				<ColumnSelect
 					columns={filteredAllColumns}
 					onSelectionChange={onVisibleColumnsChange}
 					visibleColumnNames={visibleColumnNames}
 				/>
-				<Tooltip closeDelay={0} delay={0}>
-					<Tooltip.Trigger>
-						<Button
-							isPending={isSavingVisibleColumns}
-							onPress={onSaveVisibleColumns}
-							size="sm"
-							variant="secondary"
-						>
-							<Save className="size-4 sm:mr-2" />
-							<span className="hidden sm:inline">儲存欄位設定</span>
-						</Button>
-					</Tooltip.Trigger>
-					<Tooltip.Content placement="top">
-						儲存目前的顯示欄位設定，下次進入此頁面時將維持同樣的配置。
-					</Tooltip.Content>
-				</Tooltip>
+				<div className="flex shrink-0 items-center gap-3 sm:gap-6">
+					<Tooltip closeDelay={0} delay={0}>
+						<Tooltip.Trigger>
+							<Button
+								aria-label="匯出完整 CSV"
+								className="text-success"
+								isIconOnly
+								isPending={isDownloading}
+								onPress={downloadUnfilteredCSV}
+								size="sm"
+								variant="tertiary"
+							>
+								<Download className="size-4" />
+							</Button>
+						</Tooltip.Trigger>
+						<Tooltip.Content placement="top">
+							下載完整報到清單數據
+						</Tooltip.Content>
+					</Tooltip>
+
+					<Tooltip closeDelay={0} delay={0}>
+						<Tooltip.Trigger>
+							<Button
+								aria-label="儲存欄位設定"
+								className="text-accent"
+								isIconOnly
+								isPending={isSavingVisibleColumns}
+								onPress={onSaveVisibleColumns}
+								size="sm"
+								variant="tertiary"
+							>
+								<Save className="size-4" />
+							</Button>
+						</Tooltip.Trigger>
+						<Tooltip.Content placement="top">
+							儲存目前的顯示欄位設定，下次進入此頁面時將維持同樣的配置。
+						</Tooltip.Content>
+					</Tooltip>
+				</div>
 			</div>
 
+			{hasOverflow && (
+				<div
+					className="w-full select-none overflow-x-auto overflow-y-hidden"
+					onScroll={handleDummyScroll}
+					ref={dummyScrollRef}
+				>
+					<div style={{ width: `${tableScrollWidth}px`, height: "1px" }} />
+				</div>
+			)}
+
 			<Table variant="secondary">
-				<Table.ScrollContainer>
+				<Table.ScrollContainer
+					onScroll={handleTableScroll}
+					ref={tableScrollRef}
+				>
 					<Table.Content aria-label="報到清單數據表">
 						<Table.Header>
 							{filteredVisibleColumns.length === 0 ? (

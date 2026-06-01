@@ -9,7 +9,8 @@ import {
 	Table,
 	Tooltip,
 } from "@heroui/react";
-import { RefreshCcw } from "lucide-react";
+import { Download, RefreshCcw } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "~/app/_hooks/useAuth";
 import { useCheckboxStats } from "../_hooks/useCheckboxStats";
 
@@ -32,6 +33,10 @@ interface CheckboxStatsTableProps {
 	data: DataRow[];
 	onRefetch?: () => void;
 	isRefetching?: boolean;
+	groupByColumn?: string;
+	setGroupByColumn?: (val: string) => void;
+	showRowRatio?: boolean;
+	setShowRowRatio?: (val: boolean) => void;
 }
 
 export function CheckboxStatsTable({
@@ -39,6 +44,10 @@ export function CheckboxStatsTable({
 	data,
 	onRefetch,
 	isRefetching,
+	groupByColumn: externalGroupByColumn,
+	setGroupByColumn: externalSetGroupByColumn,
+	showRowRatio: externalShowRowRatio,
+	setShowRowRatio: externalSetShowRowRatio,
 }: CheckboxStatsTableProps) {
 	const { isViewer } = useAuth();
 
@@ -56,7 +65,53 @@ export function CheckboxStatsTable({
 		showRowRatio,
 		setShowRowRatio,
 		statsData,
-	} = useCheckboxStats(filteredColumns, data);
+		downloadCSV,
+	} = useCheckboxStats(filteredColumns, data, {
+		groupByColumn: externalGroupByColumn,
+		setGroupByColumn: externalSetGroupByColumn,
+		showRowRatio: externalShowRowRatio,
+		setShowRowRatio: externalSetShowRowRatio,
+	});
+
+	const dummyScrollRef = useRef<HTMLDivElement>(null);
+	const tableScrollRef = useRef<HTMLDivElement>(null);
+	const [tableScrollWidth, setTableScrollWidth] = useState(0);
+	const [hasOverflow, setHasOverflow] = useState(false);
+
+	useEffect(() => {
+		const tableScroll = tableScrollRef.current;
+		if (!tableScroll) return;
+
+		const updateWidth = () => {
+			setTableScrollWidth(tableScroll.scrollWidth);
+			setHasOverflow(tableScroll.scrollWidth > tableScroll.clientWidth);
+		};
+
+		updateWidth();
+
+		const observer = new ResizeObserver(updateWidth);
+		observer.observe(tableScroll);
+
+		return () => observer.disconnect();
+	}, []);
+
+	const handleDummyScroll = () => {
+		const dummy = dummyScrollRef.current;
+		const table = tableScrollRef.current;
+		if (!dummy || !table) return;
+		if (table.scrollLeft !== dummy.scrollLeft) {
+			table.scrollLeft = dummy.scrollLeft;
+		}
+	};
+
+	const handleTableScroll = () => {
+		const dummy = dummyScrollRef.current;
+		const table = tableScrollRef.current;
+		if (!dummy || !table) return;
+		if (dummy.scrollLeft !== table.scrollLeft) {
+			dummy.scrollLeft = table.scrollLeft;
+		}
+	};
 
 	if (filteredColumns.length === 0) {
 		return null;
@@ -75,8 +130,8 @@ export function CheckboxStatsTable({
 
 	return (
 		<div className="flex flex-col gap-4">
-			<div className="flex w-full flex-wrap items-end justify-between gap-4">
-				<div className="flex max-w-xs flex-col gap-2">
+			<div className="flex w-full flex-row flex-nowrap items-end justify-between gap-4">
+				<div className="flex min-w-0 max-w-xs flex-1 flex-col gap-2">
 					<Select
 						onChange={(val) => {
 							if (val) setGroupByColumn(String(val));
@@ -105,7 +160,7 @@ export function CheckboxStatsTable({
 					</Select>
 				</div>
 
-				<div className="flex items-center gap-6">
+				<div className="flex shrink-0 items-center gap-3 sm:gap-6">
 					<Tooltip closeDelay={0} delay={0}>
 						<Tooltip.Trigger>
 							<Checkbox isSelected={showRowRatio} onChange={setShowRowRatio}>
@@ -122,11 +177,29 @@ export function CheckboxStatsTable({
 						</Tooltip.Content>
 					</Tooltip>
 
+					<Tooltip closeDelay={0} delay={0}>
+						<Tooltip.Trigger>
+							<Button
+								aria-label="下載 CSV 檔案"
+								className="text-success"
+								isIconOnly
+								onPress={downloadCSV}
+								size="sm"
+								variant="tertiary"
+							>
+								<Download className="size-4" />
+							</Button>
+						</Tooltip.Trigger>
+						<Tooltip.Content placement="top">
+							下載統計數據為 CSV 檔案
+						</Tooltip.Content>
+					</Tooltip>
+
 					{onRefetch && (
 						<Tooltip closeDelay={0} delay={0}>
 							<Tooltip.Trigger>
 								<Button
-									className="text-muted"
+									className="text-accent"
 									isIconOnly
 									isPending={isRefetching}
 									onPress={onRefetch}
@@ -144,8 +217,21 @@ export function CheckboxStatsTable({
 				</div>
 			</div>
 
+			{hasOverflow && (
+				<div
+					className="w-full select-none overflow-x-auto overflow-y-hidden"
+					onScroll={handleDummyScroll}
+					ref={dummyScrollRef}
+				>
+					<div style={{ width: `${tableScrollWidth}px`, height: "1px" }} />
+				</div>
+			)}
+
 			<Table variant="secondary">
-				<Table.ScrollContainer>
+				<Table.ScrollContainer
+					onScroll={handleTableScroll}
+					ref={tableScrollRef}
+				>
 					<Table.Content aria-label="核取方塊統計表">
 						<Table.Header>
 							<Table.Column

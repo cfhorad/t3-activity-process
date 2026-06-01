@@ -24,7 +24,12 @@ interface CheckHeaderProps {
 }
 
 function CheckHeader({ processId, isSyncing, onSync }: CheckHeaderProps) {
-	const { data: process } = api.process.getById.useQuery({ id: processId });
+	const { data: process } = api.process.getById.useQuery(
+		{ id: processId },
+		{
+			staleTime: 1000 * 60 * 5, // Cache process metadata for 5 minutes
+		},
+	);
 	const { isActivityEditor } = useAuth();
 
 	const isAuthorized = isActivityEditor(
@@ -76,6 +81,10 @@ export function CheckPageClient({
 		handleSaveVisibleColumns,
 		isSavingVisibleColumns,
 		handleManualRefetch,
+		groupByColumn,
+		setGroupByColumn,
+		showRowRatio,
+		setShowRowRatio,
 	} = useCheckData(id);
 
 	return (
@@ -167,8 +176,12 @@ export function CheckPageClient({
 								<CheckboxStatsTable
 									columns={columns}
 									data={syncedData ?? []}
+									groupByColumn={groupByColumn}
 									isRefetching={isQueryLoading}
 									onRefetch={handleManualRefetch}
+									setGroupByColumn={setGroupByColumn}
+									setShowRowRatio={setShowRowRatio}
+									showRowRatio={showRowRatio}
 								/>
 							</Card>
 						</div>

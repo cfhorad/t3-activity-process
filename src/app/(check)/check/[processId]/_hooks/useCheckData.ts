@@ -13,6 +13,8 @@ export function useCheckData(processId: number) {
 	>({});
 	const [hasAttemptedAutoSync, setHasAttemptedAutoSync] = useState(false);
 	const [visibleColumnNames, setVisibleColumnNames] = useState<string[]>([]);
+	const [groupByColumn, setGroupByColumn] = useState("");
+	const [showRowRatio, setShowRowRatio] = useState(false);
 
 	const {
 		data: syncedData,
@@ -36,6 +38,18 @@ export function useCheckData(processId: number) {
 		}
 	}, [columns, visibleColumnNames.length]);
 
+	// Automatically select the first groupable column as default once columns are loaded
+	useEffect(() => {
+		if (columns && groupByColumn === "") {
+			const groupable = columns
+				.filter((col) => !col.isCheckbox)
+				.sort((a, b) => a.displayOrder - b.displayOrder);
+			if (groupable[0]?.columnName) {
+				setGroupByColumn(groupable[0].columnName);
+			}
+		}
+	}, [columns, groupByColumn]);
+
 	const syncMutation = api.checkSheet.sync.useMutation({
 		onSuccess: (data) => {
 			void utils.checkSheet.getAll.invalidate({ processId });
@@ -57,7 +71,7 @@ export function useCheckData(processId: number) {
 				toast.danger(`儲存失敗: ${error.message}`);
 			},
 		});
-		// MEMO: optimistic update，先更新 UI，再更新資料，若失敗則回滾
+	// MEMO: optimistic update，先更新 UI，再更新資料，若失敗則回滾
 	const updateCheckboxMutation = api.checkSheet.updateCheckbox.useMutation({
 		onMutate: async ({ databaseId, columnName, newValue }) => {
 			// Optimistic UI update
@@ -172,7 +186,9 @@ export function useCheckData(processId: number) {
 	const visibleColumns =
 		columns?.filter((c) => visibleColumnNames.includes(c.columnName)) ?? [];
 
-	const sortedData = syncedData ? [...syncedData].sort((a, b) => a.id - b.id) : [];
+	const sortedData = syncedData
+		? [...syncedData].sort((a, b) => a.id - b.id)
+		: [];
 
 	const handleSaveVisibleColumns = () => {
 		saveVisibleColumnsMutation.mutate({
@@ -209,5 +225,9 @@ export function useCheckData(processId: number) {
 		handleSaveVisibleColumns,
 		isSavingVisibleColumns: saveVisibleColumnsMutation.isPending,
 		handleManualRefetch,
+		groupByColumn,
+		setGroupByColumn,
+		showRowRatio,
+		setShowRowRatio,
 	};
 }

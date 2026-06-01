@@ -1,5 +1,6 @@
 "use client";
 
+import { toast } from "@heroui/react";
 import { useState } from "react";
 
 export interface Column {
@@ -23,7 +24,16 @@ export interface StatRow {
 	[key: string]: string | number;
 }
 
-export function useCheckboxStats(columns: Column[], data: DataRow[]) {
+export function useCheckboxStats(
+	columns: Column[],
+	data: DataRow[],
+	options?: {
+		groupByColumn?: string;
+		setGroupByColumn?: (val: string) => void;
+		showRowRatio?: boolean;
+		setShowRowRatio?: (val: boolean) => void;
+	},
+) {
 	// 1. Identify all checkbox columns (X-axis)
 	const checkboxColumns = columns
 		.filter((col) => col.isCheckbox)
@@ -34,14 +44,26 @@ export function useCheckboxStats(columns: Column[], data: DataRow[]) {
 		.filter((col) => !col.isCheckbox)
 		.sort((a, b) => a.displayOrder - b.displayOrder);
 
-	// Default to the first groupable column
-	const [groupByColumn, setGroupByColumn] = useState<string>(
-		groupableColumns[0]?.columnName ?? "",
-	);
-	const [showRowRatio, setShowRowRatio] = useState(false);
+	// Default state if not provided externally (liftoff support)
+	const [localGroupByColumn, setLocalGroupByColumn] = useState<string>("");
+	const [localShowRowRatio, setLocalShowRowRatio] = useState(false);
+
+	const rawGroupByColumn =
+		options?.groupByColumn !== undefined
+			? options.groupByColumn
+			: localGroupByColumn;
+	const setGroupByColumn = options?.setGroupByColumn || setLocalGroupByColumn;
+	const showRowRatio =
+		options?.showRowRatio !== undefined
+			? options.showRowRatio
+			: localShowRowRatio;
+	const setShowRowRatio = options?.setShowRowRatio || setLocalShowRowRatio;
+
+	const groupByColumn =
+		rawGroupByColumn || (groupableColumns[0]?.columnName ?? "");
 
 	// 3. Process the data
-	const statsData = (() => {
+	const statsData: StatRow[] = (() => {
 		if (!groupByColumn || checkboxColumns.length === 0) return [];
 
 		const groups: Record<
@@ -143,6 +165,68 @@ export function useCheckboxStats(columns: Column[], data: DataRow[]) {
 		return rows;
 	})();
 
+	/**
+	 * Generates a CSV file from the computed statsData and triggers a browser download.
+	 * Includes a UTF-8 Byte Order Mark (BOM) to ensure correct encoding/Chinese display in Excel.
+	 */
+	const downloadCSV = () => {
+		if (statsData.length === 0) return;
+
+		// 1. Build CSV headers matching the table layout
+		const headers = [groupByColumn || "分組"];
+		if (showRowRatio) {
+			headers.push("比率");
+		}
+		for (const col of checkboxColumns) {
+			headers.push(col.columnName);
+		}
+
+		// 2. Format row values and map to CSV fields
+		const csvRows = statsData.map((row) => {
+			const csvRow = [row.groupName];
+			if (showRowRatio) {
+				csvRow.push(row.rowRatio || "");
+			}
+			for (const col of checkboxColumns) {
+				const val = row[col.columnName];
+				csvRow.push(val !== undefined ? String(val) : "");
+			}
+			// Escape field values to safely handle commas, quotes, and newlines
+			return csvRow
+				.map((field) => {
+					const escaped = field.replace(/"/g, '""');
+					return `"${escaped}"`;
+				})
+				.join(",");
+		});
+
+		// 3. Assemble CSV string
+		const csvContent = [
+			headers.map((h) => `"${h.replace(/"/g, '""')}"`).join(","),
+			...csvRows,
+		].join("\n");
+
+		// 4. Create a download link with UTF-8 BOM to prevent Excel display corruption on Chinese characters
+		const blob = new Blob([`\uFEFF${csvContent}`], {
+			type: "text/csv;charset=utf-8;",
+		});
+		const url = URL.createObjectURL(blob);
+		const link = document.createElement("a");
+		link.setAttribute("href", url);
+
+		// Format file name using group column and current ISO date (YYYY-MM-DD)
+		const timestamp = new Date().toISOString().slice(0, 10);
+		const fileName = `check-stats-${groupByColumn || "group"}-${timestamp}.csv`;
+		link.setAttribute("download", fileName);
+
+		// 5. Append, click, and clean up the temporary anchor element
+		document.body.appendChild(link);
+		link.click();
+		document.body.removeChild(link);
+
+		toast.success("CSV 檔案下載成功");
+	};
+
 	return {
 		checkboxColumns,
 		groupableColumns,
@@ -151,5 +235,6 @@ export function useCheckboxStats(columns: Column[], data: DataRow[]) {
 		showRowRatio,
 		setShowRowRatio,
 		statsData,
+		downloadCSV,
 	};
 }

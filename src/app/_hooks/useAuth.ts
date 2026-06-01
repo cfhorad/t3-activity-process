@@ -41,6 +41,7 @@ export function useAuth(serverSession?: Session | null) {
 		undefined,
 		{
 			enabled: isMounted && !!session,
+			staleTime: 1000 * 60 * 5, // Cache permissions for 5 minutes to avoid redundant network refetches
 		},
 	);
 
@@ -50,11 +51,10 @@ export function useAuth(serverSession?: Session | null) {
 	const isViewer = normalizedRole === "VIEWER" || (!isAdmin && !isManager);
 	const isManagerOrAdmin = isAdmin || isManager;
 
-	const approvedAreaIds = (
+	const approvedAreaIds =
 		myPermissions?.areas
 			?.filter((app) => app.status === "approved")
-			.map((app) => app.areaId) ?? []
-	);
+			.map((app) => app.areaId) ?? [];
 
 	const isSuperAdmin = isAdmin && approvedAreaIds.includes("ALL");
 
