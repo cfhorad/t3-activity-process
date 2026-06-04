@@ -15,10 +15,7 @@ export const env = createEnv({
 		BETTER_AUTH_GOOGLE_CLIENT_SECRET: z.string(),
 		BETTER_AUTH_URL: z.string().url(),
 		DATABASE_URL: z.string().url(),
-		GOOGLE_SERVICE_ACCOUNT_EMAIL: z.string().email(),
-		GOOGLE_PRIVATE_KEY: z.string(),
-		GOOGLE_SHEET_ID: z.string(),
-		GOOGLE_SHEET_PROCESS_NAME: z.string(),
+
 		NODE_ENV: z
 			.enum(["development", "test", "production"])
 			.default("development"),
@@ -44,10 +41,7 @@ export const env = createEnv({
 			process.env.BETTER_AUTH_GOOGLE_CLIENT_SECRET,
 		BETTER_AUTH_URL: process.env.BETTER_AUTH_URL,
 		DATABASE_URL: process.env.DATABASE_URL,
-		GOOGLE_SERVICE_ACCOUNT_EMAIL: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-		GOOGLE_PRIVATE_KEY: process.env.GOOGLE_PRIVATE_KEY,
-		GOOGLE_SHEET_ID: process.env.GOOGLE_SHEET_ID,
-		GOOGLE_SHEET_PROCESS_NAME: process.env.GOOGLE_SHEET_PROCESS_NAME,
+
 		NODE_ENV: process.env.NODE_ENV,
 	},
 	/**
