@@ -72,12 +72,5 @@
 	"ct3aMetadata": {
 		"initVersion": "7.40.0"
 	},
-	"packageManager": "pnpm@11.1.1",
-	"pnpm": {
-		"onlyBuiltDependencies": [
-			"heroui-pro",
-			"@heroui-pro/react",
-			"heroui-native-pro"
-		]
-	}
+	"packageManager": "pnpm@11.5.1"
 }
