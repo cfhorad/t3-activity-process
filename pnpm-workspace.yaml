@@ -1,7 +1,0 @@
-allowBuilds:
-  heroui-pro: true
-  '@heroui-pro/react': true
-  heroui-native-pro: true
-  '@zowe/secrets-for-zowe-sdk': true
-  esbuild: true
-  sharp: true
