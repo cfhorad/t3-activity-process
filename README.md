@@ -75,6 +75,69 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 - `src/trpc`: tRPC client and server configuration.
 - `src/styles`: Global CSS and styling files.
 
+## 🔐 Authentication Custom Hook (`useAuth`)
+
+The custom hook [`useAuth`](src/app/_hooks/useAuth.ts) is a client-side hook for managing user sessions and computed role privileges safely while supporting Next.js Server-Side Rendering (SSR) and Better Auth.
+
+### Core Design & Features
+
+1. **SSR-Safe Hydration Guard**:
+   Uses an `isMounted` mount state indicator to prevent React hydration mismatch errors by deferring client-only logic until after the component has mounted on the client.
+2. **SSR Fallback Support**:
+   Accepts an optional `serverSession` parameter passed from a Server Component. It immediately falls back to this server-side session to guarantee faster visual loading before client hydration.
+3. **Role-Based Access Control (RBAC)**:
+   - Computes standard flags based on user roles: `isAdmin`, `isManager`, `isViewer`.
+   - Combines common permission sets, such as `isManagerOrAdmin`, for simpler view-level gating.
+4. **tRPC Area Permission Syncing**:
+   - Automatically queries the user's application statuses using the client-side tRPC query `api.user.getMyAreaStatuses` once mounted and authenticated.
+   - Maps the list of approved area identifiers to `approvedAreaIds`.
+   - Checks if the user is a `isSuperAdmin` (requires the `"ADMIN"` role and an approved area containing `"ALL"`).
+
+### Returned Properties
+
+The hook returns the following fields:
+
+| Field | Type | Description |
+| :--- | :--- | :--- |
+| `session` | `Session \| null` | The current session object (uses the client-side hook or the server fallback). |
+| `user` | `Session["user"] \| undefined` | The active user details inside the current session. |
+| `isLoading` | `boolean` | `true` if the tRPC request for area permission status is loading. |
+| `isAdmin` | `boolean` | `true` if the user's role is `"ADMIN"`. |
+| `isManager` | `boolean` | `true` if the user's role is `"MANAGER"`. |
+| `isViewer` | `boolean` | `true` if the user is a `"VIEWER"` or has no administrative privileges. |
+| `isManagerOrAdmin` | `boolean` | `true` if the user is either an `"ADMIN"` or a `"MANAGER"`. |
+| `approvedAreaIds` | `string[]` | Array of area IDs for which the user's status is `'approved'`. |
+| `isSuperAdmin` | `boolean` | `true` if the user is both an `"ADMIN"` and has access to the `"ALL"` area. |
+
+### Usage Example
+
+```tsx
+"use client";
+
+import { useAuth } from "~/app/_hooks/useAuth";
+
+export default function AdminFeature() {
+  const { user, isAdmin, isSuperAdmin, approvedAreaIds, isLoading } = useAuth();
+
+  if (!user) return <p>Please sign in to access this feature.</p>;
+  if (isLoading) return <p>Checking permissions...</p>;
+
+  return (
+    <div className="p-4 border rounded-xl bg-card">
+      <h3 className="font-bold">Welcome, {user.name}</h3>
+      <p>Role: {user.role}</p>
+      
+      {isSuperAdmin && <p className="text-destructive font-semibold">Super Admin Permissions Active</p>}
+      {isAdmin && <p className="text-primary font-semibold">Admin Panel Access Approved</p>}
+      
+      <div className="mt-2 text-sm text-muted-foreground">
+        <strong>Approved Area IDs:</strong> {approvedAreaIds.join(", ") || "None"}
+      </div>
+    </div>
+  );
+}
+```
+
 ## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.

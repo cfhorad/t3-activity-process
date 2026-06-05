@@ -1,48 +1,107 @@
 import { relations } from "drizzle-orm";
 import {
 	boolean,
-	index,
 	integer,
 	jsonb,
 	pgTableCreator,
+	primaryKey,
 	text,
 	timestamp,
 } from "drizzle-orm/pg-core";
 
 export const createTable = pgTableCreator((name) => `pg-drizzle_${name}`);
 
+export const area = createTable("area", {
+	id: text("id").primaryKey(),
+	name: text("name").notNull(),
+});
+
 export const googleSheetData = createTable("google_sheet_data", {
 	id: integer().primaryKey().generatedByDefaultAsIdentity(),
+	processId: integer("process_id")
+		.notNull()
+		.references(() => processes.id, { onDelete: "cascade" }),
 	data: jsonb("data").notNull(),
-	isAlwaysShow: boolean("is_always_show").default(false).notNull(),
 });
 
 export const googleSheetConfig = createTable("google_sheet_config", {
 	id: integer().primaryKey().generatedByDefaultAsIdentity(),
+	processId: integer("process_id")
+		.notNull()
+		.references(() => processes.id, { onDelete: "cascade" }),
 	columnName: text("column_name").notNull(),
 	isFilterable: boolean("is_filterable").default(false).notNull(),
+	isCheckbox: boolean("is_checkbox").default(false).notNull(),
 	displayOrder: integer("display_order").notNull(),
+	isVisible: boolean("is_visible").default(true).notNull(),
 });
 
-export const posts = createTable(
-	"post",
-	(d) => ({
-		id: d.integer().primaryKey().generatedByDefaultAsIdentity(),
-		name: d.varchar({ length: 256 }),
-		createdById: d
-			.varchar({ length: 255 })
+export const activities = createTable("activity", (d) => ({
+	id: d.integer().primaryKey().generatedByDefaultAsIdentity(),
+	name: d.varchar({ length: 256 }).notNull(),
+	googleSheetId: d.varchar({ length: 255 }).notNull(),
+	activityDate: d.text("activity_date").notNull(),
+	activityMemo: text("activity_memo"),
+	createdById: text("created_by_id")
+		.notNull()
+		.references(() => user.id),
+	areaId: text("area_id").references(() => area.id),
+	createdAt: d
+		.timestamp({ withTimezone: true })
+		.$defaultFn(() => new Date())
+		.notNull(),
+	updatedAt: d.timestamp({ withTimezone: true }).$onUpdate(() => new Date()),
+}));
+
+export const processes = createTable("process", (d) => ({
+	id: d.integer().primaryKey().generatedByDefaultAsIdentity(),
+	name: d.varchar({ length: 256 }).notNull(),
+	activityId: d
+		.integer("activity_id")
+		.notNull()
+		.references(() => activities.id, { onDelete: "cascade" }),
+	sheetName: d.varchar({ length: 255 }).notNull(),
+	type: text("type", { enum: ["PROCESS", "CHECK", "WEB"] })
+		.default("PROCESS")
+		.notNull(),
+	iframeSrc: text("iframe_src"),
+	processDate: d.text("process_date"),
+	processMemo: d.text("process_memo"),
+	createdAt: d
+		.timestamp({ withTimezone: true })
+		.$defaultFn(() => new Date())
+		.notNull(),
+	updatedAt: d.timestamp({ withTimezone: true }).$onUpdate(() => new Date()),
+}));
+
+export const activityEditors = createTable(
+	"activity_editor",
+	{
+		activityId: integer("activity_id")
 			.notNull()
-			.references(() => user.id),
-		createdAt: d
-			.timestamp({ withTimezone: true })
-			.$defaultFn(() => new Date())
-			.notNull(),
-		updatedAt: d.timestamp({ withTimezone: true }).$onUpdate(() => new Date()),
+			.references(() => activities.id, { onDelete: "cascade" }),
+		userId: text("user_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+	},
+	(t) => ({
+		pk: primaryKey({ columns: [t.activityId, t.userId] }),
 	}),
-	(t) => [
-		index("post_created_by_idx").on(t.createdById),
-		index("post_name_idx").on(t.name),
-	],
+);
+
+export const processCheckers = createTable(
+	"process_checker",
+	{
+		processId: integer("process_id")
+			.notNull()
+			.references(() => processes.id, { onDelete: "cascade" }),
+		userId: text("user_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+	},
+	(t) => ({
+		pk: primaryKey({ columns: [t.processId, t.userId] }),
+	}),
 );
 
 export const user = createTable("user", {
@@ -53,6 +112,10 @@ export const user = createTable("user", {
 		.$defaultFn(() => false)
 		.notNull(),
 	image: text("image"),
+	role: text("role", { enum: ["ADMIN", "MANAGER", "VIEWER"] }),
+	status: text("status", { enum: ["pending", "active", "suspended"] })
+		.default("pending")
+		.notNull(),
 	createdAt: timestamp("created_at")
 		.$defaultFn(() => /* @__PURE__ */ new Date())
 		.notNull(),
@@ -60,6 +123,27 @@ export const user = createTable("user", {
 		.$defaultFn(() => /* @__PURE__ */ new Date())
 		.notNull(),
 });
+
+export const userAreas = createTable(
+	"user_area",
+	{
+		userId: text("user_id")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		areaId: text("area_id")
+			.notNull()
+			.references(() => area.id, { onDelete: "cascade" }),
+		status: text("status", { enum: ["pending", "approved", "rejected"] })
+			.default("pending")
+			.notNull(),
+		approvedById: text("approved_by_id").references(() => user.id),
+		approvedAt: timestamp("approved_at"),
+		rejectedReason: text("rejected_reason"),
+	},
+	(t) => ({
+		pk: primaryKey({ columns: [t.userId, t.areaId] }),
+	}),
+);
 
 export const session = createTable("session", {
 	id: text("id").primaryKey(),
@@ -108,6 +192,30 @@ export const verification = createTable("verification", {
 export const userRelations = relations(user, ({ many }) => ({
 	account: many(account),
 	session: many(session),
+	areas: many(userAreas, { relationName: "user_to_areas" }),
+	approvals: many(userAreas, { relationName: "approver" }),
+	editedActivities: many(activityEditors),
+	checkedProcesses: many(processCheckers),
+	activities: many(activities),
+}));
+
+export const areaRelations = relations(area, ({ many }) => ({
+	users: many(userAreas),
+	activities: many(activities),
+}));
+
+export const userAreasRelations = relations(userAreas, ({ one }) => ({
+	user: one(user, {
+		fields: [userAreas.userId],
+		references: [user.id],
+		relationName: "user_to_areas",
+	}),
+	area: one(area, { fields: [userAreas.areaId], references: [area.id] }),
+	approvedBy: one(user, {
+		fields: [userAreas.approvedById],
+		references: [user.id],
+		relationName: "approver",
+	}),
 }));
 
 export const accountRelations = relations(account, ({ one }) => ({
@@ -117,3 +225,91 @@ export const accountRelations = relations(account, ({ one }) => ({
 export const sessionRelations = relations(session, ({ one }) => ({
 	user: one(user, { fields: [session.userId], references: [user.id] }),
 }));
+
+export const activityRelations = relations(activities, ({ many, one }) => ({
+	processes: many(processes),
+	creator: one(user, {
+		fields: [activities.createdById],
+		references: [user.id],
+	}),
+	area: one(area, { fields: [activities.areaId], references: [area.id] }),
+	editors: many(activityEditors),
+}));
+
+export const activityEditorsRelations = relations(
+	activityEditors,
+	({ one }) => ({
+		activity: one(activities, {
+			fields: [activityEditors.activityId],
+			references: [activities.id],
+		}),
+		user: one(user, {
+			fields: [activityEditors.userId],
+			references: [user.id],
+		}),
+	}),
+);
+
+export const processCheckersRelations = relations(
+	processCheckers,
+	({ one }) => ({
+		process: one(processes, {
+			fields: [processCheckers.processId],
+			references: [processes.id],
+		}),
+		user: one(user, {
+			fields: [processCheckers.userId],
+			references: [user.id],
+		}),
+	}),
+);
+
+export const googleSheetDataRelations = relations(
+	googleSheetData,
+	({ one }) => ({
+		process: one(processes, {
+			fields: [googleSheetData.processId],
+			references: [processes.id],
+		}),
+	}),
+);
+
+export const googleSheetConfigRelations = relations(
+	googleSheetConfig,
+	({ one }) => ({
+		process: one(processes, {
+			fields: [googleSheetConfig.processId],
+			references: [processes.id],
+		}),
+	}),
+);
+
+export const processRelations = relations(processes, ({ one, many }) => ({
+	activity: one(activities, {
+		fields: [processes.activityId],
+		references: [activities.id],
+	}),
+	googleSheetData: many(googleSheetData),
+	googleSheetConfig: many(googleSheetConfig),
+	checkers: many(processCheckers),
+}));
+
+// ─── Inferred types ────────────────────────────────────────────
+// Use these for tRPC router return values and server-side queries.
+// For session-based user props in UI components, use `User` from
+// `~/server/better-auth/config` instead.
+
+export type Activity = typeof activities.$inferSelect;
+export type NewActivity = typeof activities.$inferInsert;
+
+export type Process = typeof processes.$inferSelect;
+export type NewProcess = typeof processes.$inferInsert;
+
+export type Area = typeof area.$inferSelect;
+export type ActivityEditor = typeof activityEditors.$inferSelect;
+export type ProcessChecker = typeof processCheckers.$inferSelect;
+
+export type DbUser = typeof user.$inferSelect;
+
+export type UserArea = typeof userAreas.$inferSelect;
+export type NewUserArea = typeof userAreas.$inferInsert;

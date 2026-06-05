@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "@heroui/styles";
+@import "@heroui-pro/react/css";
 @theme {
 	--font-sans:
 		var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif,
