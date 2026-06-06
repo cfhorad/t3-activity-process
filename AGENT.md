@@ -1,6 +1,6 @@
 # Antigravity IDE - T3 AI Rules
 
-- **DB (Neon/Drizzle)**: Schema in `src/server/db/schema.ts`. Use `postgres-js` (Dev) / `neon-http` (Prod). Use `drizzle-kit push`.
+- **DB (Neon/Drizzle)**: Schema in `src/server/db/schema.ts`. Use `postgres-js` (Dev) / `neon-serverless` (Prod). Use `drizzle-kit push`.
 - **Auth (Better Auth)**:
   - Server-side: Use `auth.getSession(headers())` strictly for routing guards (redirecting unauthenticated users). **DO NOT** prop-drill `session.user` down to Client Components.
   - Client-side: ALWAYS use the centralized custom hook `useAuth` from `~/app/_hooks/useAuth` for authentication states, role privilege checks (`isSuperAdmin`, `isManagerOrAdmin`, `isViewer`), and active `approvedAreaIds`. NEVER calculate role or area privileges inline or perform verbose typecasts on components. Let each client component autonomously call `useAuth()` to determine its rendering rights.

@@ -40,12 +40,12 @@ When deploying to Vercel, you must configure the following environment variables
 To optimize speed during development and prevent persistent connection lockouts in production, we use two separate drivers:
 
 1. **`postgres-js`** locally (maintains stateful pool and singleton pattern to survive Next.js HMR).
-2. **`neon-http`** in production (stateless HTTP connections, allowing Neon to Scale-to-Zero and reducing cold starts).
+2. **`neon-serverless`** in production (WebSocket-based connection pooler, allowing interactive database transactions while still managing connections efficiently).
 
 ### The TypeScript Union & Peer Dependency Problem
 
-Because `pnpm` resolves different peer dependency trees for `drizzle-orm/neon-http` and `drizzle-orm/postgres-js`, they reside in separate isolated directories. TypeScript treats private fields (such as `shouldInlineParams` inside Drizzle's `SQL` class) nominally, which means:
-* A union type like `NeonHttpDatabase | PostgresJsDatabase` cannot be successfully called.
+Because `pnpm` resolves different peer dependency trees for `drizzle-orm/neon-serverless` and `drizzle-orm/postgres-js`, they reside in separate isolated directories. TypeScript treats private fields nominally, which means:
+* A union type like `NeonDatabase | PostgresJsDatabase` cannot be successfully called.
 * Custom SQL templates (`sql` template literal tag) from `drizzle-orm` will raise assignment errors due to type mismatches.
 
 ### The Solution: Intersection Cast
@@ -54,12 +54,17 @@ By casting the exported `db` to an **intersection type** rather than a union typ
 
 ```typescript
 // src/server/db/index.ts
-import { neon } from "@neondatabase/serverless";
-import { drizzle as drizzleHttp, type NeonHttpDatabase } from "drizzle-orm/neon-http";
+import { Pool, neonConfig } from "@neondatabase/serverless";
+import { drizzle as drizzleServerless, type NeonDatabase } from "drizzle-orm/neon-serverless";
 import { drizzle as drizzlePg, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
+import ws from "ws";
 import { env } from "~/env";
 import * as schema from "./schema";
+
+if (typeof window === "undefined") {
+  neonConfig.webSocketConstructor = ws;
+}
 
 const globalForDb = globalThis as unknown as {
   conn: postgres.Sql | undefined;
@@ -69,8 +74,8 @@ const createDb = () => {
   if (env.NODE_ENV === "production") {
     // Fallback to a placeholder string at build-time if environment variables are not fully loaded in the build environment
     const databaseUrl = env.DATABASE_URL || "postgresql://placeholder-for-build-time.local/db";
-    const sql = neon(databaseUrl);
-    return drizzleHttp({ client: sql, schema });
+    const pool = new Pool({ connectionString: databaseUrl });
+    return drizzleServerless({ client: pool, schema });
   }
 
   const conn = globalForDb.conn ?? postgres(env.DATABASE_URL);
@@ -79,15 +84,15 @@ const createDb = () => {
 };
 
 // Cast to intersection type to solve TS Union & nominal peer dependency conflicts
-export const db = createDb() as unknown as PostgresJsDatabase<typeof schema> & NeonHttpDatabase<typeof schema>;
-
+export const db = createDb() as unknown as PostgresJsDatabase<typeof schema> & NeonDatabase<typeof schema>;
 ```
+`
 
 ---
 
 ## 3. Handling Dynamic Raw Query Results
 
-When running raw queries using `db.execute()`, the HTTP driver returns an object with a `.rows` property (`{ rows: any[] }`), while the Postgres client driver returns a direct array.
+When running raw queries using `db.execute()`, the serverless/HTTP driver returns an object with a `.rows` property (`{ rows: any[] }`), while the local Postgres client driver returns a direct array.
 
 Because the database is typed as an intersection, TypeScript will narrow the return value to `never` in the `else` branch of an `Array.isArray()` check due to array-type narrowing contradictions.
 

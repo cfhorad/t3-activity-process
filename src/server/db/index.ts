@@ -1,10 +1,22 @@
-import { neon } from "@neondatabase/serverless";
-import { drizzle as drizzleHttp, type NeonHttpDatabase } from "drizzle-orm/neon-http";
-import { drizzle as drizzlePg, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
+import { neonConfig, Pool } from "@neondatabase/serverless";
+import {
+	drizzle as drizzleServerless,
+	type NeonDatabase,
+} from "drizzle-orm/neon-serverless";
+import {
+	drizzle as drizzlePg,
+	type PostgresJsDatabase,
+} from "drizzle-orm/postgres-js";
 import postgres from "postgres";
+import ws from "ws";
 
 import { env } from "~/env";
 import * as schema from "./schema";
+
+// Set WebSocket constructor for neon-serverless driver to run in Node.js server environments
+if (typeof window === "undefined") {
+	neonConfig.webSocketConstructor = ws;
+}
 
 /**
  * Cache the database connection in development. This avoids creating a new connection on every HMR
@@ -16,12 +28,13 @@ const globalForDb = globalThis as unknown as {
 
 const createDb = () => {
 	if (env.NODE_ENV === "production") {
-		// Production (Serverless/Edge): Stateless HTTP driver
-		// Allows Scale-to-Zero and reduces cold starts
+		// Production (Serverless/Edge): WebSocket/Pool driver
+		// Allows transactions and connection pooling
 		// Fallback to a placeholder string at build-time if environment variables are not fully loaded in the build environment
-		const databaseUrl = env.DATABASE_URL || "postgresql://placeholder-for-build-time.local/db";
-		const sql = neon(databaseUrl);
-		return drizzleHttp({ client: sql, schema });
+		const databaseUrl =
+			env.DATABASE_URL || "postgresql://placeholder-for-build-time.local/db";
+		const pool = new Pool({ connectionString: databaseUrl });
+		return drizzleServerless({ client: pool, schema });
 	}
 
 	// Development: Stateful connection with Singleton pattern
@@ -32,5 +45,6 @@ const createDb = () => {
 	return drizzlePg({ client: conn, schema });
 };
 
-export const db = createDb() as unknown as PostgresJsDatabase<typeof schema> & NeonHttpDatabase<typeof schema>;
-
+// Cast to intersection type to solve TS Union & nominal peer dependency conflicts
+export const db = createDb() as unknown as PostgresJsDatabase<typeof schema> &
+	NeonDatabase<typeof schema>;
