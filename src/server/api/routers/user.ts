@@ -7,14 +7,13 @@ import {
 	publicProcedure,
 } from "~/server/api/trpc";
 import { auth } from "~/server/better-auth";
+import { getCachedPublicAreas } from "~/server/cache/area";
 import { user, userAreas } from "~/server/db/schema";
 
 export const userRouter = createTRPCRouter({
 	// Anyone can call this (for registration)
-	getPublicAreas: publicProcedure.query(async ({ ctx }) => {
-		return ctx.db.query.area.findMany({
-			where: (a, { ne }) => ne(a.id, "ALL"), // hide "ALL" from registration
-		});
+	getPublicAreas: publicProcedure.query(async () => {
+		return await getCachedPublicAreas();
 	}),
 
 	// Called right after signup — creates pending userAreas

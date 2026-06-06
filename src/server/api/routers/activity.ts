@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
-import { eq, inArray } from "drizzle-orm";
+import { eq } from "drizzle-orm";
+import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import {
 	assertCanManageArea,
@@ -7,29 +8,17 @@ import {
 	managerProcedure,
 	protectedProcedure,
 } from "~/server/api/trpc";
+import {
+	getCachedActivities,
+	getCachedActivityById,
+} from "~/server/cache/activity";
 import { activities, activityEditors, processes } from "~/server/db/schema";
 
 export const activityRouter = createTRPCRouter({
 	getAll: protectedProcedure.query(async ({ ctx }) => {
 		const { areaIds } = ctx.session.user;
-		const where = areaIds.includes("ALL")
-			? undefined
-			: inArray(activities.areaId, areaIds);
-
-		return await ctx.db.query.activities.findMany({
-			where,
-			with: {
-				creator: true,
-				processes: true,
-				area: true,
-				editors: {
-					with: {
-						user: true,
-					},
-				},
-			},
-			orderBy: (activities, { desc }) => [desc(activities.createdAt)],
-		});
+		const areaIdsJoined = [...areaIds].sort().join(",");
+		return await getCachedActivities(areaIdsJoined);
 	}),
 
 	getById: protectedProcedure
@@ -37,25 +26,18 @@ export const activityRouter = createTRPCRouter({
 		.query(async ({ ctx, input }) => {
 			const { areaIds } = ctx.session.user;
 
-			const activity = await ctx.db.query.activities.findFirst({
-				where: (activities, { and, eq, inArray }) =>
-					areaIds.includes("ALL")
-						? eq(activities.id, input.id)
-						: and(
-								eq(activities.id, input.id),
-								inArray(activities.areaId, areaIds),
-							),
-				with: {
-					processes: true,
-					creator: true,
-					area: true,
-					editors: {
-						with: {
-							user: true,
-						},
-					},
-				},
-			});
+			const activity = await getCachedActivityById(input.id);
+
+			if (!activity) return null;
+
+			// Verify authorization (area access)
+			if (
+				!areaIds.includes("ALL") &&
+				!(activity.areaId !== null && areaIds.includes(activity.areaId))
+			) {
+				throw new TRPCError({ code: "FORBIDDEN" });
+			}
+
 			return activity;
 		}),
 
@@ -104,6 +86,10 @@ export const activityRouter = createTRPCRouter({
 
 				return newActivity;
 			});
+
+			if (activity) {
+				revalidateTag("activities");
+			}
 
 			return activity;
 		}),
@@ -173,6 +159,11 @@ export const activityRouter = createTRPCRouter({
 				return [updated];
 			});
 
+			if (activity) {
+				revalidateTag("activities");
+				revalidateTag(`activity-${id}`);
+			}
+
 			return activity;
 		}),
 
@@ -204,6 +195,8 @@ export const activityRouter = createTRPCRouter({
 			}
 
 			await ctx.db.delete(activities).where(eq(activities.id, input.id));
+			revalidateTag("activities");
+			revalidateTag(`activity-${input.id}`);
 			return { success: true };
 		}),
 });

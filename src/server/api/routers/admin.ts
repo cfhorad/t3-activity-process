@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { and, eq, inArray } from "drizzle-orm";
+import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import {
 	assertCanManageArea,
@@ -341,6 +342,10 @@ export const adminRouter = createTRPCRouter({
 				})
 				.returning();
 
+			if (newArea) {
+				revalidateTag("public-areas");
+			}
+
 			return newArea;
 		}),
 
@@ -363,6 +368,7 @@ export const adminRouter = createTRPCRouter({
 			}
 
 			await ctx.db.delete(area).where(eq(area.id, input.id));
+			revalidateTag("public-areas");
 			return { success: true };
 		}),
 });

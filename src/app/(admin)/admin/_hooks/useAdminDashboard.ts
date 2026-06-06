@@ -45,27 +45,119 @@ export function useAdminDashboard({ currentUser }: UseAdminDashboardProps) {
 	} = api.admin.getPendingApprovals.useQuery();
 
 	const approveMutation = api.admin.approveAreaApplication.useMutation({
-		onSuccess: async () => {
+		onMutate: async ({ userId, areaId }) => {
+			await utils.admin.getPendingApprovals.cancel();
+			await utils.admin.getUsers.cancel();
+
+			const previousApprovals = utils.admin.getPendingApprovals.getData();
+			const previousUsers = utils.admin.getUsers.getData();
+
+			utils.admin.getPendingApprovals.setData(undefined, (old) => {
+				if (!old) return [];
+				return old.filter(
+					(app) => !(app.userId === userId && app.areaId === areaId),
+				);
+			});
+
+			utils.admin.getUsers.setData(undefined, (old) => {
+				if (!old) return [];
+				return old.map((u) => {
+					if (u.id === userId) {
+						return {
+							...u,
+							areas: u.areas.map((ua) =>
+								ua.areaId === areaId
+									? { ...ua, status: "approved" as const }
+									: ua,
+							),
+						};
+					}
+					return u;
+				});
+			});
+
+			return { previousApprovals, previousUsers };
+		},
+		onError: (err, _variables, context) => {
+			if (context?.previousApprovals) {
+				utils.admin.getPendingApprovals.setData(
+					undefined,
+					context.previousApprovals,
+				);
+			}
+			if (context?.previousUsers) {
+				utils.admin.getUsers.setData(undefined, context.previousUsers);
+			}
+			toast.danger(`核准失敗: ${err.message}`);
+		},
+		onSuccess: () => {
 			toast.success("分會申請已核准！");
+		},
+		onSettled: async () => {
 			await utils.admin.getPendingApprovals.invalidate();
 			await utils.admin.getUsers.invalidate();
-		},
-		onError: (err) => {
-			toast.danger(`核准失敗: ${err.message}`);
 		},
 	});
 
 	const rejectMutation = api.admin.rejectAreaApplication.useMutation({
-		onSuccess: async () => {
+		onMutate: async ({ userId, areaId, rejectedReason }) => {
+			await utils.admin.getPendingApprovals.cancel();
+			await utils.admin.getUsers.cancel();
+
+			const previousApprovals = utils.admin.getPendingApprovals.getData();
+			const previousUsers = utils.admin.getUsers.getData();
+
+			utils.admin.getPendingApprovals.setData(undefined, (old) => {
+				if (!old) return [];
+				return old.filter(
+					(app) => !(app.userId === userId && app.areaId === areaId),
+				);
+			});
+
+			utils.admin.getUsers.setData(undefined, (old) => {
+				if (!old) return [];
+				return old.map((u) => {
+					if (u.id === userId) {
+						return {
+							...u,
+							areas: u.areas.map((ua) =>
+								ua.areaId === areaId
+									? {
+											...ua,
+											status: "rejected" as const,
+											rejectedReason: rejectedReason ?? null,
+										}
+									: ua,
+							),
+						};
+					}
+					return u;
+				});
+			});
+
+			return { previousApprovals, previousUsers };
+		},
+		onError: (err, _variables, context) => {
+			if (context?.previousApprovals) {
+				utils.admin.getPendingApprovals.setData(
+					undefined,
+					context.previousApprovals,
+				);
+			}
+			if (context?.previousUsers) {
+				utils.admin.getUsers.setData(undefined, context.previousUsers);
+			}
+			toast.danger(`拒絕失敗: ${err.message}`);
+		},
+		onSuccess: () => {
 			toast.success("已拒絕該分會申請。");
 			setRejectModalOpen(false);
 			setRejectingApplication(null);
 			setRejectedReason("");
+		},
+		onSettled: async () => {
 			await utils.admin.getPendingApprovals.invalidate();
 			await utils.admin.getUsers.invalidate();
-		},
-		onError: (err) => {
-			toast.danger(`拒絕失敗: ${err.message}`);
 		},
 	});
 

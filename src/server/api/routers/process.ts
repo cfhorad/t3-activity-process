@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { eq } from "drizzle-orm";
+import { revalidateTag } from "next/cache";
 import { z } from "zod";
 import {
 	createTRPCRouter,
@@ -216,6 +217,9 @@ export const processRouter = createTRPCRouter({
 				}
 				return updated;
 			});
+			if (updatedProcess) {
+				revalidateTag(`process-${id}`);
+			}
 			return updatedProcess;
 		}),
 
@@ -250,6 +254,7 @@ export const processRouter = createTRPCRouter({
 			}
 
 			await ctx.db.delete(processes).where(eq(processes.id, input.id));
+			revalidateTag(`process-${input.id}`);
 			return { success: true };
 		}),
 });

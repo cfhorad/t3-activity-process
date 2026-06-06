@@ -1,10 +1,8 @@
 "use client";
 
-import { Button, Card, Spinner } from "@heroui/react";
-import { useRouter } from "next/navigation";
-import { use, useState } from "react";
+import { Card, Spinner } from "@heroui/react";
+import { useState } from "react";
 import { PageHeader } from "~/app/_components/page-header";
-import { useWebData } from "./_hooks/useWebData";
 
 // ─── SUB-COMPONENTS ───────────────────────────────────────────
 
@@ -57,38 +55,11 @@ function NoIframeWarning() {
 	);
 }
 
+import type { Process } from "~/server/db/schema";
+
 // ─── MAIN PRESENTATIONAL COMPONENT ───────────────────────────
 
-export function WebPageClient({
-	params,
-}: {
-	params: Promise<{ processId: string }>;
-}) {
-	const { processId } = use(params);
-	const id = parseInt(processId, 10);
-	const router = useRouter();
-
-	const { process, isLoading } = useWebData(id);
-
-	if (isLoading) {
-		return (
-			<div className="flex h-full items-center justify-center">
-				<Spinner size="lg" />
-			</div>
-		);
-	}
-
-	if (!process) {
-		return (
-			<div className="flex h-full flex-col items-center justify-center gap-4">
-				<p className="text-muted text-xl">Process not found</p>
-				<Button onPress={() => router.back()} variant="secondary">
-					Go Back
-				</Button>
-			</div>
-		);
-	}
-
+export function WebPageClient({ process }: { process: Process }) {
 	return (
 		<main className="h-full bg-linear-to-b from-background to-surface-secondary p-4 md:p-8">
 			<div className="mx-auto flex h-full max-w-7xl flex-col">

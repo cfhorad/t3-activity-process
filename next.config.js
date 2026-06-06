@@ -12,6 +12,10 @@ const withSerwist = withSerwistInit({
 });
 
 /** @type {import("next").NextConfig} */
-const config = {};
+const config = {
+	experimental: {
+		useCache: true,
+	},
+};
 
 export default withSerwist(config);
