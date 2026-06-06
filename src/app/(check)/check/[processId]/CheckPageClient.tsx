@@ -61,6 +61,7 @@ export function CheckPageClient({
 }) {
 	const { processId } = use(params);
 	const id = parseInt(processId, 10);
+	const { isManagerOrAdmin } = useAuth();
 
 	const {
 		search,
@@ -96,15 +97,17 @@ export function CheckPageClient({
 					processId={id}
 				/>
 
-				<DataFilterToolbar
-					filterableColumns={filterableColumns}
-					filterType="check"
-					onFilterChange={updateFilter}
-					onSearchChange={setSearch}
-					processId={id}
-					search={search}
-					selectedFilters={selectedFilters}
-				/>
+				{isManagerOrAdmin && (
+					<DataFilterToolbar
+						filterableColumns={filterableColumns}
+						filterType="check"
+						onFilterChange={updateFilter}
+						onSearchChange={setSearch}
+						processId={id}
+						search={search}
+						selectedFilters={selectedFilters}
+					/>
+				)}
 
 				<Tabs variant="secondary">
 					<Tabs.ListContainer>

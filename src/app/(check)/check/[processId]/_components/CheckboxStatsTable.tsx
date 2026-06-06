@@ -49,7 +49,7 @@ export function CheckboxStatsTable({
 	showRowRatio: externalShowRowRatio,
 	setShowRowRatio: externalSetShowRowRatio,
 }: CheckboxStatsTableProps) {
-	const { isViewer } = useAuth();
+	const { isViewer, isManagerOrAdmin } = useAuth();
 
 	const filteredColumns = isViewer
 		? columns.filter(
@@ -177,23 +177,25 @@ export function CheckboxStatsTable({
 						</Tooltip.Content>
 					</Tooltip>
 
-					<Tooltip closeDelay={0} delay={0}>
-						<Tooltip.Trigger>
-							<Button
-								aria-label="下載 CSV 檔案"
-								className="text-success"
-								isIconOnly
-								onPress={downloadCSV}
-								size="sm"
-								variant="tertiary"
-							>
-								<Download className="size-4" />
-							</Button>
-						</Tooltip.Trigger>
-						<Tooltip.Content placement="top">
-							下載統計數據為 CSV 檔案
-						</Tooltip.Content>
-					</Tooltip>
+					{isManagerOrAdmin && (
+						<Tooltip closeDelay={0} delay={0}>
+							<Tooltip.Trigger>
+								<Button
+									aria-label="下載 CSV 檔案"
+									className="text-success"
+									isIconOnly
+									onPress={downloadCSV}
+									size="sm"
+									variant="tertiary"
+								>
+									<Download className="size-4" />
+								</Button>
+							</Tooltip.Trigger>
+							<Tooltip.Content placement="top">
+								下載統計數據為 CSV 檔案
+							</Tooltip.Content>
+						</Tooltip>
+					)}
 
 					{onRefetch && (
 						<Tooltip closeDelay={0} delay={0}>

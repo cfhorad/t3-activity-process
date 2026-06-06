@@ -208,7 +208,7 @@ export function CheckListTable({
 	const [isDownloading, setIsDownloading] = useState(false);
 	const utils = api.useUtils();
 
-	const { isViewer, isProcessChecker } = useAuth();
+	const { isViewer, isProcessChecker, isManagerOrAdmin } = useAuth();
 
 	const isEditable = isProcessChecker(
 		processId,
@@ -359,45 +359,47 @@ export function CheckListTable({
 					onSelectionChange={onVisibleColumnsChange}
 					visibleColumnNames={visibleColumnNames}
 				/>
-				<div className="flex shrink-0 items-center gap-3 sm:gap-6">
-					<Tooltip closeDelay={0} delay={0}>
-						<Tooltip.Trigger>
-							<Button
-								aria-label="匯出完整 CSV"
-								className="text-success"
-								isIconOnly
-								isPending={isDownloading}
-								onPress={downloadUnfilteredCSV}
-								size="sm"
-								variant="tertiary"
-							>
-								<Download className="size-4" />
-							</Button>
-						</Tooltip.Trigger>
-						<Tooltip.Content placement="top">
-							下載完整報到清單數據
-						</Tooltip.Content>
-					</Tooltip>
+				{isManagerOrAdmin && (
+					<div className="flex shrink-0 items-center gap-3 sm:gap-6">
+						<Tooltip closeDelay={0} delay={0}>
+							<Tooltip.Trigger>
+								<Button
+									aria-label="匯出完整 CSV"
+									className="text-success"
+									isIconOnly
+									isPending={isDownloading}
+									onPress={downloadUnfilteredCSV}
+									size="sm"
+									variant="tertiary"
+								>
+									<Download className="size-4" />
+								</Button>
+							</Tooltip.Trigger>
+							<Tooltip.Content placement="top">
+								下載完整報到清單數據
+							</Tooltip.Content>
+						</Tooltip>
 
-					<Tooltip closeDelay={0} delay={0}>
-						<Tooltip.Trigger>
-							<Button
-								aria-label="儲存欄位設定"
-								className="text-accent"
-								isIconOnly
-								isPending={isSavingVisibleColumns}
-								onPress={onSaveVisibleColumns}
-								size="sm"
-								variant="tertiary"
-							>
-								<Save className="size-4" />
-							</Button>
-						</Tooltip.Trigger>
-						<Tooltip.Content placement="top">
-							儲存目前的顯示欄位設定，下次進入此頁面時將維持同樣的配置。
-						</Tooltip.Content>
-					</Tooltip>
-				</div>
+						<Tooltip closeDelay={0} delay={0}>
+							<Tooltip.Trigger>
+								<Button
+									aria-label="儲存欄位設定"
+									className="text-accent"
+									isIconOnly
+									isPending={isSavingVisibleColumns}
+									onPress={onSaveVisibleColumns}
+									size="sm"
+									variant="tertiary"
+								>
+									<Save className="size-4" />
+								</Button>
+							</Tooltip.Trigger>
+							<Tooltip.Content placement="top">
+								儲存目前的顯示欄位設定，下次進入此頁面時將維持同樣的配置。
+							</Tooltip.Content>
+						</Tooltip>
+					</div>
+				)}
 			</div>
 
 			{hasOverflow && (
