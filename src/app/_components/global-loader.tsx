@@ -17,13 +17,7 @@ export function GlobalLoader() {
 		window.addEventListener("navigation-end", handleEnd);
 
 		const handleAnchorClick = (e: MouseEvent) => {
-			if (
-				e.button !== 0 ||
-				e.metaKey ||
-				e.ctrlKey ||
-				e.shiftKey ||
-				e.altKey
-			) {
+			if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) {
 				return;
 			}
 			const anchor = (e.target as HTMLElement).closest("a");

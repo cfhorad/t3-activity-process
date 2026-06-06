@@ -9,6 +9,7 @@ import {
 	Modal,
 	SearchField,
 	Select,
+	Spinner,
 	Tag,
 	TagGroup,
 	TextField,
@@ -344,6 +345,7 @@ export function ActivityFormModal({
 								isPending={isPending}
 								type="submit"
 							>
+								{isPending && <Spinner color="current" size="sm" />}
 								{isPending ? `${submitLabel}...` : submitLabel}
 							</Button>
 						</Modal.Footer>

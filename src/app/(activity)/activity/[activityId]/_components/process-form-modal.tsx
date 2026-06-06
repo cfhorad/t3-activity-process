@@ -11,6 +11,7 @@ import {
 	Modal,
 	SearchField,
 	Select,
+	Spinner,
 	Tag,
 	TagGroup,
 	TextArea,
@@ -321,6 +322,7 @@ export function ProcessFormModal({
 								isPending={isPending}
 								type="submit"
 							>
+								{isPending && <Spinner color="current" size="sm" />}
 								{isPending ? `${submitLabel}...` : submitLabel}
 							</Button>
 						</Modal.Footer>

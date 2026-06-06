@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Form } from "@heroui/react";
+import { Button, Form, Spinner } from "@heroui/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { createAuthClient } from "better-auth/react";
 import { useForm } from "react-hook-form";
@@ -94,6 +94,7 @@ export function LoginForm({
 				isPending={isLoading}
 				type="submit"
 			>
+				{isLoading && <Spinner color="current" size="sm" />}
 				登入
 			</Button>
 		</Form>

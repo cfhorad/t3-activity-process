@@ -29,6 +29,16 @@ export function NavbarComponent({
 		return null;
 	}
 
+	const navigateWithLoader = (targetPath: string) => {
+		if (
+			typeof window !== "undefined" &&
+			window.location.pathname !== targetPath
+		) {
+			window.dispatchEvent(new CustomEvent("navigation-start"));
+		}
+		router.push(targetPath);
+	};
+
 	// ─── User Avatar Dropdown Items Config ───
 	const avatarDropdownItems = [
 		{
@@ -36,7 +46,7 @@ export function NavbarComponent({
 			label: "您的帳戶",
 			icon: <Person className="size-4 text-info" />,
 			onAction: () => {
-				router.push("/profile");
+				navigateWithLoader("/profile");
 			},
 		},
 		isAdmin && {
@@ -44,7 +54,7 @@ export function NavbarComponent({
 			label: "管理員後台",
 			icon: <ShieldCheck className="size-4 text-success" />,
 			onAction: () => {
-				router.push("/admin");
+				navigateWithLoader("/admin");
 			},
 		},
 		{
@@ -52,7 +62,7 @@ export function NavbarComponent({
 			label: "審核狀態",
 			icon: <Clock className="size-4 text-warning" />,
 			onAction: () => {
-				router.push("/pending-approval");
+				navigateWithLoader("/pending-approval");
 			},
 		},
 		{

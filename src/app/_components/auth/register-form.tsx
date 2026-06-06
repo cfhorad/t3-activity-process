@@ -208,6 +208,7 @@ export function RegisterForm({
 				isPending={isLoading}
 				type="submit"
 			>
+				{isLoading && <Spinner color="current" size="sm" />}
 				註冊
 			</Button>
 		</Form>

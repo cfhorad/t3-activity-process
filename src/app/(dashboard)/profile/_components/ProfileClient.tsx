@@ -26,6 +26,7 @@ import {
 	User,
 	XCircle,
 } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useAuth } from "~/app/_hooks/useAuth";
@@ -379,7 +380,12 @@ export function ProfileClient({ user }: ProfileClientProps) {
 					<div className="flex gap-3 border-separator/20 border-t pt-4">
 						<Button
 							className="flex flex-1 items-center gap-1.5 font-medium"
-							onPress={() => router.push("/")}
+							render={(props) => (
+								<Link
+									{...(props as unknown as Record<string, unknown>)}
+									href="/"
+								/>
+							)}
 							variant="secondary"
 						>
 							<ArrowLeft className="size-4" />
@@ -392,6 +398,9 @@ export function ProfileClient({ user }: ProfileClientProps) {
 							type="submit"
 							variant="primary"
 						>
+							{updateProfileMutation.isPending && (
+								<Spinner color="current" size="sm" />
+							)}
 							<Save className="size-4" />
 							儲存個人資料
 						</Button>

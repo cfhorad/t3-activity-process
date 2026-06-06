@@ -26,6 +26,7 @@ import { authClient } from "~/server/better-auth/client";
 import type { User } from "~/server/better-auth/config";
 import type { AreaStatusItem } from "../_hooks/usePendingApproval";
 import { usePendingApproval } from "../_hooks/usePendingApproval";
+import { ApprovalResultModal } from "./ApprovalResultModal";
 
 // ─── SUB-COMPONENTS ───────────────────────────────────────────
 
@@ -167,6 +168,7 @@ function OnboardingApplyForm({
 								type="submit"
 								variant="primary"
 							>
+								{isPending && <Spinner color="current" size="sm" />}
 								送出分會審核申請
 							</Button>
 						</div>
@@ -185,6 +187,7 @@ interface ApplicationStatusCardProps {
 	availableToApplyCount: number;
 	onApplyMore: () => void;
 	onRefresh: () => void;
+	isRefreshing: boolean;
 	isSuperAdmin: boolean;
 	isSuspended?: boolean;
 }
@@ -194,6 +197,7 @@ function ApplicationStatusCard({
 	availableToApplyCount,
 	onApplyMore,
 	onRefresh,
+	isRefreshing,
 	isSuperAdmin,
 	isSuspended,
 }: ApplicationStatusCardProps) {
@@ -279,14 +283,16 @@ function ApplicationStatusCard({
 				<div className="flex items-center justify-between rounded-xl bg-surface-secondary p-4 text-muted text-xs">
 					<span className="flex items-center gap-2 font-medium">
 						<Info className="size-4 shrink-0" />
-						當您至少有一個分會審核通過 (已開通) 後，您即可進入儀表板查看活動！
+						當您至少有一個分會審核通過 (已開通) 後，您即可進入活動管理查看活動！
 					</span>
 					<Button
-						className="font-semibold text-xs"
+						className="font-bold text-white text-xs"
+						isPending={isRefreshing}
 						onPress={onRefresh}
-						variant="secondary"
+						variant="primary"
 					>
-						重新整理狀態
+						{isRefreshing && <Spinner color="current" size="sm" />}
+						重新整理
 					</Button>
 				</div>
 			</div>
@@ -301,6 +307,8 @@ interface PendingApprovalClientProps {
 // ─── MAIN PRESENTATIONAL COMPONENT ───────────────────────────
 export function PendingApprovalClient({ user }: PendingApprovalClientProps) {
 	const router = useRouter();
+	const [isResultModalOpen, setIsResultModalOpen] = useState(false);
+	const [isRefreshing, setIsRefreshing] = useState(false);
 
 	const {
 		isLoading,
@@ -335,11 +343,22 @@ export function PendingApprovalClient({ user }: PendingApprovalClientProps) {
 	}
 
 	const isSuspended = user.status === "suspended";
+	const hasApproved = !!myApplications?.some(
+		(app) => app.status === "approved",
+	);
 
 	const handleRefresh = async () => {
-		await refetchSession();
-		await refetchStatus();
-		router.refresh();
+		setIsRefreshing(true);
+		try {
+			await refetchSession();
+			await refetchStatus();
+			router.refresh();
+			setIsResultModalOpen(true);
+		} catch (err) {
+			console.error("重新整理失敗", err);
+		} finally {
+			setIsRefreshing(false);
+		}
 	};
 
 	return (
@@ -383,6 +402,7 @@ export function PendingApprovalClient({ user }: PendingApprovalClientProps) {
 					availableToApplyCount={
 						availableToApply.length - (myApplications?.length ?? 0)
 					}
+					isRefreshing={isRefreshing}
 					isSuperAdmin={!!isSuperAdmin}
 					isSuspended={isSuspended}
 					myApplications={myApplications}
@@ -390,6 +410,17 @@ export function PendingApprovalClient({ user }: PendingApprovalClientProps) {
 					onRefresh={handleRefresh}
 				/>
 			)}
+
+			{/* Application Result Modal */}
+			<ApprovalResultModal
+				hasApproved={hasApproved}
+				isOpen={isResultModalOpen}
+				myApplications={myApplications}
+				onOpenChange={setIsResultModalOpen}
+				onRedirect={() => {
+					router.push("/");
+				}}
+			/>
 		</div>
 	);
 }

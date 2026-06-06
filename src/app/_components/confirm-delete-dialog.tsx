@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertDialog, Button } from "@heroui/react";
+import { AlertDialog, Button, Spinner } from "@heroui/react";
 import type { ReactNode } from "react";
 
 interface ConfirmDeleteDialogProps {
@@ -47,6 +47,7 @@ export function ConfirmDeleteDialog({
 							{cancelLabel}
 						</Button>
 						<Button isPending={isPending} onPress={onConfirm} variant={variant}>
+							{isPending && <Spinner color="current" size="sm" />}
 							{isPending ? `${confirmLabel}...` : confirmLabel}
 						</Button>
 					</AlertDialog.Footer>
