@@ -46,3 +46,7 @@ yarn-error.log*
 .idea
 # heroui-agents-md
 .heroui-docs/
+
+# PWA service worker
+/public/sw*
+/public/swe-worker*

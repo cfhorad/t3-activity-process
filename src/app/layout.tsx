@@ -1,5 +1,5 @@
 import "~/styles/globals.css";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import { getSession } from "~/server/better-auth/server";
 import { TRPCReactProvider } from "~/trpc/react";
@@ -8,7 +8,24 @@ import { Providers } from "./providers";
 
 export const metadata: Metadata = {
 	title: "活動管理系統",
-	icons: [{ rel: "icon", url: "/favicon.ico" }],
+	description: "一個現代化的活動管理與報到系統，支援與 Google 試算表同步。",
+	icons: {
+		icon: "/favicon.ico",
+		apple: "/apple-icon.png",
+	},
+	appleWebApp: {
+		capable: true,
+		statusBarStyle: "black-translucent",
+		title: "活動管理",
+	},
+};
+
+export const viewport: Viewport = {
+	themeColor: "#006fee",
+	width: "device-width",
+	initialScale: 1,
+	maximumScale: 1,
+	userScalable: false,
 };
 
 const geist = Geist({
