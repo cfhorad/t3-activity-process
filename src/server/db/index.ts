@@ -18,7 +18,9 @@ const createDb = () => {
 	if (env.NODE_ENV === "production") {
 		// Production (Serverless/Edge): Stateless HTTP driver
 		// Allows Scale-to-Zero and reduces cold starts
-		const sql = neon(env.DATABASE_URL);
+		// Fallback to a placeholder string at build-time if environment variables are not fully loaded in the build environment
+		const databaseUrl = env.DATABASE_URL || "postgresql://placeholder-for-build-time.local/db";
+		const sql = neon(databaseUrl);
 		return drizzleHttp({ client: sql, schema });
 	}
 
