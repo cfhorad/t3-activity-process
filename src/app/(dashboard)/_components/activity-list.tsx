@@ -176,7 +176,10 @@ function ActivityCard({ activity }: ActivityCardProps) {
 				date={activity.activityDate}
 				description={activity.activityMemo}
 				icon="meteocons:wind-offshore"
-				onClick={() => router.push(linkHref)}
+				onClick={() => {
+					window.dispatchEvent(new CustomEvent("navigation-start"));
+					router.push(linkHref);
+				}}
 				onDelete={isAuthorized ? () => deleteState.open() : undefined}
 				onEdit={isAuthorized ? () => editState.open() : undefined}
 				onInfo={() => infoState.open()}

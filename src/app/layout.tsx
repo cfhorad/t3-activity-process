@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
 import { getSession } from "~/server/better-auth/server";
 import { TRPCReactProvider } from "~/trpc/react";
+import { GlobalLoader } from "./_components/global-loader";
 import { NavbarClient } from "./_components/navbar-client";
 import { Providers } from "./providers";
 
@@ -43,6 +44,7 @@ export default async function RootLayout({
 			<body className="min-h-screen bg-background antialiased">
 				<TRPCReactProvider>
 					<Providers>
+						<GlobalLoader />
 						<div className="relative flex h-screen flex-col overflow-hidden">
 							<NavbarClient session={session} />
 							<main className="flex-1 overflow-auto">{children}</main>

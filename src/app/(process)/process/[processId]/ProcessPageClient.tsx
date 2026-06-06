@@ -37,7 +37,7 @@ function ProcessHeader({ processId, isSyncing, onSync }: ProcessHeaderProps) {
 		<PageHeader
 			action={<SyncConfirmDialog isSyncing={isSyncing} onSync={onSync} />}
 			backHref={process ? `/activity/${process.activityId}` : "/"}
-			backLabel={process?.activity?.name ?? "返回活動"}
+			backLabel="返回"
 			title={process?.name ?? "處理流程"}
 		/>
 	);

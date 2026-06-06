@@ -64,7 +64,7 @@ export default async function ActivityPage({
 							)
 						}
 						backHref="/"
-						backLabel="活動管理"
+						backLabel="返回"
 						title={activity.name}
 					/>
 

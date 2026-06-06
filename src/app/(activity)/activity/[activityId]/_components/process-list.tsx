@@ -256,15 +256,16 @@ function ProcessCard({ process, activity }: ProcessCardProps) {
 				date={process.processDate}
 				description={process.processMemo}
 				icon={getIcon()}
-				onClick={() =>
+				onClick={() => {
+					window.dispatchEvent(new CustomEvent("navigation-start"));
 					router.push(
 						process.type === "CHECK"
 							? `/check/${process.id}`
 							: process.type === "WEB"
 								? `/web/${process.id}`
 								: `/process/${process.id}`,
-					)
-				}
+					);
+				}}
 				onDelete={isAuthorized ? () => deleteState.open() : undefined}
 				onEdit={isAuthorized ? () => editState.open() : undefined}
 				onInfo={() => infoState.open()}

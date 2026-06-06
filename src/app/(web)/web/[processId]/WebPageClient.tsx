@@ -94,7 +94,7 @@ export function WebPageClient({
 			<div className="mx-auto flex h-full max-w-7xl flex-col">
 				<PageHeader
 					backHref={process ? `/activity/${process.activityId}` : "/"}
-					backLabel={process?.activity?.name ?? "返回活動"}
+					backLabel="返回"
 					title={process.name}
 				/>
 

@@ -87,9 +87,7 @@ export function NavbarComponent({
 							href="/"
 						>
 							<Home className="size-5 shrink-0" />
-							<span className="hidden font-bold text-sm tracking-wide md:inline">
-								活動管理
-							</span>
+							<span className="font-bold text-sm tracking-wide">活動管理</span>
 						</Link>
 					</div>
 
