@@ -1,4 +1,6 @@
-import { drizzle } from "drizzle-orm/postgres-js";
+import { neon } from "@neondatabase/serverless";
+import { drizzle as drizzleHttp, type NeonHttpDatabase } from "drizzle-orm/neon-http";
+import { drizzle as drizzlePg, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 
 import { env } from "~/env";
@@ -12,7 +14,21 @@ const globalForDb = globalThis as unknown as {
 	conn: postgres.Sql | undefined;
 };
 
-const conn = globalForDb.conn ?? postgres(env.DATABASE_URL);
-if (env.NODE_ENV !== "production") globalForDb.conn = conn;
+const createDb = () => {
+	if (env.NODE_ENV === "production") {
+		// Production (Serverless/Edge): Stateless HTTP driver
+		// Allows Scale-to-Zero and reduces cold starts
+		const sql = neon(env.DATABASE_URL);
+		return drizzleHttp({ client: sql, schema });
+	}
 
-export const db = drizzle(conn, { schema });
+	// Development: Stateful connection with Singleton pattern
+	// Prevents "too many connections" during HMR
+	const conn = globalForDb.conn ?? postgres(env.DATABASE_URL);
+	globalForDb.conn = conn;
+
+	return drizzlePg({ client: conn, schema });
+};
+
+export const db = createDb() as unknown as PostgresJsDatabase<typeof schema> & NeonHttpDatabase<typeof schema>;
+

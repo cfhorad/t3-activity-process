@@ -26,6 +26,7 @@
 		"@heroui/styles": "^3.0.3",
 		"@hookform/resolvers": "^5.2.2",
 		"@internationalized/number": "3.6.6",
+		"@neondatabase/serverless": "^1.1.0",
 		"@number-flow/react": "^0.6.0",
 		"@react-aria/utils": "3.34.0",
 		"@react-stately/utils": "3.12.0",

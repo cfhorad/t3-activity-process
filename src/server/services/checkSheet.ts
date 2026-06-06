@@ -222,7 +222,11 @@ export const checkSheetService = {
 		);
 
 		const uniqueValues = new Set<string>();
-		for (const row of result) {
+		// Handle both postgres-js (array) and neon-http ({ rows: [] })
+		const rows = Array.isArray(result)
+			? (result as unknown as { value: string | boolean | null }[])
+			: (result as unknown as { rows: { value: string | boolean | null }[] }).rows;
+		for (const row of rows) {
 			if (row.value !== null) {
 				const stringVal = row.value.toString();
 				const parts = stringVal.split(/[,\n\r]+/).map((p) => p.trim());

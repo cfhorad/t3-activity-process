@@ -185,7 +185,11 @@ export const googleSheetService = {
 		);
 
 		const uniqueValues = new Set<string>();
-		for (const row of result) {
+		// Handle both postgres-js (array) and neon-http ({ rows: [] })
+		const rows = Array.isArray(result)
+			? (result as unknown as { value: string | null }[])
+			: (result as unknown as { rows: { value: string | null }[] }).rows;
+		for (const row of rows) {
 			if (row.value) {
 				const parts = row.value.split(/[,\n\r]+/).map((p) => p.trim());
 				for (const p of parts) {
