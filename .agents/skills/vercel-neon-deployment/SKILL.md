@@ -50,21 +50,22 @@ Because `pnpm` resolves different peer dependency trees for `drizzle-orm/neon-se
 
 ### The Solution: Intersection Cast
 
-By casting the exported `db` to an **intersection type** rather than a union type, we satisfy the compiler for all queries, transactions, deletes, inserts, and template literals:
+By casting the exported `db` to an **intersection type** rather than a union type, we satisfy the compiler for all queries, transactions, deletes, inserts, and template literals.
+
+> [!IMPORTANT]
+> **Do NOT import the `ws` package in `src/server/db/index.ts`.**
+> If `ws` is imported statically, the Next.js builder will bundle it into `middleware.js`. Since Next.js middleware runs in a sandboxed environment, executing the `ws` initialization code will fail with `TypeError: b.mask is not a function`.
+>
+> In modern environments (Node.js 22+ and the Next.js Middleware/Edge Sandbox), a native global `WebSocket` object is already available. The `@neondatabase/serverless` driver will automatically detect and use `globalThis.WebSocket` without any manual configuration.
 
 ```typescript
 // src/server/db/index.ts
-import { Pool, neonConfig } from "@neondatabase/serverless";
+import { Pool } from "@neondatabase/serverless";
 import { drizzle as drizzleServerless, type NeonDatabase } from "drizzle-orm/neon-serverless";
 import { drizzle as drizzlePg, type PostgresJsDatabase } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import ws from "ws";
 import { env } from "~/env";
 import * as schema from "./schema";
-
-if (typeof window === "undefined") {
-  neonConfig.webSocketConstructor = ws;
-}
 
 const globalForDb = globalThis as unknown as {
   conn: postgres.Sql | undefined;
@@ -86,7 +87,7 @@ const createDb = () => {
 // Cast to intersection type to solve TS Union & nominal peer dependency conflicts
 export const db = createDb() as unknown as PostgresJsDatabase<typeof schema> & NeonDatabase<typeof schema>;
 ```
-`
+
 
 ---
 

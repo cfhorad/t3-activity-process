@@ -1,4 +1,4 @@
-import { neonConfig, Pool } from "@neondatabase/serverless";
+import { Pool } from "@neondatabase/serverless";
 import {
 	drizzle as drizzleServerless,
 	type NeonDatabase,
@@ -8,15 +8,9 @@ import {
 	type PostgresJsDatabase,
 } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
-import ws from "ws";
 
 import { env } from "~/env";
 import * as schema from "./schema";
-
-// Set WebSocket constructor for neon-serverless driver to run in Node.js server environments
-if (typeof window === "undefined") {
-	neonConfig.webSocketConstructor = ws;
-}
 
 /**
  * Cache the database connection in development. This avoids creating a new connection on every HMR
