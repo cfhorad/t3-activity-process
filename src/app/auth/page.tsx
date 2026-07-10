@@ -1,33 +1,18 @@
-"use client";
-
-import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
-import { authClient } from "~/server/better-auth/client";
-import { AuthCard } from "../_components/auth/auth-card";
+import { AuthPageClient } from "./AuthPageClient";
 
-function AuthPageContent() {
-	const router = useRouter();
-	const searchParams = useSearchParams();
-	const tab = searchParams.get("tab");
+interface PageProps {
+	searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}
 
-	// Default to register if tab=register, otherwise login
+export default async function AuthPage({ searchParams }: PageProps) {
+	const params = await searchParams;
+	const tab = typeof params.tab === "string" ? params.tab : undefined;
 	const defaultTab = tab === "register" ? "register" : "login";
 
 	return (
-		<div className="flex min-h-screen items-center justify-center bg-background p-4 sm:p-8">
-			<AuthCard
-				authClient={authClient}
-				defaultTab={defaultTab}
-				onSuccess={() => router.push("/")}
-			/>
-		</div>
-	);
-}
-
-export default function AuthPage() {
-	return (
 		<Suspense fallback={<div className="min-h-screen bg-background" />}>
-			<AuthPageContent />
+			<AuthPageClient defaultTab={defaultTab} />
 		</Suspense>
 	);
 }

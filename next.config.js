@@ -11,10 +11,11 @@ const withSerwist = withSerwistInit({
 	disable: process.env.NODE_ENV === "development",
 });
 
-/** @type {import("next").NextConfig} */
+/** @type {import("next/dist/server/config").NextConfig} */
 const config = {
 	experimental: {
 		useCache: true,
+		reactCompiler: true,
 	},
 };
 

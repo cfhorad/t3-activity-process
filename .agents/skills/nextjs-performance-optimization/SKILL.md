@@ -1,7 +1,6 @@
 ---
-trigger: glob
+name: nextjs-performance-optimization-2026
 description: Comprehensive guidelines for optimizing Next.js applications in 2026 (Next.js 16+), emphasizing the React Compiler, Cache Components (`use cache`), Turbopack, tRPC caching, and Core Web Vitals.
-globs: src/**/*.{ts,tsx}
 ---
 
 # Next.js 16+ Performance Optimization Guidelines (2026 Standards)
@@ -12,7 +11,8 @@ Use this skill whenever optimizing performance, reducing bundle sizes, improving
 
 ## 1. Architectural Defaults & The React Compiler
 
-- **React Compiler (Stable):** Next.js 16 ships with a stable React Compiler. **Do not use manual `useMemo` or `useCallback`** unless strictly necessary. The compiler automatically memoizes components and hooks. Focus purely on writing clean, idiomatic React.
+- **React Compiler (Stable in 16, Opt-in in 15):** Next.js 16 ships with a stable React Compiler by default. In Next.js 15, you must explicitly opt-in by setting `experimental: { reactCompiler: true }` in `next.config.js` and installing the compiler compiler plugin: `pnpm add -D babel-plugin-react-compiler`.
+- **Zero Manual Memoization:** **Do not use manual `useMemo` or `useCallback`** unless strictly necessary. The compiler automatically memoizes components and hooks. Focus purely on writing clean, idiomatic React.
 - **Turbopack by Default:** Always use Turbopack for local development and production builds. It provides up to 10x faster Fast Refresh and 5x faster production builds compared to Webpack.
 - **Layout Deduplication:** Next.js 16 automatically deduplicates layouts and uses incremental prefetching. Do not implement custom prefetching logic; rely on the built-in `<Link>` component.
 
