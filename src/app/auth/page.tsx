@@ -1,5 +1,5 @@
-import { Spinner } from "@heroui/react";
 import { Suspense } from "react";
+import { GlobalSpinner } from "~/app/loading";
 import { AuthPageClient } from "./AuthPageClient";
 
 export default function AuthPage() {
@@ -7,7 +7,7 @@ export default function AuthPage() {
 		<Suspense
 			fallback={
 				<div className="flex min-h-screen items-center justify-center bg-background p-4 sm:p-8">
-					<Spinner size="lg" />
+					<GlobalSpinner />
 				</div>
 			}
 		>
