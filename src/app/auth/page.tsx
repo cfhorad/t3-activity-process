@@ -1,18 +1,17 @@
+import { Spinner } from "@heroui/react";
 import { Suspense } from "react";
 import { AuthPageClient } from "./AuthPageClient";
 
-interface PageProps {
-	searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-}
-
-export default async function AuthPage({ searchParams }: PageProps) {
-	const params = await searchParams;
-	const tab = typeof params.tab === "string" ? params.tab : undefined;
-	const defaultTab = tab === "register" ? "register" : "login";
-
+export default function AuthPage() {
 	return (
-		<Suspense fallback={<div className="min-h-screen bg-background" />}>
-			<AuthPageClient defaultTab={defaultTab} />
+		<Suspense
+			fallback={
+				<div className="flex min-h-screen items-center justify-center bg-background p-4 sm:p-8">
+					<Spinner size="lg" />
+				</div>
+			}
+		>
+			<AuthPageClient />
 		</Suspense>
 	);
 }

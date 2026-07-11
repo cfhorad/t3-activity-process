@@ -74,3 +74,18 @@ While the server uses `use cache`, the client uses the tRPC React query cache:
   }
   ```
 - **Fetch Caching:** `fetch` requests are **not** cached by default. You must explicitly specify `cache: 'force-cache'` (or use the `use cache` directive) if you want static data.
+
+## 7. Avoid Database Authentication in Middleware
+
+- **No DB Queries in `middleware.ts`:** In Next.js, middleware runs in an isolated runtime and executes *before* the request reaches the App Router. Executing database queries (e.g., `getSession()`) in middleware blocks the entire request pipeline, severely degrading Time to First Byte (TTFB).
+- **Use Server Components for Auth:** Perform authentication checks in your Layout or Page Server Components instead. Server Components can stream HTML (like a layout skeleton) instantly, providing immediate visual feedback to the user while the DB query resolves.
+
+## 8. Unblocking Layout Streaming with Suspense
+
+- **Avoid Top-Level `await` for Data Fetching:** If a Page Component uses a top-level `await` for data fetching (e.g., `await api.entity.getAll.prefetch()`), Next.js must wait for the query to resolve before it can send any HTML for that page chunk, delaying LCP.
+- **Use `<Suspense>` for Prefetching:** Extract your data prefetching logic into a separate Server Component and wrap it in a React `<Suspense>` boundary. This allows Next.js to stream the static parts of the page (like a Page Header) instantly, and fall back to a loading spinner while the server finishes fetching the data.
+
+## 9. Static Prerendering via Client-Side URL Params
+
+- **Avoid `await searchParams` when possible:** Reading `searchParams` in a Server Component forces Next.js to opt the page into **Dynamic Rendering** (SSR), which increases TTFB.
+- **Push `searchParams` to Client Components:** If your page only uses URL parameters for client-side state (e.g., active tabs), move the logic to a Client Component using `useSearchParams()`. Wrap the Client Component in a `<Suspense>` boundary in the Server Component. This allows Next.js to treat the route as **100% Statically Prerendered**, instantly serving the HTML payload.
